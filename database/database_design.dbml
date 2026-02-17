@@ -1,0 +1,324 @@
+// =========================
+// FitSense AI
+// =========================
+Table users {
+  user_id uuid [pk]
+  name varchar
+  email varchar [unique]
+  created_at datetime
+}
+
+Table goals {
+  goal_id uuid [pk]
+  name varchar [unique]
+  description text
+}
+
+Table user_goals {
+  user_id uuid [not null, ref: > users.user_id]
+  goal_id uuid [not null, ref: > goals.goal_id]
+  priority int
+
+  indexes {
+    (user_id, goal_id) [unique]
+    (goal_id)
+  }
+}
+
+Table conditions {
+  condition_id uuid [pk]
+  name varchar [unique]
+  description text
+}
+
+Table user_conditions {
+  user_id uuid [not null, ref: > users.user_id]
+  condition_id uuid [not null, ref: > conditions.condition_id]
+  severity varchar
+  notes text
+
+  indexes {
+    (user_id, condition_id) [unique]
+    (condition_id)
+  }
+}
+
+// =========================
+// Exercise + Equipment
+// =========================
+Table equipment {
+  equipment_id uuid [pk]
+  name varchar [unique]
+  category varchar
+}
+
+Table exercises {
+  exercise_id uuid [pk]
+  name varchar [unique]
+  primary_muscle varchar
+  notes text
+}
+
+Table exercise_equipment {
+  exercise_id uuid [not null, ref: > exercises.exercise_id]
+  equipment_id uuid [not null, ref: > equipment.equipment_id]
+
+  indexes {
+    (exercise_id, equipment_id) [unique]
+    (equipment_id)
+  }
+}
+
+// =========================
+// Workout Plans (Blueprint)
+// =========================
+Table workout_plans {
+  plan_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  name varchar
+  is_active boolean
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (user_id, is_active)
+  }
+}
+
+Table plan_exercises {
+  plan_exercise_id uuid [pk]
+  plan_id uuid [not null, ref: > workout_plans.plan_id]
+  exercise_id uuid [not null, ref: > exercises.exercise_id]
+  position int
+  notes text
+
+  indexes {
+    (plan_id)
+    (exercise_id)
+    (plan_id, position)
+  }
+}
+
+Table plan_sets {
+  plan_set_id uuid [pk]
+  plan_exercise_id uuid [not null, ref: > plan_exercises.plan_exercise_id]
+  set_number int
+  target_reps int
+  target_weight decimal
+  target_rir int // reps-in-reserve
+  rest_seconds int
+
+  indexes {
+    (plan_exercise_id)
+    (plan_exercise_id, set_number) [unique]
+  }
+}
+
+// =========================
+// Workouts (Actual sessions)
+// =========================
+Table workouts {
+  workout_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  plan_id uuid [ref: > workout_plans.plan_id] // nullable: workout may not use a plan
+  started_at datetime
+  ended_at datetime
+  notes text
+
+  indexes {
+    (user_id)
+    (plan_id)
+    (user_id, started_at)
+  }
+}
+
+Table workout_exercises {
+  workout_exercise_id uuid [pk]
+  workout_id uuid [not null, ref: > workouts.workout_id]
+  exercise_id uuid [not null, ref: > exercises.exercise_id]
+  plan_exercise_id uuid [ref: > plan_exercises.plan_exercise_id] // nullable link to blueprint row
+  position int
+  notes text
+
+  indexes {
+    (workout_id)
+    (exercise_id)
+    (plan_exercise_id)
+    (workout_id, position)
+  }
+}
+
+Table workout_sets {
+  workout_set_id uuid [pk]
+  workout_exercise_id uuid [not null, ref: > workout_exercises.workout_exercise_id]
+  set_number int
+  reps int
+  weight decimal
+  rir int
+  is_warmup boolean
+  completed_at datetime
+
+  indexes {
+    (workout_exercise_id)
+    (workout_exercise_id, set_number) [unique]
+  }
+}
+
+// =========================
+// AI interactions (query/response)
+// =========================
+Table ai_interactions {
+  ai_interaction_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  context_type varchar // e.g., 'plan' | 'workout' | 'general'
+  context_id uuid // optional: references plan_id or workout_id (polymorphic)
+  query_text text
+  response_text text
+  model_name varchar
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (context_type, context_id)
+    (created_at)
+  }
+}
+
+// =========================
+// User profile + medical
+// =========================
+Table user_profiles {
+  user_id uuid [pk, ref: > users.user_id]
+  date_of_birth date
+  sex varchar
+  height_cm decimal
+  activity_level varchar // e.g., sedentary | lightly_active | moderately_active | very_active
+  updated_at datetime
+}
+
+Table user_medical_profiles {
+  medical_profile_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  has_injuries boolean
+  injury_details text
+  surgeries_history text
+  family_history text
+  notes text
+  updated_at datetime
+
+  indexes {
+    (user_id)
+  }
+}
+
+Table user_medications {
+  medication_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  medication_name varchar [not null]
+  dosage varchar
+  frequency varchar
+  start_date date
+  end_date date
+  notes text
+
+  indexes {
+    (user_id)
+    (medication_name)
+  }
+}
+
+Table user_allergies {
+  allergy_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  allergen varchar [not null]
+  reaction varchar
+  severity varchar
+  notes text
+
+  indexes {
+    (user_id)
+    (allergen)
+  }
+}
+
+// =========================
+// Calorie targets + intake logs
+// =========================
+Table calorie_targets {
+  calorie_target_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  maintenance_calories int [not null]
+  method varchar // e.g., formula | ai | manual
+  effective_from date [not null]
+  effective_to date // nullable for current active target
+  notes text
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (user_id, effective_from)
+  }
+}
+
+Table calorie_intake_logs {
+  calorie_log_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  log_date date [not null]
+  calories_consumed int [not null]
+  notes text
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (user_id, log_date) [unique]
+  }
+}
+
+// =========================
+// Sleep targets + duration logs
+// =========================
+Table sleep_targets {
+  sleep_target_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  target_sleep_hours decimal [not null]
+  effective_from date [not null]
+  effective_to date // nullable for current active target
+  notes text
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (user_id, effective_from)
+  }
+}
+
+Table sleep_duration_logs {
+  sleep_log_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  log_date date [not null]
+  sleep_duration_hours decimal [not null]
+  notes text
+  created_at datetime
+
+  indexes {
+    (user_id)
+    (user_id, log_date) [unique]
+  }
+}
+
+// =========================
+// Weight tracking
+// =========================
+Table weight_logs {
+  weight_log_id uuid [pk]
+  user_id uuid [not null, ref: > users.user_id]
+  logged_at datetime [not null]
+  weight_kg decimal [not null]
+  body_fat_percentage decimal
+  notes text
+
+  indexes {
+    (user_id)
+    (user_id, logged_at)
+  }
+}
