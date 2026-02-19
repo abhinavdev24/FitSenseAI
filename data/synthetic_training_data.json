@@ -1,0 +1,3701 @@
+[
+  {
+    "input": {
+      "age": 31,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee sprain"
+        ],
+        "mobility_limitations": [
+          "squats"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "avg_sleep_hours": 7.5,
+      "latest_weight": 69
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body (no squats)",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee sprain and mobility limitations, the plan avoids squats and high-impact exercises. The moderate intensity and duration are suitable for the user's intermediate fitness level and weight loss goal, while also considering the user's hypertension and average sleep hours.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions like hypertension. It's also essential to listen to your body and rest when needed, especially with a knee sprain.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stay consistent, and you'll see progress towards your weight loss goal. Remember to prioritize your knee health and adjust the plan as needed."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_gain",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "resistance bands",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 52
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and goal of weight gain, a moderate intensity workout plan with a mix of upper body, lower body, and core exercises is recommended. The plan allows for rest days on Wednesday and Sunday to aid in recovery and muscle growth.",
+      "safety_notes": "As the user has hypertension, it's essential to monitor blood pressure regularly and consult with a doctor before starting any new exercise program. It's also crucial to warm up properly before each workout and cool down afterwards to prevent any injuries.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to stay consistent, listen to your body, and celebrate small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "lose weight",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee injury"
+        ],
+        "mobility_limitations": [
+          "limited mobility in right leg"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 80
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body (modified for knee injury)",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio (treadmill walk/jog)",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core and Balance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery (light stretching and mobility)",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee injury and limited mobility in the right leg, the plan focuses on modified lower body exercises and incorporates rest and recovery days to avoid exacerbating the injury. The intensity and duration of workouts are moderate to avoid putting excessive strain on the body.",
+      "safety_notes": "Please consult with a medical professional before starting any new exercise program, especially with hypertension and a knee injury. Monitor blood pressure and knee pain during workouts, and stop immediately if experiencing any discomfort or pain.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Remember to listen to your body and prioritize recovery. With consistent effort and patience, you'll achieve your weight loss goal and improve your overall well-being."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "beginner",
+      "primary_goal": "build muscle",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "weights",
+        "resistance bands"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 65
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and primary goal of building muscle, the plan focuses on moderate-intensity workouts with a mix of upper and lower body exercises. The plan also includes rest days to allow for recovery and muscle growth. The user's diabetes condition is taken into account by avoiding high-intensity workouts and focusing on manageable durations.",
+      "safety_notes": "Please consult with a doctor or a certified fitness professional before starting any new exercise program, especially with a medical condition like diabetes. Monitor blood sugar levels and adjust the plan as needed. Stay hydrated and listen to your body, resting when needed.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to stay consistent, listen to your body, and celebrate small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "lose weight",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Strength Training",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Strength Training",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the lack of information on fatigue score, adherence rate, HRV, and sleep hours, a moderate-intensity plan with rest days is provided. This plan can be adjusted based on the individual's progress and feedback.",
+      "safety_notes": "It is essential to consult a doctor before starting any new exercise program, especially with a medical condition like hypertension. Please monitor blood pressure and adjust the plan as needed.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Stay consistent, and don't hesitate to reach out if you need any adjustments to your plan."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "squatting"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body (modified for knee injury)",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body (modified for knee injury)",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee injury, exercises have been modified to avoid squatting and reduce stress on the knee joint. The plan also takes into account the high blood pressure condition by avoiding high-intensity workouts and incorporating rest days.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions. Warm up before each workout, and listen to your body to avoid exacerbating the knee injury.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stay consistent, and you'll see progress towards your weight loss goal. Remember to prioritize your knee health and adjust the plan as needed."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "barbell"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 60
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal of muscle gain, the plan focuses on high-intensity workouts with adequate rest days. The user's average sleep hours are sufficient, allowing for high-intensity workouts.",
+      "safety_notes": "Warm up properly before each workout, and rest when needed. Ensure proper form and technique when using the barbell to avoid injury.",
+      "motivation_message": "You're on the right track to achieving your muscle gain goals! Stay consistent, listen to your body, and celebrate small victories along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "male",
+      "height_cm": 170,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "squatting"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "upper_body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "lower_body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Thursday",
+          "focus": "core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "upper_body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "lower_body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level, knee injury, and mobility limitations with squatting, the intensity and duration of workouts have been reduced to ensure safety and gradual progression. The user's diabetes condition has also been considered, and the plan focuses on low-intensity exercises to avoid putting excessive strain on the body.",
+      "safety_notes": "Please consult with a medical professional before starting any new exercise program, especially with a pre-existing condition like diabetes. It's also essential to listen to your body and rest when needed, especially with a knee injury.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to focus on progress, not perfection, and celebrate small victories along the way. Stay consistent, and you'll be on your way to achieving your weight loss goal."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and limited mobility, the plan focuses on moderate-intensity workouts with shorter durations to avoid exacerbating the injury. The inclusion of rest days allows for recovery and adaptation.",
+      "safety_notes": "Please consult with a medical professional before starting any new exercise program, especially with hypertension and a knee injury. Warm up properly before each workout and listen to your body to avoid further injury.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stay consistent, listen to your body, and celebrate small victories along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 65
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal of muscle gain, the plan focuses on high-intensity workouts with adequate rest days. The presence of diabetes requires careful monitoring of blood sugar levels, especially during intense exercise. The plan assumes the user will manage their condition accordingly.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a medical condition like diabetes. Monitor blood sugar levels and adjust the plan as needed. Stay hydrated throughout the workouts.",
+      "motivation_message": "You're on the path to achieving your muscle gain goals! Stay consistent, listen to your body, and make adjustments as needed. Remember to prioritize your health and safety throughout the journey."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "advanced",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "diabetes",
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury",
+          "shoulder_surgery"
+        ],
+        "mobility_limitations": [
+          "limited_knee_extension",
+          "shoulder_mobility_impaired"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill",
+        "exercise_ball"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and primary goal of weight loss, a moderate-intensity workout plan is created. However, considering the user's medical conditions (diabetes and hypertension) and injuries (knee injury and shoulder surgery), the intensity and duration of the workouts are adjusted to avoid high-impact activities and allow for rest and recovery. The plan also takes into account the user's average sleep hours, which is sufficient, but still includes rest days to ensure adequate recovery.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with pre-existing medical conditions and injuries. It is essential to listen to your body and adjust the intensity and duration of the workouts based on how you feel. Make sure to warm up properly before each workout and cool down afterwards to prevent injuries.",
+      "motivation_message": "You've got this! Stick to the plan, and you'll be on your way to achieving your weight loss goal. Remember to stay hydrated, eat a balanced diet, and get enough sleep to support your fitness journey. You're not alone, and every small step counts. Keep pushing forward, and celebrate your progress along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 30,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "intermediate",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "asthma"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "kettlebells",
+        "jump_rope"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 60
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the user's intermediate fitness level and goal of muscle gain, a moderate-intensity workout plan with a mix of strength training and cardio is recommended. The plan allows for rest and recovery days to avoid overtraining and prevent injury, considering the user's asthma condition.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a pre-existing medical condition like asthma. Make sure to warm up properly before each workout and cool down afterwards to prevent injury. Use your inhaler as prescribed by your doctor if you experience any asthma symptoms during exercise.",
+      "motivation_message": "You've got this! Stick to your workout plan and you'll be on your way to achieving your muscle gain goals. Remember to listen to your body and rest when needed, and don't hesitate to reach out if you have any questions or concerns."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 80
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and limited mobility, the intensity and duration of workouts have been adjusted to moderate levels to avoid exacerbating the injury. The inclusion of rest days allows for recovery and reduces the risk of further injury.",
+      "safety_notes": "It is essential to consult with a doctor before starting any new exercise program, especially with high blood pressure and a knee injury. It is also crucial to listen to your body and stop exercising if you experience any pain or discomfort.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of. Remember to stay consistent, listen to your body, and celebrate small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 31,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "beginner",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "allergies"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 55
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and muscle gain goal, a moderate intensity workout plan with rest days is recommended. The plan is tailored to accommodate the user's available equipment (dumbbells) and does not require any high-intensity exercises that may be contraindicated for someone with allergies.",
+      "safety_notes": "Please consult a medical professional before starting any new exercise program, especially with pre-existing medical conditions such as allergies. Ensure proper warm-up and cool-down routines, and stay hydrated throughout the workout.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to track your progress, listen to your body, and have fun. You've got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 46,
+      "gender": "male",
+      "height_cm": 190,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee injury and limited mobility, the plan focuses on moderate intensity workouts with shorter durations to avoid exacerbating the injury. The plan also includes rest days to allow for recovery.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with high blood pressure and a knee injury. Warm up properly before each workout and listen to your body to avoid any further injury.",
+      "motivation_message": "You've got this! With consistent effort and patience, you'll be on your way to achieving your muscle gain goals while taking care of your knee injury and overall health."
+    }
+  },
+  {
+    "input": {
+      "age": 30,
+      "gender": "Male",
+      "height_cm": 175,
+      "fitness_level": "advanced",
+      "primary_goal": "weightloss",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee sprain",
+          "hip strain"
+        ],
+        "mobility_limitations": [
+          "squatting",
+          "lunging"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body (modified for knee sprain and hip strain)",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core and Conditioning",
+          "intensity": "Moderate",
+          "duration_minutes": 40
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body (modified for knee sprain and hip strain)",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee sprain and hip strain, the plan focuses on low-impact exercises and avoids squatting and lunging. The plan also considers the hypertension condition and aims to maintain moderate intensity. With an average sleep of 8 hours, the plan does not need to avoid high intensity, but it is still kept moderate to ensure safety and progressive overload.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions and injuries. Warm up properly before each workout, and rest when needed. Monitor blood pressure and adjust the plan as necessary.",
+      "motivation_message": "You've got this! With consistent effort and patience, you'll achieve your weight loss goal and improve your overall fitness. Remember to listen to your body and adjust the plan as needed to ensure a safe and enjoyable journey."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "Male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "muscle gain",
+      "medical_conditions": [
+        "asthma"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the lack of information on fatigue score, adherence rate, HRV, and sleep hours, a moderate intensity plan with rest days is provided. Please monitor your progress and adjust the plan accordingly.",
+      "safety_notes": "As you have asthma, please ensure you have your inhaler nearby during workouts and consult your doctor if you experience any discomfort or shortness of breath.",
+      "motivation_message": "Stay consistent, listen to your body, and celebrate small victories along the way. You've got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 33,
+      "gender": "Female",
+      "height_cm": 160,
+      "fitness_level": "beginner",
+      "primary_goal": "weight loss",
+      "medical_conditions": [
+        "high blood pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee sprain"
+        ],
+        "mobility_limitations": [
+          "squatting"
+        ]
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 50
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body (avoid squatting)",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core and Balance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio (low-impact)",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Flexibility and Stretching",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee sprain and mobility limitations, the plan avoids high-impact exercises and squatting. The moderate intensity and shorter workout duration are suitable for a beginner with high blood pressure. The rest and recovery days are included to allow for proper healing and stress management.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with high blood pressure and a knee sprain. Warm up and cool down properly, and listen to your body to avoid any further injuries.",
+      "motivation_message": "Congratulations on taking the first step towards your weight loss journey! Remember to stay consistent, listen to your body, and celebrate small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 31,
+      "gender": "Male",
+      "height_cm": 170,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle gain",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal of muscle gain, a high-intensity workout plan is recommended. However, without information on fatigue score, adherence rate, HRV, or sleep hours, we cannot apply specific adaptation rules. As the user has diabetes, it is essential to monitor blood sugar levels and adjust the plan accordingly.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a medical condition like diabetes. Monitor blood sugar levels and adjust the plan as needed. Warm up properly before each workout and cool down afterwards to prevent injuries.",
+      "motivation_message": "Stay consistent and focused on your goal of muscle gain. With a well-structured workout plan and proper nutrition, you can achieve significant progress. Remember to listen to your body and adjust the plan as needed to avoid injury or burnout."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and limited mobility, the plan focuses on low-impact exercises and avoids high-intensity workouts. The plan also includes rest days to allow for recovery and adaptation.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with high blood pressure and knee injury. Warm up before each workout and listen to your body to avoid any further injury.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of. Stay consistent, and you'll see progress over time. Remember to prioritize your safety and listen to your body."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_gain",
+      "medical_conditions": [
+        "anxiety"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "yoga_mat"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Yoga",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the lack of information on fatigue score, adherence rate, HRV, and sleep hours, a moderate intensity plan with rest days has been created. This plan will be adjusted as more information becomes available.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with anxiety. It's also essential to listen to your body and rest when needed.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to be patient and kind to yourself as you progress. Celebrate small victories, and don't hesitate to reach out for support when needed."
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "male",
+      "height_cm": 185,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "high_cholesterol"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "shoulder_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell",
+        "treadmill"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulder and Abs",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's shoulder injury, intensity has been reduced for shoulder-focused workouts. The plan also includes rest days to allow for recovery and adaptation.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions like high cholesterol. Be mindful of your shoulder injury and avoid any exercises that cause pain or discomfort.",
+      "motivation_message": "Stay consistent and patient, and you'll see progress towards your muscle gain goal. Remember to listen to your body and adjust the plan as needed to avoid injury or burnout."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "lose_weight",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "knee_pain"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 70.0
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "upper_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "lower_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "core_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and mobility limitations, the plan focuses on low-impact cardio and strength exercises. The moderate intensity and 30-minute duration are suitable for the user's intermediate fitness level and primary goal of weight loss. Rest days are included to allow for recovery and management of knee pain.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with high blood pressure and knee injury. Warm up before each workout, and stop if experiencing any pain or discomfort.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle. Stay consistent, listen to your body, and celebrate small victories along the way. Remember, losing weight is not just about the number on the scale, but about becoming a stronger and healthier version of yourself."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "advanced",
+      "primary_goal": "build_muscle",
+      "medical_conditions": [
+        "asthma"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "kettlebell"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 65.0
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body Strength",
+          "intensity": "High",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Rowing Endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body Strength",
+          "intensity": "High",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Kettlebell Conditioning",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal to build muscle, the plan focuses on strength training with moderate to high intensity. The rowing machine and kettlebell are utilized to provide variety and challenge. Rest and recovery days are included to allow for muscle growth and repair.",
+      "safety_notes": "The user has asthma, so it's essential to warm up properly before each workout and to have an inhaler nearby if needed. It's also crucial to listen to the body and adjust the intensity and volume of the workouts based on how you feel.",
+      "motivation_message": "You've got this! Stick to the plan, and you'll be on your way to building muscle and achieving your fitness goals. Remember to stay consistent, listen to your body, and celebrate your progress along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and limited mobility, the intensity and duration of workouts have been adjusted to moderate levels to avoid exacerbating the injury. The inclusion of rest days allows for recovery and reduces the risk of further injury.",
+      "safety_notes": "It is essential to listen to your body and stop exercising if you experience any pain or discomfort, especially in the knee area. Consult with a medical professional before starting any new exercise program, especially with high blood pressure and knee injury.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of. Stay consistent, and don't be too hard on yourself \u2013 every small step counts, and you'll reach your weight loss goal in no time."
+    }
+  },
+  {
+    "input": {
+      "age": 40,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "advanced",
+      "primary_goal": "improve_yoga",
+      "medical_conditions": [
+        "flexibility_issues"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "yoga_mat",
+        "blocks"
+      ],
+      "avg_sleep_hours": 9.0,
+      "latest_weight": 60
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Yoga Flow",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Restorative Yoga",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Yoga Strength",
+          "intensity": "High",
+          "duration_minutes": 50
+        },
+        {
+          "day": "Thursday",
+          "focus": "Yoga Flexibility",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Recovery Day",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Saturday",
+          "focus": "Yoga Balance",
+          "intensity": "Moderate",
+          "duration_minutes": 40
+        },
+        {
+          "day": "Sunday",
+          "focus": "Yoga Relaxation",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal to improve yoga, the plan focuses on a mix of moderate to high intensity workouts. However, since the user has flexibility issues, restorative yoga and recovery days are included to aid in flexibility and injury prevention.",
+      "safety_notes": "Listen to your body and only go as far as you feel comfortable in each pose. If you experience any pain or discomfort, stop immediately and consult with a medical professional.",
+      "motivation_message": "Remember, consistency and patience are key. Stick to your plan, listen to your body, and celebrate small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "run_marathon",
+      "medical_conditions": [
+        "knee_pain"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "lower_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "cardio_endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "rest_day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "upper_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "cardio_endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "long_run",
+          "intensity": "Moderate",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Sunday",
+          "focus": "rest_day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee pain and limited mobility, the plan focuses on moderate intensity and shorter duration workouts to avoid exacerbating the injury. Rest days are included to allow for recovery and rehabilitation.",
+      "safety_notes": "It is essential to listen to your body and stop immediately if you experience any sharp pain or discomfort. Consult with a medical professional before starting any new exercise program, especially with pre-existing knee pain and injury.",
+      "motivation_message": "Stay committed to your marathon training, and don't be discouraged by setbacks. With consistent effort and careful management of your knee pain, you can achieve your goal and reach the finish line."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180.5,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 70.5
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "upper_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Thursday",
+          "focus": "lower_body_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "core_strength",
+          "intensity": "Moderate",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Sunday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 20
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee injury and limited mobility, the plan focuses on low-impact cardio and strength exercises that can be modified to accommodate their mobility limitations. The moderate intensity and shorter workout durations are chosen to balance the user's intermediate fitness level with their need to manage high blood pressure and avoid exacerbating their injury.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with high blood pressure and a knee injury. Warm up before each workout, and listen to your body to avoid overexertion. If you experience any pain or discomfort, stop the exercise immediately.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Remember to stay consistent, listen to your body, and celebrate your small victories along the way. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 40,
+      "gender": "female",
+      "height_cm": 165.2,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "high_cholesterol"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "elliptical"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 65.2
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "High",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "High",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rowing Machine",
+          "intensity": "High",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Elliptical",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal of muscle gain, the plan focuses on high-intensity workouts with adequate rest days. The user's average sleep hours are sufficient, and there are no injuries or mobility limitations to consider. The plan incorporates the available equipment and allows for progressive overload to support muscle gain.",
+      "safety_notes": "It is essential to warm up before each workout and cool down afterwards to prevent injuries. The user should also listen to their body and adjust the intensity and volume of the workouts based on how they feel. Given the user's high cholesterol, it is crucial to monitor their heart health and adjust the plan as needed.",
+      "motivation_message": "You've got this! Stay consistent, and you'll be on your way to achieving your muscle gain goals. Remember to track your progress, and don't hesitate to reach out if you have any questions or concerns. Keep pushing yourself, and celebrate your small wins along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 50,
+      "gender": "male",
+      "height_cm": 175.8,
+      "fitness_level": "advanced",
+      "primary_goal": "marathon_training",
+      "medical_conditions": [
+        "asthma"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill",
+        "running_shoes"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Strength Training",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Speed and Agility",
+          "intensity": "High",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Long Run",
+          "intensity": "Moderate",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest and Recovery",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the knee injury and limited mobility, the plan focuses on low-impact endurance and strength training to minimize stress on the knee joint. The plan also includes rest and recovery days to allow for adequate healing and adaptation.",
+      "safety_notes": "Please consult with a medical professional before starting any new exercise program, especially with pre-existing conditions like asthma. Make sure to warm up properly before each workout and cool down afterwards to prevent injury. Use your inhaler as prescribed and have it with you during workouts.",
+      "motivation_message": "You've got this! With consistent training and patience, you'll be ready to crush your marathon goal. Remember to listen to your body and take rest days as needed. You're not just training for a marathon, you're building a stronger, healthier you."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "Male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure",
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury",
+          "back_pain"
+        ],
+        "mobility_limitations": [
+          "limited_mobility",
+          "chronic_pain"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's medical conditions and injuries, the intensity and duration of workouts have been adjusted to moderate levels to avoid exacerbating the conditions. Rest days have been included to allow for recovery and management of chronic pain.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with pre-existing medical conditions and injuries. It is essential to listen to your body and stop if you experience any pain or discomfort.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stay consistent, and don't hesitate to reach out if you need any support or guidance."
+    }
+  },
+  {
+    "input": {
+      "age": 31,
+      "gender": "Female",
+      "height_cm": 160,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_gain",
+      "medical_conditions": [
+        "hypothyroidism"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "kettlebell"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 55
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and primary goal of weight gain, the plan focuses on moderate intensity workouts with a mix of upper and lower body exercises. Since the user has hypothyroidism, it's essential to avoid overexertion and include rest days for recovery. The plan also considers the user's average sleep hours, which is sufficient, so no adjustments are made for sleep deprivation.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a medical condition like hypothyroidism. It's essential to monitor your body's response to the workouts and adjust the intensity and volume as needed. Make sure to warm up properly before each workout and cool down afterwards to prevent injuries.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember that consistency and patience are key. Focus on progressive overload and proper nutrition to support your weight gain goal. Celebrate small victories along the way, and don't hesitate to reach out if you have any questions or concerns."
+    }
+  },
+  {
+    "input": {
+      "age": 40,
+      "gender": "Male",
+      "height_cm": 180,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury",
+          "back_pain"
+        ],
+        "mobility_limitations": [
+          "limited_mobility",
+          "chronic_pain"
+        ]
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the presence of knee injury, back pain, and limited mobility, the intensity and duration of workouts have been adjusted to moderate levels to avoid exacerbating the conditions. Rest days have been included to allow for recovery and management of chronic pain.",
+      "safety_notes": "It is essential to consult with a medical professional before starting any new exercise program, especially with high blood pressure and existing injuries. Please monitor blood pressure and adjust the workout plan as needed. Avoid any exercises that exacerbate knee injury or back pain.",
+      "motivation_message": "Remember, consistency and patience are key. Focus on progressive overload and proper form to achieve muscle gain while managing your injuries and medical conditions. Celebrate small victories and don't hesitate to reach out if you need any adjustments to your workout plan."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "lose_weight",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 8.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Full Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's average sleep hours of 8.0, we can maintain moderate intensity workouts. Since the user has hypertension, we will avoid high intensity workouts and focus on moderate intensity exercises. The user's fitness level is intermediate, so we will provide a balanced workout plan with a mix of upper body, lower body, core, and cardio exercises.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with a medical condition like hypertension. Make sure to warm up before each workout and cool down afterwards to prevent injuries. Stay hydrated throughout the day and listen to your body, resting when needed.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stick to your workout plan, and you'll see progress over time. Remember to be patient and kind to yourself, and don't hesitate to reach out if you have any questions or concerns."
+    }
+  },
+  {
+    "input": {
+      "age": 30,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "advanced",
+      "primary_goal": "gain_muscle",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_pain"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "barbell"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 65
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's knee pain and limited mobility, the intensity and duration of workouts have been adjusted to moderate and 45 minutes respectively, with an additional recovery day on Wednesday to allow for rest and rehabilitation. The user's diabetes condition has also been taken into account, with a focus on balanced and controlled workouts.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions such as diabetes. It is also essential to listen to your body and adjust the intensity and duration of workouts based on how you feel, and to prioritize rest and recovery when needed.",
+      "motivation_message": "You've got this! Remember to stay consistent, listen to your body, and celebrate small victories along the way. With patience and dedication, you'll be on your way to achieving your fitness goals and gaining muscle in no time."
+    }
+  },
+  {
+    "input": {
+      "age": 31,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 70
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Total Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's average sleep hours of 7.0, the plan avoids high intensity workouts. The plan also considers the user's primary goal of weight loss and incorporates a mix of strength training and cardio exercises.",
+      "safety_notes": "It is essential to monitor blood pressure regularly and consult a doctor before starting any new exercise program, especially with high blood pressure. Warm up before each workout and cool down afterwards to prevent injuries.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Stick to your workout plan, and you'll see progress towards your weight loss goal in no time. Remember to stay hydrated, eat a balanced diet, and get enough sleep to support your fitness journey."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "barbell",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 60
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Chest and Triceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Back and Biceps",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Legs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Friday",
+          "focus": "Shoulders and Abs",
+          "intensity": "High",
+          "duration_minutes": 60
+        },
+        {
+          "day": "Saturday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal of muscle gain, the plan focuses on high-intensity workouts with adequate rest days. Since the user gets sufficient sleep, high-intensity workouts are included. However, rest days are incorporated to allow for recovery and muscle growth.",
+      "safety_notes": "Warm up before each workout, and cool down afterwards. Start with lighter weights and progress gradually. Listen to your body and rest when needed.",
+      "motivation_message": "You've got this! Stick to your plan, and you'll be on your way to achieving your muscle gain goals. Remember to stay consistent, and don't hesitate to reach out if you have any questions or concerns."
+    }
+  },
+  {
+    "input": {
+      "age": 41,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_pain"
+        ],
+        "mobility_limitations": [
+          "limited_movement"
+        ]
+      },
+      "equipment_owned": [],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and knee pain, the intensity and duration of the workouts have been reduced to minimize the risk of injury. As the user's fitness level and mobility improve, the intensity and duration can be gradually increased.",
+      "safety_notes": "It is essential to listen to your body and stop immediately if you experience any pain or discomfort. Consult with a medical professional before starting any new exercise program, especially with high blood pressure and knee pain.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to stay consistent, and don't be too hard on yourself. Celebrate small victories, and you'll be on your way to achieving your weight loss goal in no time."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "hypertension"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "avg_sleep_hours": 7.25,
+      "latest_weight": 65
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's average sleep hours of 7.25, the plan avoids high intensity workouts. The plan also considers the user's primary goal of weight loss and incorporates a mix of strength training and cardio exercises.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a medical condition like hypertension. It's also essential to listen to your body and rest when needed.",
+      "motivation_message": "You've taken the first step towards your weight loss journey! Stay consistent, and you'll see progress over time. Remember to also focus on a balanced diet and adequate sleep to support your fitness goals."
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "injury1",
+          "injury2"
+        ],
+        "mobility_limitations": [
+          "mobility1",
+          "mobility2"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and primary goal of muscle gain, a moderate-intensity workout plan is recommended. However, due to the presence of injuries and mobility limitations, the intensity and duration of the workouts have been adjusted to avoid exacerbating the injuries. The plan also includes rest days and active recovery to allow for proper recovery and adaptation.",
+      "safety_notes": "Please consult with a medical professional before starting any new exercise program, especially with pre-existing medical conditions such as diabetes. It is also essential to listen to your body and adjust the intensity and duration of the workouts based on how you feel. If you experience any pain or discomfort, stop the exercise immediately and consult with a medical professional.",
+      "motivation_message": "Remember, consistency and patience are key to achieving your fitness goals. Stay committed to your workout plan, and don't be afraid to make adjustments as needed. Celebrate your small victories along the way, and don't give up \u2013 you got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 6,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "lose_weight",
+      "medical_conditions": [
+        "high_blood_pressure",
+        "high_cholesterol"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury",
+          "ankle_injury"
+        ],
+        "mobility_limitations": [
+          "knee_pain",
+          "ankle_pain"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "exercise_ball"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 79
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "upper_body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "lower_body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "upper_body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "lower_body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's high blood pressure and high cholesterol, moderate intensity workouts are recommended. The presence of knee and ankle injuries requires careful consideration of exercises to avoid exacerbating the conditions. The user's average sleep hours are sufficient, so no adjustments are made for sleep deprivation. The weekly plan includes rest days to allow for recovery and to minimize the risk of further injury.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions. Warm up before each workout, and cool down afterwards to prevent injury. Avoid any exercises that cause pain or discomfort in the knee or ankle.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Remember to listen to your body and only do what feels comfortable and safe. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 5,
+      "gender": "female",
+      "height_cm": 160,
+      "fitness_level": "advanced",
+      "primary_goal": "build_muscle",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "treadmill",
+        "exercise_ball"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body Strength",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body Strength",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core Strength",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardiovascular Endurance",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's advanced fitness level and goal to build muscle, a moderate-intensity strength training program is recommended. However, without information on fatigue score, adherence rate, HRV, or average sleep hours, the program is designed to be balanced and allow for rest and recovery. The presence of high blood pressure requires careful consideration of intensity and duration, and regular monitoring of blood pressure is advised.",
+      "safety_notes": "It is essential to consult with a healthcare professional before starting any new exercise program, especially with a medical condition like high blood pressure. Regular monitoring of blood pressure and adjustment of the exercise program as needed is crucial. Proper warm-up, cool-down, and hydration are also essential for safe and effective exercise.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness goals! Remember to listen to your body, stay consistent, and celebrate small victories along the way. With dedication and patience, you can achieve your goals and maintain a healthy, active lifestyle."
+    }
+  },
+  {
+    "input": {
+      "age": 3,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "beginner",
+      "primary_goal": "lose_weight",
+      "medical_conditions": [
+        "high_cholesterol"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "knee_pain"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "exercise_ball"
+      ],
+      "avg_sleep_hours": 7.0,
+      "latest_weight": 80
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "upper_body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "lower_body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Thursday",
+          "focus": "core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "upper_body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "lower_body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "recovery",
+          "intensity": "Low",
+          "duration_minutes": 20
+        }
+      ],
+      "adaptation_explanation": "Given the client's knee injury and mobility limitations, the plan focuses on moderate intensity workouts with shorter durations to avoid exacerbating the injury. The inclusion of recovery days allows for adequate rest and rehabilitation.",
+      "safety_notes": "Client should avoid high-impact exercises and heavy weights, and prioritize proper warm-up and cool-down routines to prevent further injury. It is also essential to monitor knee pain and adjust the plan accordingly.",
+      "motivation_message": "You're taking the first step towards a healthier lifestyle, and that's something to be proud of! Remember to listen to your body and prioritize your recovery. You got this!"
+    }
+  },
+  {
+    "input": {
+      "age": 35,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight loss",
+      "medical_conditions": [
+        "high blood pressure",
+        "hypothyroidism"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "ankle sprain",
+          "knee injury"
+        ],
+        "mobility_limitations": [
+          "running",
+          "jumping"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "avg_sleep_hours": 7.5,
+      "latest_weight": 69
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's ankle sprain and knee injury, high-impact activities like running and jumping are avoided. The plan focuses on moderate-intensity workouts with dumbbells and barbell to promote weight loss while being mindful of the user's mobility limitations. Rest days are included to allow for recovery and management of high blood pressure and hypothyroidism.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with pre-existing medical conditions. Monitor blood pressure and thyroid hormone levels regularly. Avoid any exercises that exacerbate ankle or knee pain.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle. Stay consistent, listen to your body, and celebrate small victories along the way. Remember, fitness is a journey, and every step forward is a step closer to your goals."
+    }
+  },
+  {
+    "input": {
+      "age": 34,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "beginner",
+      "primary_goal": "weight gain",
+      "medical_conditions": [
+        "anxiety"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee injury"
+        ],
+        "mobility_limitations": [
+          "running"
+        ]
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "resistance bands"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Upper Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Lower Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and knee injury, the plan focuses on low-intensity exercises to avoid exacerbating the injury. The plan also includes rest days to allow for recovery and adaptation.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a pre-existing knee injury. Warm up before each workout and listen to your body to avoid any further injury.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to be patient and kind to your body as you progress. Celebrate small victories and don't hesitate to reach out if you need any support or guidance."
+    }
+  },
+  {
+    "input": {
+      "age": 36,
+      "gender": "male",
+      "height_cm": 180,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "high_blood_pressure"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "knee_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Sunday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the knee injury and limited mobility, the plan focuses on moderate intensity workouts with shorter durations to avoid exacerbating the injury. The rest days and active recovery day are included to allow for proper recovery and rehabilitation.",
+      "safety_notes": "Please consult with a doctor before starting any new exercise program, especially with high blood pressure and a knee injury. It's essential to listen to your body and stop if you experience any pain or discomfort.",
+      "motivation_message": "You've taken the first step towards a healthier lifestyle, and that's something to be proud of! Remember to stay consistent, listen to your body, and celebrate small victories along the way."
+    }
+  },
+  {
+    "input": {
+      "age": 33,
+      "gender": "female",
+      "height_cm": 165,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_gain",
+      "medical_conditions": [],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "stationary_bike",
+        "yoga_mat"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Yoga",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's beginner fitness level and goal of weight gain, a moderate-intensity workout plan with a mix of upper body, lower body, core, and cardio exercises is recommended. Rest days are included to allow for recovery and muscle growth.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program. It's also essential to listen to your body and rest when needed. Make sure to warm up before each workout and cool down afterwards to prevent injuries.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to stay consistent, and don't be too hard on yourself. Celebrate small victories, and you'll be on your way to achieving your weight gain goal in no time."
+    }
+  },
+  {
+    "input": {
+      "age": 56,
+      "gender": "male",
+      "height_cm": 185,
+      "fitness_level": "advanced",
+      "primary_goal": "muscle_gain",
+      "medical_conditions": [
+        "high_cholesterol"
+      ],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "ankle_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "jump_rope"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Lower Body",
+          "intensity": "Moderate",
+          "duration_minutes": 45
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rest Day",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Sunday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the ankle injury and limited mobility, the plan focuses on moderate intensity workouts with shorter durations to avoid exacerbating the injury. Rest days are included to allow for recovery and rehabilitation.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with high cholesterol and ankle injury. Warm up properly before each workout and listen to your body to avoid further injury.",
+      "motivation_message": "You've got this! With consistent effort and patience, you'll be on your way to achieving your muscle gain goals while prioritizing your safety and well-being."
+    }
+  },
+  {
+    "input": {
+      "age": 45,
+      "gender": "female",
+      "height_cm": 170,
+      "fitness_level": "intermediate",
+      "primary_goal": "weight_loss",
+      "medical_conditions": [
+        "diabetes"
+      ],
+      "injuries": {
+        "has_injuries": false,
+        "injury_details": [],
+        "mobility_limitations": []
+      },
+      "equipment_owned": [
+        "elliptical",
+        "exercise_ball"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Strength Training",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Cardio",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Moderate",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Sunday",
+          "focus": "Active Recovery",
+          "intensity": "Low",
+          "duration_minutes": 30
+        }
+      ],
+      "adaptation_explanation": "Given the lack of information on fatigue score, adherence rate, HRV, and sleep hours, a moderate-intensity plan with rest days is recommended. As the user has diabetes, it's essential to monitor blood sugar levels and adjust the plan accordingly.",
+      "safety_notes": "Please consult a doctor before starting any new exercise program, especially with a medical condition like diabetes. Monitor blood sugar levels and adjust the plan as needed.",
+      "motivation_message": "Congratulations on taking the first step towards your weight loss journey! Remember to stay consistent, listen to your body, and have fun with the process."
+    }
+  },
+  {
+    "input": {
+      "age": 31,
+      "gender": "male",
+      "height_cm": 175,
+      "fitness_level": "beginner",
+      "primary_goal": "weight_gain",
+      "medical_conditions": [],
+      "injuries": {
+        "has_injuries": true,
+        "injury_details": [
+          "shoulder_injury"
+        ],
+        "mobility_limitations": [
+          "limited_mobility"
+        ]
+      },
+      "equipment_owned": [
+        "stationary_bike",
+        "kettlebells"
+      ],
+      "avg_sleep_hours": null,
+      "latest_weight": null
+    },
+    "output": {
+      "weekly_plan": [
+        {
+          "day": "Monday",
+          "focus": "Upper Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Tuesday",
+          "focus": "Cardio",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Wednesday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Thursday",
+          "focus": "Lower Body",
+          "intensity": "Low",
+          "duration_minutes": 30
+        },
+        {
+          "day": "Friday",
+          "focus": "Core",
+          "intensity": "Low",
+          "duration_minutes": 20
+        },
+        {
+          "day": "Saturday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        },
+        {
+          "day": "Sunday",
+          "focus": "Rest",
+          "intensity": "Low",
+          "duration_minutes": 0
+        }
+      ],
+      "adaptation_explanation": "Given the user's shoulder injury and limited mobility, the intensity and duration of the workouts have been reduced to minimize the risk of further injury. The focus is on low-impact exercises that can be modified to accommodate the user's mobility limitations.",
+      "safety_notes": "It is essential to listen to your body and stop exercising if you experience any pain or discomfort. Consult with a medical professional before starting any new exercise program, especially with a pre-existing injury.",
+      "motivation_message": "Congratulations on taking the first step towards your fitness journey! Remember to be patient and focus on progressive overload to achieve your weight gain goals. Celebrate small victories along the way, and don't hesitate to reach out if you need any guidance or support."
+    }
+  }
+]

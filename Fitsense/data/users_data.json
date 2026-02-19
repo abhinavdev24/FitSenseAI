@@ -1,0 +1,5457 @@
+{
+  "users_data": [
+    {
+      "user": {
+        "user_id": 1,
+        "username": "user00001",
+        "email": "user00001@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1995-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee sprain"
+          ],
+          "mobility_limitations": [
+            "squats"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-15T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1000,
+          "program_name": "weight loss",
+          "description": "lose weight in 3 months",
+          "start_date": "2025-10-01",
+          "end_date": "2026-01-01",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5000,
+              "workout_name": "cardio day 1",
+              "workout_date": "2025-10-01",
+              "description": "30 minutes on treadmill",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "jogging",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/jogging"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-01T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": null,
+                    "weight_used_kg": null,
+                    "duration_minutes": 30,
+                    "rpe": 5,
+                    "notes": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": null
+          },
+          {
+            "log_date": "2025-10-08",
+            "weight_kg": 69,
+            "body_fat_percentage": 19,
+            "notes": null
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast: oatmeal, lunch: chicken breast"
+          },
+          {
+            "log_date": "2025-10-08",
+            "calories_consumed": 2200,
+            "protein_grams": 150,
+            "carbs_grams": 300,
+            "fat_grams": 80,
+            "meal_description": "breakfast: scrambled eggs, lunch: turkey breast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          },
+          {
+            "log_date": "2025-10-08",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          },
+          {
+            "log_date": "2025-10-08",
+            "water_intake_liters": 3
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "good program",
+          "created_at": "2025-10-15T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "what is the best exercise for weight loss",
+          "response": "jogging",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 2,
+        "username": "user00002",
+        "email": "user00002@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1990-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_gain",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-15T00:00:00.000Z",
+        "updated_at": "2025-10-20T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "resistance bands",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1001,
+          "program_name": "weight gain",
+          "description": "gain weight in 3 months",
+          "start_date": "2025-10-15",
+          "end_date": "2026-01-15",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5001,
+              "workout_name": "strength training day 1",
+              "workout_date": "2025-10-15",
+              "description": "45 minutes on resistance bands",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "bicep curls",
+                    "muscle_group": "arm",
+                    "video_url": "https://example.com/bicep_curls"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 12,
+                    "prescribed_weight_kg": 10,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-15",
+            "weight_kg": 50,
+            "body_fat_percentage": 30,
+            "notes": null
+          },
+          {
+            "log_date": "2025-10-22",
+            "weight_kg": 52,
+            "body_fat_percentage": 28,
+            "notes": null
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-15",
+            "calories_consumed": 2500,
+            "protein_grams": 150,
+            "carbs_grams": 300,
+            "fat_grams": 100,
+            "meal_description": "breakfast: oatmeal, lunch: chicken breast"
+          },
+          {
+            "log_date": "2025-10-22",
+            "calories_consumed": 2700,
+            "protein_grams": 180,
+            "carbs_grams": 350,
+            "fat_grams": 120,
+            "meal_description": "breakfast: scrambled eggs, lunch: turkey breast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-15",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 9
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 3,
+        "username": "user00003",
+        "email": "user00003@example.com",
+        "password_hash": "hashedPassword",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "lose weight",
+          "secondary": "build muscle"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee injury"
+          ],
+          "mobility_limitations": [
+            "limited mobility in right leg"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "too high impact"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1002,
+          "program_name": "weight loss program",
+          "description": "a program to lose weight",
+          "start_date": "2025-10-01",
+          "end_date": "2026-02-17",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5002,
+              "workout_name": "cardio day 1",
+              "workout_date": "2025-10-03",
+              "description": "a cardio workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "jogging",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/jogging-video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 120
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 80,
+            "body_fat_percentage": 25,
+            "notes": ""
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2000,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-10-05T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-05T00:00:00.000Z",
+          "prompt": "generate a workout plan",
+          "response": "here is a workout plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 4,
+        "username": "user00004",
+        "email": "user00004@example.com",
+        "password_hash": "hashedPassword",
+        "date_of_birth": "1991-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "build muscle",
+          "secondary": "lose weight"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-02T00:00:00.000Z",
+        "updated_at": "2025-10-02T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "weights",
+        "resistance bands"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "push-ups",
+          "reason": "too hard"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1003,
+          "program_name": "muscle building program",
+          "description": "a program to build muscle",
+          "start_date": "2025-10-02",
+          "end_date": "2026-02-17",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5003,
+              "workout_name": "strength training day 1",
+              "workout_date": "2025-10-04",
+              "description": "a strength training workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/squats-video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 50,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 90
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-06",
+            "weight_kg": 65,
+            "body_fat_percentage": 30,
+            "notes": ""
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-06",
+            "calories_consumed": 1800,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 60,
+            "meal_description": "lunch"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-06",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-06",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "great program",
+          "created_at": "2025-10-06T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-06T00:00:00.000Z",
+          "prompt": "generate a workout plan for a beginner",
+          "response": "here is a workout plan for a beginner",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 5,
+        "username": "user00005",
+        "email": "user00005@example.com",
+        "password_hash": "hashedPassword",
+        "date_of_birth": "1992-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "lose weight",
+          "secondary": "build muscle"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        }
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 6,
+        "username": "user00006",
+        "email": "user00006@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "squatting"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-05T10:00:00Z",
+        "updated_at": "2025-10-05T10:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1004,
+          "program_name": "weight_loss_program",
+          "description": "lose weight in 6 weeks",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-15",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5004,
+              "workout_name": "warm_up",
+              "workout_date": "2025-10-01",
+              "description": "warm up with cardio",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "treadmill",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 20,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "no notes"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "great program",
+          "created_at": "2025-10-05T10:00:00Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-05T10:00:00Z",
+          "prompt": "generate workout plan for weight loss",
+          "response": "workout plan generated",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 7,
+        "username": "user00007",
+        "email": "user00007@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1991-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-10T10:00:00Z",
+        "updated_at": "2025-10-10T10:00:00Z"
+      },
+      "equipment_owned": [
+        "barbell"
+      ],
+      "disliked_exercises": [],
+      "programs": [
+        {
+          "program_id": 1005,
+          "program_name": "muscle_gain_program",
+          "description": "gain muscle in 6 weeks",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-15",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5005,
+              "workout_name": "warm_up",
+              "workout_date": "2025-10-01",
+              "description": "warm up with cardio",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "treadmill",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 20,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-10",
+            "weight_kg": 60,
+            "body_fat_percentage": 18,
+            "notes": "no notes"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-10",
+            "calories_consumed": 2500,
+            "protein_grams": 150,
+            "carbs_grams": 300,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-10",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-10",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-10T10:00:00Z",
+          "prompt": "generate workout plan for muscle gain",
+          "response": "workout plan generated",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 8,
+        "username": "user00008",
+        "email": "user00008@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1992-01-01",
+        "gender": "male",
+        "height_cm": 170,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "squatting"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-15T10:00:00Z",
+        "updated_at": "2025-10-15T10:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back_pain"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 9,
+        "username": "user00009",
+        "email": "user00009@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "hate_burpees"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1006,
+          "program_name": "program1",
+          "description": "description1",
+          "start_date": "2025-10-01",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5006,
+              "workout_name": "workout1",
+              "workout_date": "2025-10-01",
+              "description": "description1",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "pushups",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/pushups"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-01T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": null,
+                    "rpe": 6,
+                    "notes": "notes1"
+                  }
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/squats"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-01T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": null,
+                    "rpe": 6,
+                    "notes": "notes2"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "notes1"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good_program",
+          "created_at": "2025-10-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "prompt1",
+          "response": "response1",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 10,
+        "username": "user00010",
+        "email": "user00010@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1991-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "hate_deadlifts"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1007,
+          "program_name": "program2",
+          "description": "description2",
+          "start_date": "2025-10-05",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5007,
+              "workout_name": "workout2",
+              "workout_date": "2025-10-05",
+              "description": "description2",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "lunges",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/lunges"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 4,
+                    "exercise_name": "planks",
+                    "muscle_group": "core",
+                    "video_url": "https://example.com/planks"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 65,
+            "body_fat_percentage": 22,
+            "notes": "notes2"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2200,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 60,
+            "meal_description": "lunch"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 4
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 3
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 11,
+        "username": "user00011",
+        "email": "user00011@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "diabetes",
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury",
+            "shoulder_surgery"
+          ],
+          "mobility_limitations": [
+            "limited_knee_extension",
+            "shoulder_mobility_impaired"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00Z",
+        "updated_at": "2025-10-01T00:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill",
+        "exercise_ball"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "bench_press",
+          "reason": "knee_injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1008,
+          "program_name": "weight_loss_program",
+          "description": "lose weight and feel great",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-30",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5008,
+              "workout_name": "upper_body_workout",
+              "workout_date": "2025-10-05",
+              "description": "workout for upper body",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "pushups",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/pushups"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 12,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-05T00:00:00Z",
+                    "completed_sets": 3,
+                    "completed_reps": 12,
+                    "weight_used_kg": null,
+                    "duration_minutes": null,
+                    "rpe": 8,
+                    "notes": "felt great today"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "new workout routine started"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 3
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "great program so far",
+          "created_at": "2025-10-05T00:00:00Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00Z",
+          "prompt": "generate workout routine for weight loss",
+          "response": "here is a workout routine for weight loss",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 12,
+        "username": "user00012",
+        "email": "user00012@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1995-06-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "asthma"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-01T00:00:00Z",
+        "updated_at": "2025-10-01T00:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "kettlebells",
+        "jump_rope"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "lower_back_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1009,
+          "program_name": "muscle_gain_program",
+          "description": "gain muscle and feel strong",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-30",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5009,
+              "workout_name": "lower_body_workout",
+              "workout_date": "2025-10-10",
+              "description": "workout for lower body",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/squats"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_duration_minutes": 20,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-10T00:00:00Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": 80,
+                    "duration_minutes": 20,
+                    "rpe": 8,
+                    "notes": "felt great today"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "weight_kg": 60,
+            "body_fat_percentage": 25,
+            "notes": "new workout routine started"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "calories_consumed": 2500,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 90,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 3
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01T00:00:00Z",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "great program so far",
+          "created_at": "2025-10-10T00:00:00Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00Z",
+          "prompt": "generate workout routine for muscle gain",
+          "response": "here is a workout routine for muscle gain",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 13,
+        "username": "user00013",
+        "email": "user00013@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "hate_burpees"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1010,
+          "program_name": "weight_loss_program",
+          "description": "lose_weight_fast",
+          "start_date": "2025-10-01",
+          "end_date": "2025-12-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5010,
+              "workout_name": "cardio_day",
+              "workout_date": "2025-10-01",
+              "description": "cardio_workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "treadmill_running",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/video_url"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 80,
+            "body_fat_percentage": 20,
+            "notes": "good_progress"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "good_program",
+          "created_at": "2025-10-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "generate_workout_plan",
+          "response": "workout_plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 14,
+        "username": "user00014",
+        "email": "user00014@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1995-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "allergies"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "push-ups",
+          "reason": "hate_pushups"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1011,
+          "program_name": "muscle_gain_program",
+          "description": "gain_muscle_fast",
+          "start_date": "2025-10-05",
+          "end_date": "2026-02-14",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5011,
+              "workout_name": "weightlifting_day",
+              "workout_date": "2025-10-05",
+              "description": "weightlifting_workout",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "bicep_curls",
+                    "muscle_group": "arm",
+                    "video_url": "https://example.com/video_url"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 12,
+                    "prescribed_weight_kg": 10,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-05",
+                    "completed_sets": 3,
+                    "completed_reps": 12,
+                    "weight_used_kg": 10,
+                    "duration_minutes": null,
+                    "rpe": 8,
+                    "notes": "good_lifts"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 55,
+            "body_fat_percentage": 25,
+            "notes": "good_progress"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2500,
+            "protein_grams": 150,
+            "carbs_grams": 300,
+            "fat_grams": 80,
+            "meal_description": "lunch"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 4,
+          "comments": "good_program",
+          "created_at": "2025-10-05T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-05T00:00:00.000Z",
+          "prompt": "generate_nutrition_plan",
+          "response": "nutrition_plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 15,
+        "username": "user00015",
+        "email": "user00015@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1980-01-01",
+        "gender": "male",
+        "height_cm": 190,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-10T00:00:00.000Z",
+        "updated_at": "2025-10-10T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "jogging",
+          "reason": "hate_jogging"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 16,
+        "username": "user00016",
+        "email": "user00016@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1995-05-12",
+        "gender": "Male",
+        "height_cm": 175,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "weightloss",
+          "secondary": "muscle gain"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee sprain",
+            "hip strain"
+          ],
+          "mobility_limitations": [
+            "squatting",
+            "lunging"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlift",
+          "reason": "back pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1012,
+          "program_name": "Weight Loss Program",
+          "description": "A 3-month program for weight loss",
+          "start_date": "2025-10-01",
+          "end_date": "2025-12-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5012,
+              "workout_name": "Chest and Triceps",
+              "workout_date": "2025-10-01",
+              "description": "A chest and triceps workout",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "bench press",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/bench_press"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 8,
+                    "prescribed_weight_kg": 20,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": ""
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": ""
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "Great program!",
+          "created_at": "2025-10-15T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "What is the best workout routine for weight loss?",
+          "response": "The best workout routine for weight loss is a combination of cardio and strength training.",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 17,
+        "username": "user00017",
+        "email": "user00017@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1990-08-12",
+        "gender": "Male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "muscle gain",
+          "secondary": "weight loss"
+        },
+        "medical_conditions": [
+          "asthma"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-02T00:00:00.000Z",
+        "updated_at": "2025-10-02T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 18,
+        "username": "user00018",
+        "email": "user00018@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1992-06-12",
+        "gender": "Female",
+        "height_cm": 160,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight loss",
+          "secondary": "improved cardiovascular health"
+        },
+        "medical_conditions": [
+          "high blood pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee sprain"
+          ],
+          "mobility_limitations": [
+            "squatting"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-03T00:00:00.000Z",
+        "updated_at": "2025-10-03T00:00:00.000Z"
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlift",
+          "reason": "back pain"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-03",
+            "weight_kg": 50,
+            "body_fat_percentage": 25,
+            "notes": ""
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-03",
+            "calories_consumed": 1500,
+            "protein_grams": 50,
+            "carbs_grams": 100,
+            "fat_grams": 20,
+            "meal_description": ""
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-03",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 4
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-03",
+            "water_intake_liters": 1.5
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-03T00:00:00.000Z",
+          "prompt": "What is the best cardio workout routine?",
+          "response": "The best cardio workout routine is a combination of running, cycling, and swimming.",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 19,
+        "username": "user00019",
+        "email": "user00019@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1995-01-12",
+        "gender": "Male",
+        "height_cm": 170,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle gain",
+          "secondary": "weight loss"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        }
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 20,
+        "username": "user00020",
+        "email": "user00020@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T12:00:00Z",
+        "updated_at": "2025-10-01T12:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1013,
+          "program_name": "program1",
+          "description": "program description",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-01",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5013,
+              "workout_name": "workout1",
+              "workout_date": "2025-10-01",
+              "description": "workout description",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "push_ups",
+                    "muscle_group": "chest"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-01T12:00:00Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "rpe": 8
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "note1"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 1500,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-10-01T12:00:00Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T12:00:00Z",
+          "prompt": "generate workout",
+          "response": "workout response",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 21,
+        "username": "user00021",
+        "email": "user00021@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1991-01-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_gain",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "anxiety"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-15T12:00:00Z",
+        "updated_at": "2025-10-15T12:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "yoga_mat"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "squats",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1014,
+          "program_name": "program2",
+          "description": "program description",
+          "start_date": "2025-10-15",
+          "end_date": "2025-11-15",
+          "status": "completed",
+          "workouts": [
+            {
+              "workout_id": 5014,
+              "workout_name": "workout2",
+              "workout_date": "2025-10-15",
+              "description": "workout description",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "lunges",
+                    "muscle_group": "legs"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 2,
+                    "prescribed_reps": 10,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-15",
+            "water_intake_liters": 1.5
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 22,
+        "username": "user00022",
+        "email": "user00022@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1992-01-01",
+        "gender": "male",
+        "height_cm": 185,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "high_cholesterol"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "shoulder_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-11-01T12:00:00Z",
+        "updated_at": "2025-11-01T12:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell",
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1015,
+          "program_name": "program3",
+          "description": "program description",
+          "start_date": "2025-11-01",
+          "end_date": "2026-01-01",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5015,
+              "workout_name": "workout3",
+              "workout_date": "2025-11-01",
+              "description": "workout description",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "bench_press",
+                    "muscle_group": "chest"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 23,
+        "username": "user00023",
+        "email": "user00023@example.com",
+        "password_hash": "password_hash_1",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "lose_weight",
+          "secondary": "build_muscle"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "knee_pain"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "squats",
+          "reason": "knee_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1016,
+          "program_name": "program1",
+          "description": "program1 description",
+          "start_date": "2025-10-01",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5016,
+              "workout_name": "workout1",
+              "workout_date": "2025-10-01",
+              "description": "workout1 description",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "pushups",
+                    "muscle_group": "chest",
+                    "video_url": "video_url_1"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 10.0,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "pullups",
+                    "muscle_group": "back",
+                    "video_url": "video_url_2"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70.0,
+            "body_fat_percentage": 20.0,
+            "notes": "notes_1"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100.0,
+            "carbs_grams": 200.0,
+            "fat_grams": 70.0,
+            "meal_description": "meal_description_1"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7.0,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2.0
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "comments_1",
+          "created_at": "2025-10-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "prompt_1",
+          "response": "response_1",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 24,
+        "username": "user00024",
+        "email": "user00024@example.com",
+        "password_hash": "password_hash_2",
+        "date_of_birth": "1991-01-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "build_muscle",
+          "secondary": "lose_weight"
+        },
+        "medical_conditions": [
+          "asthma"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "kettlebell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1017,
+          "program_name": "program2",
+          "description": "program2 description",
+          "start_date": "2025-10-05",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5017,
+              "workout_name": "workout2",
+              "workout_date": "2025-10-05",
+              "description": "workout2 description",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "bicep_curls",
+                    "muscle_group": "arm",
+                    "video_url": "video_url_3"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 5.0,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "tricep_dips",
+                    "muscle_group": "arm",
+                    "video_url": "video_url_4"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 5.0,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 65.0,
+            "body_fat_percentage": 20.0,
+            "notes": "notes_2"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 1800,
+            "protein_grams": 90.0,
+            "carbs_grams": 150.0,
+            "fat_grams": 40.0,
+            "meal_description": "meal_description_2"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 7.0,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2.0
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 4,
+          "comments": "comments_2",
+          "created_at": "2025-10-05T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 25,
+        "username": "user00025",
+        "email": "user00025@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1990-05-12",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-11-01T00:00:00.000Z",
+        "updated_at": "2025-11-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "hate burpees"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1018,
+          "program_name": "weight_loss_program",
+          "description": "a program for weight loss",
+          "start_date": "2025-11-01",
+          "end_date": "2026-02-01",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5018,
+              "workout_name": "workout1",
+              "workout_date": "2025-11-01",
+              "description": "workout 1",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://www.youtube.com/watch?v=video1"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 20,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-11-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "starting weight"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-11-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-11-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-11-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-11-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-11-01T00:00:00.000Z",
+          "prompt": "generate workout plan",
+          "response": "workout plan generated",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 26,
+        "username": "user00026",
+        "email": "user00026@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1985-06-15",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "improve_yoga",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "flexibility_issues"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-11-02T00:00:00.000Z",
+        "updated_at": "2025-11-02T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "yoga_mat",
+        "blocks"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "hate deadlifts"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1019,
+          "program_name": "yoga_program",
+          "description": "a program for yoga",
+          "start_date": "2025-11-02",
+          "end_date": "2026-02-02",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5019,
+              "workout_name": "yogaworkout2",
+              "workout_date": "2025-11-02",
+              "description": "yogaworkout 2",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "downward_dog",
+                    "muscle_group": "cardio",
+                    "video_url": "https://www.youtube.com/watch?v=video2"
+                  },
+                  "prescription": {
+                    "prescribed_duration_minutes": 10,
+                    "rest_period_seconds": 30
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-11-02",
+            "weight_kg": 60,
+            "body_fat_percentage": 18,
+            "notes": "improved weight"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-11-02",
+            "calories_consumed": 1500,
+            "protein_grams": 80,
+            "carbs_grams": 150,
+            "fat_grams": 50,
+            "meal_description": "lunch"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-11-02",
+            "sleep_duration_hours": 9,
+            "sleep_quality": 4
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-11-02",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "love yoga program",
+          "created_at": "2025-11-02T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-11-02T00:00:00.000Z",
+          "prompt": "generate yoga plan",
+          "response": "yoga plan generated",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 27,
+        "username": "user00027",
+        "email": "user00027@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1992-01-20",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "run_marathon",
+          "secondary": "improve_cardio"
+        },
+        "medical_conditions": [
+          "knee_pain"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        }
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 28,
+        "username": "user00028",
+        "email": "user00028@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180.5,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1020,
+          "program_name": "weight_loss_program",
+          "description": "A program designed for weight loss",
+          "start_date": "2025-10-10",
+          "end_date": "2025-11-10",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5020,
+              "workout_name": "workout_1",
+              "workout_date": "2025-10-10",
+              "description": "A workout for weight loss",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "treadmill_run",
+                    "muscle_group": "cardio",
+                    "video_url": "https://www.example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-10T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": 30,
+                    "rpe": 8,
+                    "notes": "felt good"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-10",
+            "weight_kg": 70.5,
+            "body_fat_percentage": 20.5,
+            "notes": "lost weight"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-10",
+            "calories_consumed": 1500,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-10",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-10",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-10-15T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-15T00:00:00.000Z",
+          "prompt": "generate workout plan",
+          "response": "here is the workout plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 29,
+        "username": "user00029",
+        "email": "user00029@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1985-06-01",
+        "gender": "female",
+        "height_cm": 165.2,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "endurance"
+        },
+        "medical_conditions": [
+          "high_cholesterol"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 6,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-12T00:00:00.000Z",
+        "updated_at": "2025-10-12T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "elliptical"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "leg_press",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1021,
+          "program_name": "muscle_gain_program",
+          "description": "A program designed for muscle gain",
+          "start_date": "2025-10-15",
+          "end_date": "2025-11-15",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5021,
+              "workout_name": "workout_2",
+              "workout_date": "2025-10-15",
+              "description": "A workout for muscle gain",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "rowing",
+                    "muscle_group": "cardio",
+                    "video_url": "https://www.example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 45,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-15T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": 45,
+                    "rpe": 8,
+                    "notes": "felt good"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-15",
+            "weight_kg": 65.2,
+            "body_fat_percentage": 20.2,
+            "notes": "gained muscle"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-15",
+            "calories_consumed": 2000,
+            "protein_grams": 150,
+            "carbs_grams": 250,
+            "fat_grams": 60,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-15",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-15",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "good program",
+          "created_at": "2025-10-20T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-20T00:00:00.000Z",
+          "prompt": "generate workout plan",
+          "response": "here is the workout plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 30,
+        "username": "user00030",
+        "email": "user00030@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1975-03-01",
+        "gender": "male",
+        "height_cm": 175.8,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "marathon_training",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "asthma"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 7,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-18T00:00:00.000Z",
+        "updated_at": "2025-10-18T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "running_shoes"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "squats",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 31,
+        "username": "user00031",
+        "email": "user00031@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1990-01-01",
+        "gender": "Male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure",
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury",
+            "back_pain"
+          ],
+          "mobility_limitations": [
+            "limited_mobility",
+            "chronic_pain"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        },
+        {
+          "exercise_name": "squats",
+          "reason": "dislike"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1022,
+          "program_name": "weight_loss_program",
+          "description": "lose weight in 3 months",
+          "start_date": "2025-10-01",
+          "end_date": "2025-12-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5022,
+              "workout_name": "cardio_workout",
+              "workout_date": "2025-10-01",
+              "description": "cardio workout with treadmill",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "jogging",
+                    "muscle_group": "cardio",
+                    "video_url": "video_url"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "felt good today"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-10-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "what exercise to do today",
+          "response": "do burpees",
+          "was_accepted": false
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 32,
+        "username": "user00032",
+        "email": "user00032@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1995-02-02",
+        "gender": "Female",
+        "height_cm": 160,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_gain",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "hypothyroidism"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "kettlebell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1023,
+          "program_name": "weight_gain_program",
+          "description": "gain weight in 3 months",
+          "start_date": "2025-10-05",
+          "end_date": "2025-12-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5023,
+              "workout_name": "weight_gain_workout",
+              "workout_date": "2025-10-05",
+              "description": "weight gain workout with dumbbells",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "video_url"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 20,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 55,
+            "body_fat_percentage": 25,
+            "notes": "felt good today"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2500,
+            "protein_grams": 150,
+            "carbs_grams": 300,
+            "fat_grams": 100,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 7
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "great program",
+          "created_at": "2025-10-05T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-05T00:00:00.000Z",
+          "prompt": "what exercise to do today",
+          "response": "do squats",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 33,
+        "username": "user00033",
+        "email": "user00033@example.com",
+        "password_hash": "hashedpassword",
+        "date_of_birth": "1985-03-03",
+        "gender": "Male",
+        "height_cm": 180,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury",
+            "back_pain"
+          ],
+          "mobility_limitations": [
+            "limited_mobility",
+            "chronic_pain"
+          ]
+        }
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 34,
+        "username": "user00034",
+        "email": "user00034@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "lose_weight",
+          "secondary": "gain_muscle"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "squats",
+          "reason": "knee_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1024,
+          "program_name": "weight_loss",
+          "description": "lose_weight_fast",
+          "start_date": "2025-10-01",
+          "end_date": "2026-02-17",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5024,
+              "workout_name": "day1",
+              "workout_date": "2025-10-01",
+              "description": "first_workout",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "push_ups",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/push_ups"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "pull_ups",
+                    "muscle_group": "back",
+                    "video_url": "https://example.com/pull_ups"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "good_day"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 5
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "good_program",
+          "created_at": "2025-10-01T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "generate_workout",
+          "response": "workout_plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 35,
+        "username": "user00035",
+        "email": "user00035@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1995-06-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "gain_muscle",
+          "secondary": "lose_fat"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_pain"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-02T00:00:00.000Z",
+        "updated_at": "2025-10-02T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "barbell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1025,
+          "program_name": "gain_muscle",
+          "description": "gain_muscle_fast",
+          "start_date": "2025-10-02",
+          "end_date": "2026-02-17",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5025,
+              "workout_name": "day2",
+              "workout_date": "2025-10-02",
+              "description": "second_workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/squats"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 50,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 4,
+                    "exercise_name": "bench_press",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/bench_press"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 30,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-02",
+            "weight_kg": 65,
+            "body_fat_percentage": 22,
+            "notes": "good_day"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-02",
+            "calories_consumed": 2200,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 60,
+            "meal_description": "dinner"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-02",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 4
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-02",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "good_program",
+          "created_at": "2025-10-02T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-02T00:00:00.000Z",
+          "prompt": "generate_workout",
+          "response": "workout_plan",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 36,
+        "username": "user00036",
+        "email": "user00036@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1995-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [],
+      "programs": [
+        {
+          "program_id": 1026,
+          "program_name": "Workout Plan",
+          "description": "Workout plan for beginners",
+          "start_date": "2025-10-01",
+          "end_date": "2025-12-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5026,
+              "workout_name": "Chest and Triceps",
+              "workout_date": "2025-10-01",
+              "description": "",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "Bench Press",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 8,
+                    "prescribed_weight_kg": 30,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "Tricep Pushdown",
+                    "muscle_group": "triceps",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 20,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "notes"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 37,
+        "username": "user00037",
+        "email": "user00037@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "barbell",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "Squats",
+          "reason": "knee_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1027,
+          "program_name": "Workout Plan for Women",
+          "description": "",
+          "start_date": "2025-10-01",
+          "end_date": "2026-02-28",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5027,
+              "workout_name": "Chest and Back",
+              "workout_date": "2025-10-02",
+              "description": "",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "Incline Bench Press",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 8,
+                    "prescribed_weight_kg": 25,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 4,
+                    "exercise_name": "Lat Pulldowns",
+                    "muscle_group": "back",
+                    "video_url": "https://example.com/video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 20,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-02",
+            "weight_kg": 60,
+            "body_fat_percentage": 18,
+            "notes": "notes"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-02",
+            "calories_consumed": 1800,
+            "protein_grams": 90,
+            "carbs_grams": 150,
+            "fat_grams": 30,
+            "meal_description": "lunch"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-02",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-02",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 38,
+        "username": "user00038",
+        "email": "user00038@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1985-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_pain"
+          ],
+          "mobility_limitations": [
+            "limited_movement"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "light"
+        }
+      },
+      "equipment_owned": [],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 39,
+        "username": "user00039",
+        "email": "user00039@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "hypertension"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 5,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00.000Z",
+        "updated_at": "2025-10-01T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1028,
+          "program_name": "program1",
+          "description": "description1",
+          "start_date": "2025-10-01",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5028,
+              "workout_name": "workout1",
+              "workout_date": "2025-10-01",
+              "description": "description1",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "squat",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/video1"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 50,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 120
+                  },
+                  "log": null
+                },
+                {
+                  "order_in_workout": 2,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "pushups",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/video2"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 2,
+                    "prescribed_reps": 15,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 90
+                  },
+                  "log": {
+                    "log_date": "2025-10-01T00:00:00.000Z",
+                    "completed_sets": 2,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": 20,
+                    "rpe": 6,
+                    "notes": "notes1"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "program_id": 1029,
+          "program_name": "program2",
+          "description": "description2",
+          "start_date": "2025-11-01",
+          "end_date": "2025-11-30",
+          "status": "completed",
+          "workouts": [
+            {
+              "workout_id": 5029,
+              "workout_name": "workout2",
+              "workout_date": "2025-11-01",
+              "description": "description2",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "lunges",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/video3"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 40,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 120
+                  },
+                  "log": {
+                    "log_date": "2025-11-01T00:00:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": 40,
+                    "duration_minutes": 30,
+                    "rpe": 6,
+                    "notes": "notes2"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "notes1"
+          },
+          {
+            "log_date": "2025-11-01",
+            "weight_kg": 65,
+            "body_fat_percentage": 18,
+            "notes": "notes2"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 100,
+            "carbs_grams": 200,
+            "fat_grams": 50,
+            "meal_description": "breakfast"
+          },
+          {
+            "log_date": "2025-11-01",
+            "calories_consumed": 2200,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 60,
+            "meal_description": "dinner"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          },
+          {
+            "log_date": "2025-11-01",
+            "sleep_duration_hours": 7.5,
+            "sleep_quality": 9
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          },
+          {
+            "log_date": "2025-11-01",
+            "water_intake_liters": 2.5
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "comments1",
+          "created_at": "2025-10-10T00:00:00.000Z"
+        },
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "comments2",
+          "created_at": "2025-11-10T00:00:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T00:00:00.000Z",
+          "prompt": "prompt1",
+          "response": "response1",
+          "was_accepted": true
+        },
+        {
+          "created_at": "2025-11-01T00:00:00.000Z",
+          "prompt": "prompt2",
+          "response": "response2",
+          "was_accepted": false
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 40,
+        "username": "user00040",
+        "email": "user00040@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1992-02-02",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "injury1",
+            "injury2"
+          ],
+          "mobility_limitations": [
+            "mobility1",
+            "mobility2"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-05T00:00:00.000Z",
+        "updated_at": "2025-10-05T00:00:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "bicycles",
+          "reason": "knee pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1030,
+          "program_name": "program3",
+          "description": "description3",
+          "start_date": "2025-10-05",
+          "end_date": "2025-10-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5030,
+              "workout_name": "workout3",
+              "workout_date": "2025-10-05",
+              "description": "description3",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 4,
+                    "exercise_name": "bench_press",
+                    "muscle_group": "chest",
+                    "video_url": "https://example.com/video4"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 41,
+        "username": "user00041",
+        "email": "user00041@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "2020-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "lose_weight",
+          "secondary": "build_muscle"
+        },
+        "medical_conditions": [
+          "high_blood_pressure",
+          "high_cholesterol"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury",
+            "ankle_injury"
+          ],
+          "mobility_limitations": [
+            "knee_pain",
+            "ankle_pain"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-05T14:30:00.000Z",
+        "updated_at": "2025-10-05T14:30:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "exercise_ball"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "hate_burpees"
+        },
+        {
+          "exercise_name": "squats",
+          "reason": "knee_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1031,
+          "program_name": "program1",
+          "description": "description1",
+          "start_date": "2025-10-05",
+          "end_date": "2025-10-19",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5031,
+              "workout_name": "workout1",
+              "workout_date": "2025-10-05",
+              "description": "description1",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "push_ups",
+                    "muscle_group": "chest",
+                    "video_url": "https://www.youtube.com/watch?v=video1"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-05T14:30:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": null,
+                    "rpe": 8,
+                    "notes": "notes1"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-05",
+            "weight_kg": 80,
+            "body_fat_percentage": 20,
+            "notes": "notes1"
+          },
+          {
+            "log_date": "2025-10-12",
+            "weight_kg": 79,
+            "body_fat_percentage": 19,
+            "notes": "notes2"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-05",
+            "calories_consumed": 2000,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast1"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-05",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-05",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 5,
+          "comments": "comments1",
+          "created_at": "2025-10-05T14:30:00.000Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-05T14:30:00.000Z",
+          "prompt": "prompt1",
+          "response": "response1",
+          "was_accepted": true
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 42,
+        "username": "user00042",
+        "email": "user00042@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "2021-02-02",
+        "gender": "female",
+        "height_cm": 160,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "build_muscle",
+          "secondary": "lose_weight"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-10T14:30:00.000Z",
+        "updated_at": "2025-10-10T14:30:00.000Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "exercise_ball"
+      ],
+      "disliked_exercises": [],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 43,
+        "username": "user00043",
+        "email": "user00043@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "2022-03-03",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "lose_weight",
+          "secondary": "build_muscle"
+        },
+        "medical_conditions": [
+          "high_cholesterol"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "knee_pain"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 30,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-15T14:30:00.000Z",
+        "updated_at": "2025-10-15T14:30:00.000Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "exercise_ball"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "back_pain"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1032,
+          "program_name": "program2",
+          "description": "description2",
+          "start_date": "2025-10-15",
+          "end_date": "2025-10-29",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5032,
+              "workout_name": "workout2",
+              "workout_date": "2025-10-15",
+              "description": "description2",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://www.youtube.com/watch?v=video2"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-10-15T14:30:00.000Z",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": null,
+                    "duration_minutes": null,
+                    "rpe": 8,
+                    "notes": "notes2"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-15",
+            "weight_kg": 80,
+            "body_fat_percentage": 20,
+            "notes": "notes2"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-15",
+            "calories_consumed": 2000,
+            "protein_grams": 120,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast2"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-15",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-15",
+            "water_intake_liters": 2
+          }
+        ]
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 44,
+        "username": "user00044",
+        "email": "user00044@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-10-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight loss",
+          "secondary": "muscle gain"
+        },
+        "medical_conditions": [
+          "high blood pressure",
+          "hypothyroidism"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "ankle sprain",
+            "knee injury"
+          ],
+          "mobility_limitations": [
+            "running",
+            "jumping"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-09-01T12:00:00Z",
+        "updated_at": "2025-12-01T12:00:00Z"
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "barbell"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        },
+        {
+          "exercise_name": "box jumps",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1033,
+          "program_name": "weight loss program",
+          "description": "a program to help users lose weight",
+          "start_date": "2025-10-01",
+          "end_date": "2025-11-30",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5033,
+              "workout_name": "cardio workout",
+              "workout_date": "2025-10-01",
+              "description": "a cardio workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 1,
+                    "exercise_name": "jogging",
+                    "muscle_group": "cardio",
+                    "video_url": "https://example.com/jogging-video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": null,
+                    "prescribed_reps": null,
+                    "prescribed_weight_kg": null,
+                    "prescribed_duration_minutes": 30,
+                    "rest_period_seconds": 60
+                  },
+                  "log": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "program_id": 1034,
+          "program_name": "muscle gain program",
+          "description": "a program to help users gain muscle",
+          "start_date": "2025-11-01",
+          "end_date": "2025-12-31",
+          "status": "completed",
+          "workouts": [
+            {
+              "workout_id": 5034,
+              "workout_name": "strength training workout",
+              "workout_date": "2025-11-01",
+              "description": "a strength training workout",
+              "is_completed": true,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 2,
+                    "exercise_name": "squats",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/squats-video"
+                  },
+                  "prescription": {
+                    "prescribed_sets": 3,
+                    "prescribed_reps": 10,
+                    "prescribed_weight_kg": 50,
+                    "prescribed_duration_minutes": null,
+                    "rest_period_seconds": 60
+                  },
+                  "log": {
+                    "log_date": "2025-11-01",
+                    "completed_sets": 3,
+                    "completed_reps": 10,
+                    "weight_used_kg": 50,
+                    "duration_minutes": null,
+                    "rpe": 8,
+                    "notes": "felt good today"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [
+          {
+            "log_date": "2025-10-01",
+            "weight_kg": 70,
+            "body_fat_percentage": 20,
+            "notes": "starting point"
+          },
+          {
+            "log_date": "2025-11-01",
+            "weight_kg": 69,
+            "body_fat_percentage": 19,
+            "notes": "lost 1kg"
+          }
+        ],
+        "nutrition_logs": [
+          {
+            "log_date": "2025-10-01",
+            "calories_consumed": 2000,
+            "protein_grams": 150,
+            "carbs_grams": 250,
+            "fat_grams": 70,
+            "meal_description": "breakfast"
+          },
+          {
+            "log_date": "2025-11-01",
+            "calories_consumed": 2200,
+            "protein_grams": 170,
+            "carbs_grams": 300,
+            "fat_grams": 80,
+            "meal_description": "dinner"
+          }
+        ],
+        "sleep_logs": [
+          {
+            "log_date": "2025-10-01",
+            "sleep_duration_hours": 8,
+            "sleep_quality": 9
+          },
+          {
+            "log_date": "2025-11-01",
+            "sleep_duration_hours": 7,
+            "sleep_quality": 8
+          }
+        ],
+        "hydration_logs": [
+          {
+            "log_date": "2025-10-01",
+            "water_intake_liters": 2
+          },
+          {
+            "log_date": "2025-11-01",
+            "water_intake_liters": 3
+          }
+        ]
+      },
+      "feedback": [
+        {
+          "program_id": 1,
+          "rating": 4,
+          "comments": "good program",
+          "created_at": "2025-10-15T12:00:00Z"
+        },
+        {
+          "program_id": 2,
+          "rating": 5,
+          "comments": "excellent program",
+          "created_at": "2025-11-15T12:00:00Z"
+        }
+      ],
+      "ai_generation_logs": [
+        {
+          "created_at": "2025-10-01T12:00:00Z",
+          "prompt": "generate a workout routine",
+          "response": "here is a workout routine",
+          "was_accepted": true
+        },
+        {
+          "created_at": "2025-11-01T12:00:00Z",
+          "prompt": "generate a nutrition plan",
+          "response": "here is a nutrition plan",
+          "was_accepted": false
+        }
+      ]
+    },
+    {
+      "user": {
+        "user_id": 45,
+        "username": "user00045",
+        "email": "user00045@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1992-01-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight gain",
+          "secondary": "muscle gain"
+        },
+        "medical_conditions": [
+          "anxiety"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee injury"
+          ],
+          "mobility_limitations": [
+            "running"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "moderate"
+        }
+      },
+      "equipment_owned": [
+        "dumbbells",
+        "resistance bands"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "push-ups",
+          "reason": "injury"
+        }
+      ],
+      "programs": [
+        {
+          "program_id": 1035,
+          "program_name": "weight gain program",
+          "description": "a program to help users gain weight",
+          "start_date": "2025-12-01",
+          "end_date": "2026-01-31",
+          "status": "active",
+          "workouts": [
+            {
+              "workout_id": 5035,
+              "workout_name": "strength training workout",
+              "workout_date": "2025-12-01",
+              "description": "a strength training workout",
+              "is_completed": false,
+              "exercise_plan": [
+                {
+                  "order_in_workout": 1,
+                  "exercise": {
+                    "exercise_id": 3,
+                    "exercise_name": "deadlifts",
+                    "muscle_group": "legs",
+                    "video_url": "https://example.com/deadlifts-video"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 46,
+        "username": "user00046",
+        "email": "user00046@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "height_cm": 180,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "high_blood_pressure"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "knee_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-01T00:00:00Z",
+        "updated_at": "2025-10-01T00:00:00Z"
+      },
+      "equipment_owned": [
+        "treadmill",
+        "dumbbells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "burpees",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 47,
+        "username": "user00047",
+        "email": "user00047@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1992-06-01",
+        "gender": "female",
+        "height_cm": 165,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_gain",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-05T00:00:00Z",
+        "updated_at": "2025-10-05T00:00:00Z"
+      },
+      "equipment_owned": [
+        "stationary_bike",
+        "yoga_mat"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 48,
+        "username": "user00048",
+        "email": "user00048@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1970-01-01",
+        "gender": "male",
+        "height_cm": 185,
+        "fitness_level": "advanced",
+        "goals": {
+          "primary": "muscle_gain",
+          "secondary": "weight_loss"
+        },
+        "medical_conditions": [
+          "high_cholesterol"
+        ],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "ankle_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 90,
+          "preferred_workout_days_per_week": 4,
+          "preferred_workout_time_of_day": "evening",
+          "intensity_preference": "heavy"
+        },
+        "created_at": "2025-10-10T00:00:00Z",
+        "updated_at": "2025-10-10T00:00:00Z"
+      },
+      "equipment_owned": [
+        "rowing_machine",
+        "jump_rope"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "squats",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 49,
+        "username": "user00049",
+        "email": "user00049@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1980-06-01",
+        "gender": "female",
+        "height_cm": 170,
+        "fitness_level": "intermediate",
+        "goals": {
+          "primary": "weight_loss",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [
+          "diabetes"
+        ],
+        "injuries": {
+          "has_injuries": false,
+          "injury_details": [],
+          "mobility_limitations": []
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 60,
+          "preferred_workout_days_per_week": 3,
+          "preferred_workout_time_of_day": "morning",
+          "intensity_preference": "moderate"
+        },
+        "created_at": "2025-10-15T00:00:00Z",
+        "updated_at": "2025-10-15T00:00:00Z"
+      },
+      "equipment_owned": [
+        "elliptical",
+        "exercise_ball"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "lunges",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    },
+    {
+      "user": {
+        "user_id": 50,
+        "username": "user00050",
+        "email": "user00050@example.com",
+        "password_hash": "hashed_password",
+        "date_of_birth": "1995-01-01",
+        "gender": "male",
+        "height_cm": 175,
+        "fitness_level": "beginner",
+        "goals": {
+          "primary": "weight_gain",
+          "secondary": "muscle_gain"
+        },
+        "medical_conditions": [],
+        "injuries": {
+          "has_injuries": true,
+          "injury_details": [
+            "shoulder_injury"
+          ],
+          "mobility_limitations": [
+            "limited_mobility"
+          ]
+        },
+        "preferences": {
+          "preferred_workout_duration_min": 45,
+          "preferred_workout_days_per_week": 2,
+          "preferred_workout_time_of_day": "afternoon",
+          "intensity_preference": "light"
+        },
+        "created_at": "2025-10-20T00:00:00Z",
+        "updated_at": "2025-10-20T00:00:00Z"
+      },
+      "equipment_owned": [
+        "stationary_bike",
+        "kettlebells"
+      ],
+      "disliked_exercises": [
+        {
+          "exercise_name": "deadlifts",
+          "reason": "injury"
+        }
+      ],
+      "programs": [],
+      "time_series": {
+        "progress": [],
+        "nutrition_logs": [],
+        "sleep_logs": [],
+        "hydration_logs": []
+      },
+      "feedback": [],
+      "ai_generation_logs": []
+    }
+  ]
+}
