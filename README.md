@@ -2,6 +2,15 @@
 
 AI-powered fitness coaching application focused on personalized workouts, progress tracking, and health-aware guidance.
 
+## What’s In This Repository
+
+This repository currently includes:
+
+- project planning artifacts,
+- database schema design for the FitSenseAI domain,
+- an implemented synthetic-data MLOps pipeline in `Data-Pipeline/` (data generation -> teacher LLM -> distillation dataset -> validation/monitoring),
+- Airflow DAG orchestration for the pipeline.
+
 ## Project Scope
 
 FitSenseAI is designed to:
@@ -25,6 +34,16 @@ FitSenseAI/
   README.md
   FitSense_AI_Project_Plan.md
   FitSense_AI_Project_Scoping_Complete-1.pdf
+  MLOPS-1-2_FitSenseAI_Execution_Guide.md
+  Data-Pipeline/
+    dags/
+    scripts/
+    tests/
+    data/
+    logs/
+    params.yaml
+    requirements.txt
+    dvc.yaml
   database/
     database_design.dbml
     tables.sql
@@ -68,6 +87,62 @@ Core model areas:
 
 See `FitSense_AI_Project_Plan.md` for phase-wise execution details.
 
+## Architecture Diagram (Detailed)
+
+For a more complete write-up, see `docs/Architecture.md`.
+
+![FitSenseAI Detailed Architecture Diagram](docs/assets/fitsenseai_architecture.svg)
+
+## Data Pipeline (Overview)
+
+FitSenseAI includes an end-to-end synthetic-data MLOps pipeline under `Data-Pipeline/` that covers:
+
+- synthetic profile/workout/health data generation,
+- synthetic query generation for a teacher LLM,
+- teacher response capture and storage,
+- distillation dataset creation (train/val/test JSONL),
+- validation, statistics, anomaly detection, and bias slicing,
+- Airflow DAG orchestration for the full workflow.
+
+Primary docs:
+
+- `Data-Pipeline/README.md` for the full pipeline usage and Airflow commands
+
+### Pipeline Component Diagram
+
+![FitSenseAI Data Pipeline Components](Data-Pipeline/docs_assets/pipeline_components.svg)
+
+### Airflow DAG Diagram
+
+![FitSenseAI Airflow DAG](Data-Pipeline/docs_assets/fitsense_pipeline_dag.svg)
+
+### Pipeline Quick Start
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r Data-Pipeline/requirements.txt
+
+# bootstrap
+python Data-Pipeline/scripts/bootstrap_phase1.py
+
+# run pipeline stages (script-by-script)
+python Data-Pipeline/scripts/generate_synthetic_profiles.py
+python Data-Pipeline/scripts/generate_synthetic_workouts.py
+python Data-Pipeline/scripts/generate_synthetic_queries.py
+python Data-Pipeline/scripts/call_teacher_llm.py
+python Data-Pipeline/scripts/build_distillation_dataset.py
+python Data-Pipeline/scripts/validate_data.py
+python Data-Pipeline/scripts/compute_stats.py
+python Data-Pipeline/scripts/detect_anomalies.py
+python Data-Pipeline/scripts/bias_slicing.py
+```
+
+Bootstrap outputs:
+
+- `Data-Pipeline/data/reports/phase1_bootstrap.json`
+- `Data-Pipeline/logs/pipeline.log`
+
 ## Roadmap Snapshot
 
 - Phase 1: Foundation and data schemas
@@ -76,8 +151,3 @@ See `FitSense_AI_Project_Plan.md` for phase-wise execution details.
 - Phase 4: Adaptation engine and instrumentation
 - Phase 5: Safety, monitoring, hardening
 - Phase 6: Pilot, iteration, final validation
-
-## Notes
-
-- This repository currently contains planning and database-design artifacts.
-- As services are added, extend this README with setup commands, environment variables, and deployment instructions.

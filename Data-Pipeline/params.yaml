@@ -1,0 +1,79 @@
+project:
+  name: fitsenseai-data-pipeline
+  environment: dev
+
+reproducibility:
+  seed: 20260217
+  hash_seed: "20260217"
+  timezone: "UTC"
+
+paths:
+  raw_data_dir: Data-Pipeline/data/raw
+  interim_data_dir: Data-Pipeline/data/interim
+  processed_data_dir: Data-Pipeline/data/processed
+  reports_dir: Data-Pipeline/data/reports
+  logs_dir: Data-Pipeline/logs
+
+logging:
+  level: INFO
+  file_name: pipeline.log
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
+phase2:
+  synthetic:
+    as_of_date: "2026-02-17"
+    num_users: 200
+    lookback_days: 90
+    profiles:
+      max_conditions_per_user: 2
+      max_medications_per_user: 2
+      max_allergies_per_user: 2
+    workouts:
+      workouts_per_user: 12
+      min_exercises_per_plan: 4
+      max_exercises_per_plan: 6
+      sets_per_exercise: 3
+
+phase3:
+  synthetic_queries:
+    prompts_per_type: 1
+    prompt_types:
+      - plan_creation
+      - plan_modification
+      - safety_adjustment
+      - progress_adaptation
+
+phase4:
+  teacher_llm:
+    provider: mock
+    model_name: teacher-mock-v1
+    endpoint_url: ""
+    api_key_env: OPENAI_API_KEY
+    timeout_seconds: 30
+    max_retries: 3
+    retry_backoff_seconds: 1.5
+    temperature: 0.2
+    top_p: 1.0
+    max_output_tokens: 512
+    max_queries: null
+
+phase5:
+  distillation:
+    min_response_chars: 60
+    require_post_validation: true
+    reject_on_safety_flags: true
+    split:
+      train_ratio: 0.8
+      val_ratio: 0.1
+      test_ratio: 0.1
+
+phase6:
+  anomaly_detection:
+    duplicate_record_threshold: 0
+    missing_response_threshold: 0
+    min_response_chars: 60
+    max_response_chars: 2000
+    split_ratio_tolerance: 0.2
+  bias_slicing:
+    min_group_size: 20
+    max_mean_response_len_gap: 120

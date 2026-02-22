@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#374151"/></marker>
+<marker id="arrow_dash" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/></marker>
+</defs>
+<text x="50" y="44" font-family="Arial" font-size="24" font-weight="bold" fill="#111827">FitSenseAI Data Pipeline Components</text>
+<rect x="60" y="100" width="380" height="200" rx="14" fill="#dbeafe" stroke="#374151" stroke-width="2"/>
+<text x="78" y="130" font-family="Arial" font-size="19" font-weight="bold" fill="#111827">Synthetic Data Generation</text>
+<text x="78" y="164" font-family="Courier New" font-size="14" fill="#1f2937">- generate_synthetic_profiles.py</text>
+<text x="78" y="188" font-family="Courier New" font-size="14" fill="#1f2937">- generate_synthetic_workouts.py</text>
+<rect x="530" y="100" width="380" height="200" rx="14" fill="#e0f2fe" stroke="#374151" stroke-width="2"/>
+<text x="548" y="130" font-family="Arial" font-size="19" font-weight="bold" fill="#111827">Synthetic Query Generation</text>
+<text x="548" y="164" font-family="Courier New" font-size="14" fill="#1f2937">- generate_synthetic_queries.py</text>
+<text x="548" y="188" font-family="Courier New" font-size="14" fill="#1f2937">- teacher-ready prompts + metadata</text>
+<rect x="1000" y="100" width="420" height="200" rx="14" fill="#fee2e2" stroke="#374151" stroke-width="2"/>
+<text x="1018" y="130" font-family="Arial" font-size="19" font-weight="bold" fill="#111827">Teacher LLM Calling + Storage</text>
+<text x="1018" y="164" font-family="Courier New" font-size="14" fill="#1f2937">- call_teacher_llm.py</text>
+<text x="1018" y="188" font-family="Courier New" font-size="14" fill="#1f2937">- mock / openai_compatible</text>
+<text x="1018" y="212" font-family="Courier New" font-size="14" fill="#1f2937">- responses + request metadata</text>
+<rect x="300" y="400" width="480" height="210" rx="14" fill="#ede9fe" stroke="#374151" stroke-width="2"/>
+<text x="318" y="430" font-family="Arial" font-size="19" font-weight="bold" fill="#111827">Distillation Dataset Build</text>
+<text x="318" y="464" font-family="Courier New" font-size="14" fill="#1f2937">- build_distillation_dataset.py</text>
+<text x="318" y="488" font-family="Courier New" font-size="14" fill="#1f2937">- quality filtering</text>
+<text x="318" y="512" font-family="Courier New" font-size="14" fill="#1f2937">- stratified train/val/test JSONL</text>
+<rect x="860" y="390" width="560" height="250" rx="14" fill="#dcfce7" stroke="#374151" stroke-width="2"/>
+<text x="878" y="420" font-family="Arial" font-size="19" font-weight="bold" fill="#111827">Validation, Stats, Anomalies, Bias Slicing</text>
+<text x="878" y="454" font-family="Courier New" font-size="14" fill="#1f2937">- validate_data.py</text>
+<text x="878" y="478" font-family="Courier New" font-size="14" fill="#1f2937">- compute_stats.py</text>
+<text x="878" y="502" font-family="Courier New" font-size="14" fill="#1f2937">- detect_anomalies.py</text>
+<text x="878" y="526" font-family="Courier New" font-size="14" fill="#1f2937">- bias_slicing.py</text>
+<rect x="60" y="700" width="1360" height="44" rx="8" fill="#f3f4f6" stroke="#9ca3af"/>
+<text x="80" y="728" font-family="Arial" font-size="15" fill="#111827">Raw artifacts lane: synthetic_profiles / synthetic_workouts / synthetic_queries / teacher_outputs / distillation_dataset</text>
+<rect x="60" y="760" width="1360" height="44" rx="8" fill="#f9fafb" stroke="#9ca3af"/>
+<text x="80" y="788" font-family="Arial" font-size="15" fill="#111827">Reports lane: Data-Pipeline/data/reports/phase6 (validation, stats, anomalies, bias)</text>
+<line x1="440" y1="200" x2="530" y2="200" stroke="#374151" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="910" y1="200" x2="1000" y2="200" stroke="#374151" stroke-width="2.5" marker-end="url(#arrow)"/>
+<polyline points="720,300 720,350 540,350 540,400" fill="none" stroke="#374151" stroke-width="2.5" marker-end="url(#arrow)"/>
+<polyline points="1210,300 1210,360 640,360 640,400" fill="none" stroke="#374151" stroke-width="2.5" marker-end="url(#arrow)"/>
+<line x1="780" y1="505" x2="860" y2="505" stroke="#374151" stroke-width="2.8" marker-end="url(#arrow)"/>
+<line x1="250" y1="300" x2="250" y2="700" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow_dash)"/>
+<line x1="720" y1="300" x2="720" y2="700" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow_dash)"/>
+<line x1="1210" y1="300" x2="1210" y2="700" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow_dash)"/>
+<line x1="540" y1="610" x2="540" y2="700" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow_dash)"/>
+<line x1="1140.0" y1="640" x2="1140.0" y2="760" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow_dash)"/>
+<text x="465" y="188" font-family="Arial" font-size="12" fill="#374151">synthetic records</text>
+<text x="935" y="188" font-family="Arial" font-size="12" fill="#374151">teacher prompts</text>
+<text x="548" y="344" font-family="Arial" font-size="12" fill="#374151">query metadata for join</text>
+<text x="748" y="354" font-family="Arial" font-size="12" fill="#374151">teacher responses</text>
+<text x="790" y="492" font-family="Arial" font-size="12" fill="#374151">distillation dataset QA + monitoring</text>
+</svg>
