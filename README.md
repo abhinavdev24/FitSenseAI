@@ -81,3 +81,6 @@ See `FitSense_AI_Project_Plan.md` for phase-wise execution details.
 
 - This repository currently contains planning and database-design artifacts.
 - As services are added, extend this README with setup commands, environment variables, and deployment instructions.
+
+## UI/UX Design
+Figma Design Link: [FitSense AI Figma](https://www.figma.com/design/LCPRWNcuuRtGzNLNsErsG8/Untitled?node-id=0-1&p=f&t=jE6RppR2JRMcISqz-0)
