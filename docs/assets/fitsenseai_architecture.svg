@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .panel2 { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .box { fill: #ffffff; stroke: #94a3b8; stroke-width: 2; rx: 12; }
+      .box-blue { fill: #eff6ff; stroke: #60a5fa; stroke-width: 2; rx: 12; }
+      .box-green { fill: #ecfdf5; stroke: #34d399; stroke-width: 2; rx: 12; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; stroke-width: 2; rx: 12; }
+      .box-purple { fill: #f5f3ff; stroke: #a78bfa; stroke-width: 2; rx: 12; }
+      .title { fill: #0f172a; font-family: Arial, sans-serif; font-weight: 700; font-size: 22px; }
+      .h { fill: #0f172a; font-family: Arial, sans-serif; font-weight: 700; font-size: 16px; }
+      .t { fill: #0f172a; font-family: Arial, sans-serif; font-size: 13px; }
+      .small { fill: #334155; font-family: Arial, sans-serif; font-size: 12px; }
+      .muted { fill: #475569; font-family: Arial, sans-serif; font-size: 12px; }
+      .line { stroke: #334155; stroke-width: 2.2; fill: none; }
+      .line-dash { stroke: #334155; stroke-width: 2.2; fill: none; stroke-dasharray: 7 6; }
+      .note { fill: #0f172a; font-family: Arial, sans-serif; font-weight: 700; font-size: 12px; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1120"/>
+
+  <!-- Header -->
+  <text class="title" x="40" y="52">FitSenseAI Detailed Architecture</text>
+  <text class="muted" x="40" y="76">Online serving (private vLLM) + offline Airflow pipeline (DAG in Data-Pipeline/dags/fitsense_pipeline.py) + training + promotion</text>
+
+  <!-- Online panel -->
+  <rect class="panel" x="40" y="110" width="1720" height="430"/>
+  <text class="h" x="60" y="145">Online (Serving)</text>
+  <text class="muted" x="60" y="168">Client calls Cloud Run backend; backend calls private vLLM inference VM with streaming enabled</text>
+
+  <!-- Client -->
+  <rect class="box" x="60" y="205" width="240" height="90"/>
+  <text class="t" x="78" y="233">Web / Mobile Client</text>
+  <text class="small" x="78" y="255">Onboarding, plan view</text>
+  <text class="small" x="78" y="275">Logging, coach chat</text>
+
+  <!-- Backend -->
+  <rect class="box-blue" x="340" y="195" width="330" height="120"/>
+  <text class="t" x="358" y="223">Cloud Run: Backend API</text>
+  <text class="small" x="358" y="245">Plans, logging, coaching, adaptation</text>
+  <text class="small" x="358" y="265">Streaming proxy + per-user isolation</text>
+  <text class="small" x="358" y="285">Rate limit + queue/backpressure</text>
+
+  <!-- DB / GCS / Secrets -->
+  <rect class="box" x="720" y="195" width="290" height="120"/>
+  <text class="t" x="738" y="223">Cloud SQL (PostgreSQL)</text>
+  <text class="small" x="738" y="245">users, profiles, plans</text>
+  <text class="small" x="738" y="265">workouts, daily logs</text>
+  <text class="small" x="738" y="285">ai_interactions (model metadata)</text>
+
+  <rect class="box" x="1040" y="195" width="300" height="120"/>
+  <text class="t" x="1058" y="223">Cloud Storage (GCS)</text>
+  <text class="small" x="1058" y="245">Model artifacts + manifests</text>
+  <text class="small" x="1058" y="265">Datasets + QA reports</text>
+  <text class="small" x="1058" y="285">Offline pipeline outputs</text>
+
+  <rect class="box" x="1370" y="195" width="360" height="120"/>
+  <text class="t" x="1388" y="223">Secret Manager + Observability</text>
+  <text class="small" x="1388" y="245">DB creds, API keys, config secrets</text>
+  <text class="small" x="1388" y="265">Cloud Logging/Monitoring (metrics)</text>
+  <text class="small" x="1388" y="285">Request tracing + alerts</text>
+
+  <!-- Optional queue -->
+  <rect class="box-purple" x="340" y="340" width="330" height="85"/>
+  <text class="t" x="358" y="368">Cloud Tasks (Optional)</text>
+  <text class="small" x="358" y="390">Queue LLM requests when saturated</text>
+  <text class="small" x="358" y="410">Return 429 if queue disabled</text>
+
+  <!-- Inference VM -->
+  <rect class="box-green" x="720" y="340" width="1010" height="150"/>
+  <text class="t" x="738" y="368">Compute Engine VM (1 GPU): vLLM Inference (Private)</text>
+  <text class="small" x="738" y="390">OpenAI-compatible API; backend uses stream=true and relays chunks to clients</text>
+  <text class="small" x="738" y="410">Recommended: max_model_len=4096, max_num_seqs=2-3, backend max_output_tokens≈1024</text>
+  <text class="small" x="738" y="430">Network: private IP; firewall allows port only from backend VPC connector subnet</text>
+  <text class="small" x="738" y="450">Model loads from GCS (artifact + version manifest) and logs to Cloud Logging</text>
+
+  <!-- Online arrows -->
+  <path class="line" marker-end="url(#arrow)" d="M 300 250 L 340 250"/>
+  <text class="muted" x="305" y="238">HTTPS</text>
+
+  <path class="line" marker-end="url(#arrow)" d="M 670 235 L 720 235"/>
+  <text class="muted" x="675" y="223">SQL</text>
+
+  <path class="line" marker-end="url(#arrow)" d="M 670 265 L 1040 265"/>
+  <text class="muted" x="820" y="253">read/write</text>
+
+  <path class="line" marker-end="url(#arrow)" d="M 670 385 L 720 385"/>
+  <text class="muted" x="676" y="373">internal HTTP</text>
+
+  <path class="line-dash" marker-end="url(#arrow)" d="M 505 315 L 505 340"/>
+  <text class="muted" x="520" y="334">backpressure</text>
+
+  <path class="line-dash" marker-end="url(#arrow)" d="M 670 382 L 720 382"/>
+
+  <path class="line" marker-end="url(#arrow)" d="M 1340 255 L 1370 255"/>
+  <text class="muted" x="1320" y="245">secrets/logs</text>
+
+  <!-- Offline panel -->
+  <rect class="panel2" x="40" y="565" width="1720" height="510"/>
+  <text class="h" x="60" y="600">Offline (Airflow DAG + Training)</text>
+  <text class="muted" x="60" y="623">DAG order matches Data-Pipeline/dags/fitsense_pipeline.py: linear chain then fan-out into Phase 6 tasks</text>
+
+  <!-- DAG boxes row (accurate dependencies) -->
+  <rect class="box" x="60" y="660" width="215" height="70"/>
+  <text class="t" x="78" y="688">bootstrap_phase1</text>
+  <text class="small" x="78" y="710">bootstrap_phase1.py</text>
+
+  <rect class="box" x="295" y="660" width="245" height="70"/>
+  <text class="t" x="313" y="688">generate_synthetic_profiles</text>
+  <text class="small" x="313" y="710">generate_synthetic_profiles.py</text>
+
+  <rect class="box" x="560" y="660" width="255" height="70"/>
+  <text class="t" x="578" y="688">generate_synthetic_workouts</text>
+  <text class="small" x="578" y="710">generate_synthetic_workouts.py</text>
+
+  <rect class="box" x="835" y="660" width="245" height="70"/>
+  <text class="t" x="853" y="688">generate_synthetic_queries</text>
+  <text class="small" x="853" y="710">generate_synthetic_queries.py</text>
+
+  <rect class="box-amber" x="1100" y="660" width="230" height="70"/>
+  <text class="t" x="1118" y="688">call_teacher_llm</text>
+  <text class="small" x="1118" y="710">call_teacher_llm.py</text>
+
+  <rect class="box" x="1350" y="660" width="250" height="70"/>
+  <text class="t" x="1368" y="688">build_distillation_dataset</text>
+  <text class="small" x="1368" y="710">build_distillation_dataset.py</text>
+
+  <!-- Fan-out tasks -->
+  <rect class="box-green" x="1010" y="785" width="170" height="70"/>
+  <text class="t" x="1028" y="813">validate_data</text>
+  <text class="small" x="1028" y="835">validate_data.py</text>
+
+  <rect class="box-green" x="1200" y="785" width="170" height="70"/>
+  <text class="t" x="1218" y="813">compute_stats</text>
+  <text class="small" x="1218" y="835">compute_stats.py</text>
+
+  <rect class="box-green" x="1390" y="785" width="170" height="70"/>
+  <text class="t" x="1408" y="813">detect_anomalies</text>
+  <text class="small" x="1408" y="835">detect_anomalies.py</text>
+
+  <rect class="box-green" x="1580" y="785" width="170" height="70"/>
+  <text class="t" x="1598" y="813">bias_slicing</text>
+  <text class="small" x="1598" y="835">bias_slicing.py</text>
+
+  <!-- External teacher -->
+  <rect class="box-amber" x="1100" y="745" width="230" height="55"/>
+  <text class="small" x="1118" y="770">External Teacher API (offline)</text>
+  <text class="small" x="1118" y="788">OpenAI-compatible endpoint</text>
+
+  <!-- Training -->
+  <rect class="box-blue" x="60" y="785" width="470" height="160"/>
+  <text class="t" x="78" y="813">Student Training (Single GPU)</text>
+  <text class="small" x="78" y="835">Compute Engine GPU VM (or Batch GPU job)</text>
+  <text class="small" x="78" y="855">Inputs: distillation_dataset/&lt;run_id&gt;</text>
+  <text class="small" x="78" y="875">Outputs: model artifact + eval report + version manifest to GCS</text>
+  <text class="small" x="78" y="895">Promotion: restart inference VM to load new model version</text>
+
+  <!-- Offline arrows (linear chain) -->
+  <path class="line" marker-end="url(#arrow)" d="M 275 695 L 295 695"/>
+  <path class="line" marker-end="url(#arrow)" d="M 540 695 L 560 695"/>
+  <path class="line" marker-end="url(#arrow)" d="M 815 695 L 835 695"/>
+  <path class="line" marker-end="url(#arrow)" d="M 1080 695 L 1100 695"/>
+  <path class="line" marker-end="url(#arrow)" d="M 1330 695 L 1350 695"/>
+
+  <!-- Teacher call arrows -->
+  <path class="line-dash" marker-end="url(#arrow)" d="M 1215 730 L 1215 745"/>
+  <path class="line-dash" marker-end="url(#arrow)" d="M 1225 745 L 1225 730"/>
+
+  <!-- Fan-out arrows from build_distillation_dataset -->
+  <path class="line" marker-end="url(#arrow)" d="M 1475 730 L 1095 785"/>
+  <path class="line" marker-end="url(#arrow)" d="M 1475 730 L 1285 785"/>
+  <path class="line" marker-end="url(#arrow)" d="M 1475 730 L 1475 785"/>
+  <path class="line" marker-end="url(#arrow)" d="M 1475 730 L 1665 785"/>
+
+  <!-- GCS coupling -->
+  <path class="line-dash" marker-end="url(#arrow)" d="M 1600 695 C 1660 695, 1660 260, 1340 260"/>
+  <text class="muted" x="1450" y="248">artifacts to/from GCS</text>
+
+  <!-- Training coupling -->
+  <path class="line-dash" marker-end="url(#arrow)" d="M 530 865 C 760 865, 820 430, 720 430"/>
+  <text class="muted" x="585" y="845">promote model version</text>
+
+  <!-- Footer -->
+  <text class="note" x="60" y="1046">Single-GPU serving note:</text>
+  <text class="muted" x="200" y="1046">keep true GPU concurrency low (2-3 in-flight sequences) and enforce token limits + queue/backpressure for spikes.</text>
+</svg>

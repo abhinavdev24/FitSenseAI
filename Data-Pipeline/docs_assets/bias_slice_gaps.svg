@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="70" y="38" font-family="Arial" font-size="22" font-weight="bold" fill="#111827">Bias Slicing: Max Mean Response Length Gap by Slice</text>
+<line x1="70" y1="70" x2="70" y2="430" stroke="#374151"/>
+<line x1="70" y1="430" x2="870" y2="430" stroke="#374151"/>
+<rect x="90.0" y="374.8" width="136.0" height="55.2" fill="#f59e0b" opacity="0.9"/>
+<text x="158.0" y="366.8" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">2.14</text>
+<text x="158.0" y="448" text-anchor="end" transform="rotate(-25 158.0,448)" font-family="Arial" font-size="12" fill="#111827">age_band</text>
+<rect x="246.0" y="419.4" width="136.0" height="10.6" fill="#f59e0b" opacity="0.9"/>
+<text x="314.0" y="411.4" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">0.41</text>
+<text x="314.0" y="448" text-anchor="end" transform="rotate(-25 314.0,448)" font-family="Arial" font-size="12" fill="#111827">sex</text>
+<rect x="402.0" y="405.5" width="136.0" height="24.5" fill="#f59e0b" opacity="0.9"/>
+<text x="470.0" y="397.5" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">0.95</text>
+<text x="470.0" y="448" text-anchor="end" transform="rotate(-25 470.0,448)" font-family="Arial" font-size="12" fill="#111827">goal_type</text>
+<rect x="558.0" y="347.2" width="136.0" height="82.8" fill="#f59e0b" opacity="0.9"/>
+<text x="626.0" y="339.2" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">3.21</text>
+<text x="626.0" y="448" text-anchor="end" transform="rotate(-25 626.0,448)" font-family="Arial" font-size="12" fill="#111827">activity_level</text>
+<rect x="714.0" y="70.0" width="136.0" height="360.0" fill="#f59e0b" opacity="0.9"/>
+<text x="782.0" y="62.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">13.95</text>
+<text x="782.0" y="448" text-anchor="end" transform="rotate(-25 782.0,448)" font-family="Arial" font-size="12" fill="#111827">condition_flag</text>
+</svg>

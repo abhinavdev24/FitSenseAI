@@ -1,0 +1,11 @@
+stages:
+  phase1_sanity:
+    cmd: python Data-Pipeline/scripts/bootstrap_phase1.py
+    deps:
+      - Data-Pipeline/scripts/bootstrap_phase1.py
+      - Data-Pipeline/scripts/common/config.py
+      - Data-Pipeline/scripts/common/logging_utils.py
+      - Data-Pipeline/scripts/common/reproducibility.py
+      - Data-Pipeline/params.yaml
+    outs:
+      - Data-Pipeline/data/reports/phase1_bootstrap.json
