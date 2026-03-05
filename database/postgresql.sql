@@ -3,7 +3,7 @@
 -- Generated from database_design.dbml
 -- Optimizations:
 --   • Native UUID type (128-bit, indexed via B-tree by default)
---   • gen_random_uuid() for default PK generation (pgcrypto-free in PG 13+)
+--   • gen_random_uuid() for default PK generation (requires pgcrypto extension: CREATE EXTENSION pgcrypto)
 --   • SMALLINT / SMALLSERIAL for small-range numerics
 --   • NUMERIC(n,s) for exact decimals
 --   • CHECK constraints for ENUMs (more flexible than PG ENUM type)
