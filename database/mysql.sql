@@ -157,7 +157,7 @@ CREATE TABLE `plan_exercises` (
 CREATE TABLE `plan_sets` (
   `plan_set_id`      BINARY(16)     NOT NULL,
   `plan_exercise_id` BINARY(16)     NOT NULL,
-  `set_number`       TINYINT UNSIGNED,
+  `set_number`       TINYINT UNSIGNED NOT NULL,
   `target_reps`      TINYINT UNSIGNED,
   -- e.g. 0–500 kg in 0.25 kg increments
   `target_weight`    DECIMAL(6,2),
@@ -167,6 +167,7 @@ CREATE TABLE `plan_sets` (
   PRIMARY KEY (`plan_set_id`),
   KEY         `idx_plan_sets_plan_exercise_id`            (`plan_exercise_id`),
   UNIQUE KEY  `uq_plan_sets_plan_exercise_id_set_number`  (`plan_exercise_id`, `set_number`),
+  CONSTRAINT `chk_plan_sets_set_number_positive` CHECK (`set_number` > 0),
   CONSTRAINT `fk_plan_sets_plan_exercise` FOREIGN KEY (`plan_exercise_id`) REFERENCES `plan_exercises` (`plan_exercise_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
