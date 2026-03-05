@@ -215,7 +215,7 @@ CREATE TABLE `workout_exercises` (
 CREATE TABLE `workout_sets` (
   `workout_set_id`      BINARY(16)    NOT NULL,
   `workout_exercise_id` BINARY(16)    NOT NULL,
-  `set_number`          TINYINT UNSIGNED,
+  `set_number`          TINYINT UNSIGNED NOT NULL,
   `reps`                TINYINT UNSIGNED,
   `weight`              DECIMAL(6,2),
   `rir`                 TINYINT UNSIGNED,
@@ -224,7 +224,8 @@ CREATE TABLE `workout_sets` (
   PRIMARY KEY (`workout_set_id`),
   KEY         `idx_workout_sets_workout_exercise_id`              (`workout_exercise_id`),
   UNIQUE KEY  `uq_workout_sets_workout_exercise_id_set_number`    (`workout_exercise_id`, `set_number`),
-  CONSTRAINT `fk_workout_sets_workout_exercise` FOREIGN KEY (`workout_exercise_id`) REFERENCES `workout_exercises` (`workout_exercise_id`) ON DELETE CASCADE
+  CONSTRAINT `fk_workout_sets_workout_exercise` FOREIGN KEY (`workout_exercise_id`) REFERENCES `workout_exercises` (`workout_exercise_id`) ON DELETE CASCADE,
+  CONSTRAINT `chk_workout_sets_set_number_positive` CHECK (`set_number` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
