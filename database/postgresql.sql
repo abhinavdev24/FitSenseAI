@@ -166,7 +166,7 @@ CREATE INDEX idx_plan_exercises_plan_day_id_position ON plan_exercises (plan_day
 CREATE TABLE plan_sets (
   plan_set_id      UUID     NOT NULL DEFAULT gen_random_uuid(),
   plan_exercise_id UUID     NOT NULL,
-  set_number       SMALLINT CHECK (set_number > 0),
+  set_number       SMALLINT NOT NULL CHECK (set_number > 0),
   target_reps      SMALLINT CHECK (target_reps >= 0),
   -- e.g. 0–999.99 kg
   target_weight    NUMERIC(6,2) CHECK (target_weight >= 0),
