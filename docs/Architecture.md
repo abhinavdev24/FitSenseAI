@@ -35,7 +35,7 @@ Airflow DAG:
 
 ### 2.2 Database Schema (`database/`)
 
-- `database/tables.sql` defines the core relational schema for users, goals, workouts, health logs, and AI interactions.
+- `database/postgresql.sql` / `database/mysql.sql` define the core relational schema for users, goals, workouts, health logs, and AI interactions.
 
 ## 3. Target Google Cloud Architecture (Planned)
 
@@ -54,7 +54,7 @@ Airflow DAG:
 
 ### 4.1 Offline Flow (Synthetic -> Distillation)
 
-1. Generate synthetic structured tables aligned to `database/tables.sql`.
+1. Generate synthetic structured tables aligned to `database/postgresql.sql` / `database/mysql.sql`.
 2. Generate synthetic natural-language prompts from structured user state.
 3. Call teacher LLM and store responses + metadata.
 4. Build distillation JSONL dataset and create deterministic train/val/test splits.

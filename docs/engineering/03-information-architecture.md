@@ -12,7 +12,7 @@ Define the MVP information architecture across:
 
 ## 2. Primary Objects
 
-Aligned to `database/tables.sql`:
+Aligned to `database/postgresql.sql` / `database/mysql.sql`:
 
 - User identity and profile: `users`, `user_profiles`
 - Goals and constraints: `goals`, `user_goals`, `conditions`, `user_conditions`, `user_medical_profiles`

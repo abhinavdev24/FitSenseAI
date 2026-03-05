@@ -75,7 +75,7 @@ This phase is implemented in `Data-Pipeline/` and includes the project’s synth
 
 #### Dependencies closed in this phase
 
-- Schema definition (`database/tables.sql`) -> synthetic generators
+- Schema definition (`database/postgresql.sql` / `database/mysql.sql`) -> synthetic generators
 - Synthetic generators -> query generation
 - Query generation -> teacher response capture
 - Teacher responses -> distillation dataset build
@@ -121,7 +121,7 @@ This phase uses the completed synthetic + teacher pipeline outputs to train the 
 
 1. **Backend service foundation**
    - API service for onboarding, goals, workout plans, workout logging, and daily health logs
-   - database integration based on `database/tables.sql`
+   - database integration based on `database/postgresql.sql` / `database/mysql.sql`
 
 2. **Inference integration**
    - student model inference endpoint integration

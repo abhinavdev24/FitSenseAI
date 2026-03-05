@@ -5,7 +5,7 @@ Last updated: 2026-02-22
 ## 1. Current Structure (Observed)
 
 - `Data-Pipeline/`: synthetic -> teacher -> distillation pipeline with Airflow DAG and tests
-- `database/`: schema artifacts (`tables.sql`, DBML, UML diagram)
+- `database/`: schema artifacts (`postgresql.sql`, `mysql.sql`, DBML, UML diagram)
 - `docs/`: architecture/PRD/system design and supporting runbooks
 
 ## 2. New Engineering Docs

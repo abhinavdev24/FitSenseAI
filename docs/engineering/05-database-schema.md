@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-22
 
-Source of truth: `database/tables.sql`
+Source of truth: `database/postgresql.sql` (PostgreSQL) and `database/mysql.sql` (MySQL)
 
 ## 1. Storage Choice
 
@@ -69,5 +69,5 @@ Add indexes during implementation:
 MVP expectation:
 
 - Manage schema changes via migrations (tool choice deferred until backend framework is selected).
-- Keep `database/tables.sql` in sync with migrations as a readable schema export.
+- Keep `database/postgresql.sql` and `database/mysql.sql` in sync with migrations as readable schema exports.
 
