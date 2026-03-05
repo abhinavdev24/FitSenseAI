@@ -229,7 +229,7 @@ CREATE INDEX idx_workout_exercises_workout_id_position ON workout_exercises (wor
 CREATE TABLE workout_sets (
   workout_set_id      UUID        NOT NULL DEFAULT gen_random_uuid(),
   workout_exercise_id UUID        NOT NULL,
-  set_number          SMALLINT    CHECK (set_number > 0),
+  set_number          SMALLINT    NOT NULL CHECK (set_number > 0),
   reps                SMALLINT    CHECK (reps >= 0),
   weight              NUMERIC(6,2) CHECK (weight >= 0),
   rir                 SMALLINT    CHECK (rir >= 0 AND rir <= 10),
