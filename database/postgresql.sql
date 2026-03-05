@@ -435,9 +435,9 @@ CREATE INDEX idx_weight_logs_user_id_logged_at  ON weight_logs (user_id, logged_
 -- ============================================================
 --
 -- UUID generation:
---   gen_random_uuid() is built-in since PostgreSQL 13.
---   For PG 12 and below, enable pgcrypto: CREATE EXTENSION IF NOT EXISTS pgcrypto;
---   and use gen_random_uuid() from that extension instead.
+--   gen_random_uuid() is provided by the pgcrypto extension in all supported
+--   PostgreSQL versions. Before applying this schema, ensure pgcrypto is enabled:
+--     CREATE EXTENSION IF NOT EXISTS pgcrypto;
 --
 -- Timestamps:
 --   All timestamps use TIMESTAMPTZ (timestamp with time zone).
