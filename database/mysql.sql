@@ -10,7 +10,7 @@
 --   • MEDIUMTEXT for base64 thumbnail
 --   • DATETIME(0) — no sub-second precision needed
 --   • InnoDB + utf8mb4 throughout
---   • Helper functions for UUID ↔ BINARY(16) conversion at bottom
+--   • UUID ↔ BINARY(16) usage guidelines at bottom
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -396,8 +396,8 @@ CREATE TABLE `weight_logs` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
--- UUID Helpers (MySQL 8.0+)
--- Use these to convert between application UUIDs and BINARY(16)
+-- UUID Usage Guidelines (MySQL 8.0+ built-in functions)
+-- How to convert between application UUIDs and BINARY(16)
 -- ============================================================
 --
 -- Store:    INSERT ... VALUES (UUID_TO_BIN(?, TRUE), ...)
@@ -405,4 +405,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 --
 -- The second argument `TRUE` swaps the time-high and time-low fields
 -- of UUIDv1, improving index locality. For UUIDv4/v7 it is a no-op.
+--
+-- UUID_TO_BIN() and BIN_TO_UUID() are built into MySQL 8.0+;
+-- no custom helper functions are required.
 -- ============================================================
