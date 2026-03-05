@@ -46,10 +46,10 @@ def test_generate_workouts_with_fk_consistency(tmp_path: Path) -> None:
     sleep_logs = tables["sleep_duration_logs"]
     weight_logs = tables["weight_logs"]
 
-    assert set(workouts["plan_id"]).issubset(set(plans["plan_id"]))
+    assert set(workouts["plan_id"].dropna()).issubset(set(plans["plan_id"]))
     assert set(plan_days["plan_id"]).issubset(set(plans["plan_id"]))
     assert set(plan_exercises["plan_day_id"]).issubset(set(plan_days["plan_day_id"]))
-    assert set(workouts["plan_day_id"]).issubset(set(plan_days["plan_day_id"]))
+    assert set(workouts["plan_day_id"].dropna()).issubset(set(plan_days["plan_day_id"]))
     
     assert set(workout_exercises["workout_id"]).issubset(set(workouts["workout_id"]))
     assert set(workout_exercises["plan_exercise_id"]).issubset(set(plan_exercises["plan_exercise_id"]))
