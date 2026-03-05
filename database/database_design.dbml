@@ -20,7 +20,7 @@ Table user_goals {
   priority int
 
   indexes {
-    (user_id, goal_id) [unique]
+    (user_id, goal_id) [pk]
     (goal_id)
   }
 }
@@ -38,7 +38,7 @@ Table user_conditions {
   notes text
 
   indexes {
-    (user_id, condition_id) [unique]
+    (user_id, condition_id) [pk]
     (condition_id)
   }
 }
@@ -57,6 +57,8 @@ Table exercises {
   name varchar [unique]
   primary_muscle varchar
   notes text
+  video_url varchar // link to hosted video file (e.g. S3/CDN URL)
+  thumbnail_base64 text // base64-encoded thumbnail image
 }
 
 Table exercise_equipment {
@@ -64,7 +66,7 @@ Table exercise_equipment {
   equipment_id uuid [not null, ref: > equipment.equipment_id]
 
   indexes {
-    (exercise_id, equipment_id) [unique]
+    (exercise_id, equipment_id) [pk]
     (equipment_id)
   }
 }
@@ -85,17 +87,31 @@ Table workout_plans {
   }
 }
 
+Table plan_days {
+  plan_day_id uuid [pk]
+  plan_id uuid [not null, ref: > workout_plans.plan_id]
+  name varchar [not null] // e.g. "PUSH_1", "PULL_2", "UPPER_1"
+  day_order int           // ordering within the plan cycle
+  notes text
+
+  indexes {
+    (plan_id)
+    (plan_id, name) [unique]
+    (plan_id, day_order)
+  }
+}
+
 Table plan_exercises {
   plan_exercise_id uuid [pk]
-  plan_id uuid [not null, ref: > workout_plans.plan_id]
+  plan_day_id uuid [not null, ref: > plan_days.plan_day_id]
   exercise_id uuid [not null, ref: > exercises.exercise_id]
   position int
   notes text
 
   indexes {
-    (plan_id)
+    (plan_day_id)
     (exercise_id)
-    (plan_id, position)
+    (plan_day_id, position)
   }
 }
 
@@ -120,7 +136,8 @@ Table plan_sets {
 Table workouts {
   workout_id uuid [pk]
   user_id uuid [not null, ref: > users.user_id]
-  plan_id uuid [ref: > workout_plans.plan_id] // nullable: workout may not use a plan
+  plan_id uuid [ref: > workout_plans.plan_id]     // nullable: workout may not use a plan
+  plan_day_id uuid [ref: > plan_days.plan_day_id] // nullable: which day template was followed e.g. "PUSH_1"
   started_at datetime
   ended_at datetime
   notes text
@@ -128,6 +145,7 @@ Table workouts {
   indexes {
     (user_id)
     (plan_id)
+    (plan_day_id)
     (user_id, started_at)
   }
 }

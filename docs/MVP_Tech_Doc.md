@@ -18,7 +18,7 @@ Implemented today:
 - Airflow DAG orchestration in `Data-Pipeline/dags/fitsense_pipeline.py`.
 - Deterministic configuration in `Data-Pipeline/params.yaml`.
 - Unit/integration tests in `Data-Pipeline/tests/`.
-- Relational schema in `database/tables.sql`.
+- Relational schema in `database/postgresql.sql` (PostgreSQL) and `database/mysql.sql` (MySQL).
 
 Not implemented yet (planned):
 

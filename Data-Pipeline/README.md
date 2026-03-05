@@ -57,7 +57,7 @@ This pipeline produces multiple datasets/artifacts across stages. The main train
 
 ### 2.3 Upstream Synthetic Data Artifacts
 
-The pipeline also generates structured synthetic tables aligned to the FitSenseAI schema in `database/tables.sql`, including:
+The pipeline also generates structured synthetic tables aligned to the FitSenseAI schema in `database/postgresql.sql` / `database/mysql.sql`, including:
 
 - `users`, `user_profiles`, `goals`, `user_goals`, `conditions`, `user_conditions`
 - `user_medical_profiles`, `user_medications`, `user_allergies`
