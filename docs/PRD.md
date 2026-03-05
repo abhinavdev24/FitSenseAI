@@ -78,7 +78,7 @@ People struggle to convert fitness goals into structured, safe, and adaptive wee
 
 ### 6.2 Workout Logging
 
-- Record completed session details aligned to the relational schema in `database/tables.sql`:
+- Record completed session details aligned to the relational schema in `database/postgresql.sql` / `database/mysql.sql`:
   - workout session, exercises, sets, reps, weight, RIR, notes.
 
 ### 6.3 Daily Signal Logging
@@ -153,7 +153,7 @@ People struggle to convert fitness goals into structured, safe, and adaptive wee
   - Cloud Run (or similar) for backend API.
   - cost-controlled compute (Compute Engine/GCP Batch/GKE) for training (and optionally GPU inference).
 - The current repo has a working local Airflow DAG for the offline pipeline; cloud orchestration will be a later implementation step (e.g., Cloud Composer).
-- Schema and domain entities follow `database/tables.sql`.
+- Schema and domain entities follow `database/postgresql.sql` / `database/mysql.sql`.
 
 ## 11. Risks
 

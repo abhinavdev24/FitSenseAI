@@ -55,7 +55,7 @@ This document proposes a concrete system design for FitSenseAI on Google Cloud:
 
 ### 5.1 Cloud SQL (PostgreSQL)
 
-Use the schema in `database/tables.sql` (normalized relational model), with these MVP notes:
+Use the schema in `database/postgresql.sql` (PostgreSQL) or `database/mysql.sql` (MySQL) (normalized relational model), with these MVP notes:
 
 - Use UUID primary keys (already modeled).
 - Add indexes for high-volume queries:

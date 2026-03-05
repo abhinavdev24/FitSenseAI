@@ -13,7 +13,7 @@ Last updated: 2026-02-22
   - workout and daily logging,
   - adaptation guidance,
   - coaching chat with streaming.
-- Data persistence in Cloud SQL aligned to `database/tables.sql`.
+- Data persistence in Cloud SQL aligned to `database/postgresql.sql` / `database/mysql.sql`.
 - Minimal observability (logs, metrics, basic alerts).
 
 ## 2. Out of Scope (MVP)

@@ -46,7 +46,8 @@ FitSenseAI/
     dvc.yaml
   database/
     database_design.dbml
-    tables.sql
+    postgresql.sql
+    mysql.sql
     UML_diagram.png
 ```
 
@@ -75,7 +76,7 @@ Core model areas:
 
 1. Open the live diagram: [UML Diagram](https://dbdiagram.io/d/FitSenseAI-69850002bd82f5fce2cfe02c)
 2. No DBML upload is required for viewers; they can access the schema directly from the link.
-3. Use `database/tables.sql` as the base SQL export for database setup.
+3. Use `database/postgresql.sql` (PostgreSQL) or `database/mysql.sql` (MySQL) as the base SQL export for database setup.
 4. Prefer PostgreSQL for implementation (recommended for this project’s relational complexity and future analytics needs).
 
 ## Planned Architecture (High Level)

@@ -47,7 +47,7 @@ FitSenseAI is a fitness coaching app that:
 ### 5.1 Onboarding and Profile
 
 - Capture: goal type, schedule (days/week), equipment, experience level, constraints/injury flags.
-- Store user profile in relational DB aligned to `database/tables.sql`.
+- Store user profile in relational DB aligned to `database/postgresql.sql` / `database/mysql.sql`.
 
 ### 5.2 Plan Generation
 
