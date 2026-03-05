@@ -39,6 +39,7 @@ def test_generate_workouts_with_fk_consistency(tmp_path: Path) -> None:
     workout_exercises = tables["workout_exercises"]
     workout_sets = tables["workout_sets"]
     plans = tables["workout_plans"]
+    plan_days = tables["plan_days"]
     plan_exercises = tables["plan_exercises"]
     plan_sets = tables["plan_sets"]
     calorie_logs = tables["calorie_intake_logs"]
@@ -46,6 +47,10 @@ def test_generate_workouts_with_fk_consistency(tmp_path: Path) -> None:
     weight_logs = tables["weight_logs"]
 
     assert set(workouts["plan_id"]).issubset(set(plans["plan_id"]))
+    assert set(plan_days["plan_id"]).issubset(set(plans["plan_id"]))
+    assert set(plan_exercises["plan_day_id"]).issubset(set(plan_days["plan_day_id"]))
+    assert set(workouts["plan_day_id"]).issubset(set(plan_days["plan_day_id"]))
+    
     assert set(workout_exercises["workout_id"]).issubset(set(workouts["workout_id"]))
     assert set(workout_exercises["plan_exercise_id"]).issubset(set(plan_exercises["plan_exercise_id"]))
     assert set(workout_sets["workout_exercise_id"]).issubset(set(workout_exercises["workout_exercise_id"]))
