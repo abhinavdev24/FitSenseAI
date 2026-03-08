@@ -32,7 +32,9 @@ def _load_latest_distillation(raw_root: Path) -> dict[str, Any]:
     return json.loads(latest_path.read_text(encoding="utf-8"))
 
 
-def _summarize_slice(df: pd.DataFrame, group_col: str, min_group_size: int) -> dict[str, Any]:
+def _summarize_slice(
+    df: pd.DataFrame, group_col: str, min_group_size: int
+) -> dict[str, Any]:
     grp = (
         df.groupby(group_col)
         .agg(
@@ -58,7 +60,12 @@ def _summarize_slice(df: pd.DataFrame, group_col: str, min_group_size: int) -> d
     return {"group_col": group_col, "groups": groups, "max_gap": max_gap}
 
 
-def bias_slicing(params: dict[str, Any], raw_root: Path, reports_root: Path, run_id: str | None = None) -> tuple[dict[str, Any], Path]:
+def bias_slicing(
+    params: dict[str, Any],
+    raw_root: Path,
+    reports_root: Path,
+    run_id: str | None = None,
+) -> tuple[dict[str, Any], Path]:
     cfg = params["phase6"]["bias_slicing"]
     min_group_size = int(cfg["min_group_size"])
     max_gap_allowed = float(cfg["max_mean_response_len_gap"])
@@ -71,15 +78,27 @@ def bias_slicing(params: dict[str, Any], raw_root: Path, reports_root: Path, run
         raise ValueError("No distillation rows found")
 
     df["response_len"] = df["response"].astype(str).str.len()
-    df["age_band"] = df["context"].apply(lambda c: c.get("slice_tags", {}).get("age_band", "unknown"))
-    df["sex"] = df["context"].apply(lambda c: c.get("slice_tags", {}).get("sex", "unknown"))
-    df["goal_type"] = df["context"].apply(lambda c: c.get("slice_tags", {}).get("goal_type", "unknown"))
-    df["activity_level"] = df["context"].apply(lambda c: c.get("slice_tags", {}).get("activity_level", "unknown"))
-    df["condition_flag"] = df["context"].apply(lambda c: c.get("slice_tags", {}).get("condition_flag", "unknown"))
+    df["age_band"] = df["context"].apply(
+        lambda c: c.get("slice_tags", {}).get("age_band", "unknown")
+    )
+    df["sex"] = df["context"].apply(
+        lambda c: c.get("slice_tags", {}).get("sex", "unknown")
+    )
+    df["goal_type"] = df["context"].apply(
+        lambda c: c.get("slice_tags", {}).get("goal_type", "unknown")
+    )
+    df["activity_level"] = df["context"].apply(
+        lambda c: c.get("slice_tags", {}).get("activity_level", "unknown")
+    )
+    df["condition_flag"] = df["context"].apply(
+        lambda c: c.get("slice_tags", {}).get("condition_flag", "unknown")
+    )
 
     slice_reports = []
     for col in ["age_band", "sex", "goal_type", "activity_level", "condition_flag"]:
-        slice_reports.append(_summarize_slice(df=df, group_col=col, min_group_size=min_group_size))
+        slice_reports.append(
+            _summarize_slice(df=df, group_col=col, min_group_size=min_group_size)
+        )
 
     flagged = [
         {
@@ -115,17 +134,28 @@ def bias_slicing(params: dict[str, Any], raw_root: Path, reports_root: Path, run
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run bias slicing analysis")
-    parser.add_argument("--params", default="Data-Pipeline/params.yaml")
+    parser.add_argument("--params", default="params.yaml")
     parser.add_argument("--raw-root", default=None)
     parser.add_argument("--reports-root", default=None)
     parser.add_argument("--run-id", default=None)
     args = parser.parse_args()
 
     params = load_params(args.params)
-    apply_global_seed(int(params["reproducibility"]["seed"]), str(params["reproducibility"]["hash_seed"]))
+    apply_global_seed(
+        int(params["reproducibility"]["seed"]),
+        str(params["reproducibility"]["hash_seed"]),
+    )
 
-    raw_root = Path(args.raw_root) if args.raw_root else Path(str(params["paths"]["raw_data_dir"]))
-    reports_root = Path(args.reports_root) if args.reports_root else Path(str(params["paths"]["reports_dir"]))
+    raw_root = (
+        Path(args.raw_root)
+        if args.raw_root
+        else Path(str(params["paths"]["raw_data_dir"]))
+    )
+    reports_root = (
+        Path(args.reports_root)
+        if args.reports_root
+        else Path(str(params["paths"]["reports_dir"]))
+    )
 
     logger = setup_logger(
         name="fitsense.bias_slicing",
@@ -135,8 +165,12 @@ def main() -> None:
         fmt=str(params["logging"]["format"]),
     )
 
-    report, out_path = bias_slicing(params=params, raw_root=raw_root, reports_root=reports_root, run_id=args.run_id)
-    logger.info("Bias slicing complete. bias_alert=%s output=%s", report["bias_alert"], out_path)
+    report, out_path = bias_slicing(
+        params=params, raw_root=raw_root, reports_root=reports_root, run_id=args.run_id
+    )
+    logger.info(
+        "Bias slicing complete. bias_alert=%s output=%s", report["bias_alert"], out_path
+    )
 
 
 if __name__ == "__main__":

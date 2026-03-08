@@ -17,14 +17,16 @@ except ModuleNotFoundError:
 if DAG is not None and BashOperator is not None:
     REPO_ROOT = Path(__file__).resolve().parents[2]
     PYTHON_BIN = os.getenv("FITSENSE_PYTHON_BIN", "python")
-    PARAMS_PATH = REPO_ROOT / "Data-Pipeline" / "params.yaml"
+    DATA_PIPELINE_DIR = REPO_ROOT / "Data-Pipeline"
+    PARAMS_PATH = DATA_PIPELINE_DIR / "params.yaml"
 
     def _script_cmd(script_name: str, run_id_expr: str = "{{ ts_nodash }}") -> str:
-        script_path = REPO_ROOT / "Data-Pipeline" / "scripts" / script_name
+        # Scripts run directly from Data-Pipeline/; Python adds that directory to
+        # sys.path automatically, so `common` is importable without PYTHONPATH.
         return (
-            f"cd {REPO_ROOT} && "
-            f"{PYTHON_BIN} {script_path} "
-            f"--params {PARAMS_PATH} "
+            f"cd {DATA_PIPELINE_DIR} && "
+            f"{PYTHON_BIN} {script_name} "
+            f"--params params.yaml "
             f"--run-id {run_id_expr}"
         )
 
@@ -72,7 +74,7 @@ if DAG is not None and BashOperator is not None:
         call_teacher_llm = BashOperator(
             task_id="call_teacher_llm",
             bash_command=_script_cmd("call_teacher_llm.py"),
-            execution_timeout=timedelta(minutes=45),
+            execution_timeout=timedelta(minutes=90),
         )
 
         build_distillation_dataset = BashOperator(

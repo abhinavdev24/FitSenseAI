@@ -122,7 +122,7 @@ def detect_anomalies(params: dict[str, Any], raw_root: Path, reports_root: Path,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Detect anomalies in distillation dataset")
-    parser.add_argument("--params", default="Data-Pipeline/params.yaml")
+    parser.add_argument("--params", default="params.yaml")
     parser.add_argument("--raw-root", default=None)
     parser.add_argument("--reports-root", default=None)
     parser.add_argument("--run-id", default=None)
