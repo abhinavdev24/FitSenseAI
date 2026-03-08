@@ -17,11 +17,11 @@ from __future__ import annotations
 
 CONTEXT_FIELDS: dict[str, list[str]] = {
     "plan_creation": [
-        "age_band",        # e.g. "25-34"
-        "sex",             # "male" | "female" | "non_binary"
+        "age_band",  # e.g. "25-34"
+        "sex",  # "male" | "female" | "non_binary"
         "activity_level",  # "sedentary" | "light" | "moderate" | "active" | "very_active"
-        "goal",            # e.g. "muscle_gain"
-        "conditions",      # list of condition slugs, e.g. ["lower_back_pain"]
+        "goal",  # e.g. "muscle_gain"
+        "conditions",  # list of condition slugs, e.g. ["lower_back_pain"]
     ],
     "plan_modification": [
         "age_band",
@@ -29,9 +29,9 @@ CONTEXT_FIELDS: dict[str, list[str]] = {
         "goal",
         "conditions",
         "current_plan_exercises",  # list of (exercise_name, sets, reps, weight_kg)
-        "avg_reps",                # float
-        "avg_weight",              # float kg
-        "avg_rir",                 # float
+        "avg_reps",  # float
+        "avg_weight",  # float kg
+        "avg_rir",  # float
     ],
     "safety_adjustment": [
         "age_band",
@@ -42,25 +42,30 @@ CONTEXT_FIELDS: dict[str, list[str]] = {
     "progress_adaptation": [
         "goal",
         "activity_level",
-        "workout_count",   # int
-        "avg_reps",        # float
-        "avg_weight",      # float kg
-        "avg_rir",         # float
-        "trend",           # "plateau" | "improving" | "fatigue_signals"
+        "workout_count",  # int
+        "avg_reps",  # float
+        "avg_weight",  # float kg
+        "avg_rir",  # float
+        "trend",  # "plateau" | "improving" | "fatigue_signals"
     ],
     "progress_comment": [
         "goal",
-        "workout_count",   # int
-        "avg_reps",        # float
-        "avg_weight",      # float kg
+        "workout_count",  # int
+        "avg_reps",  # float
+        "avg_weight",  # float kg
     ],
-    "workout_logging": [
+    "log_workout": [
         "conditions",
         "logged_exercises",  # list of (exercise_name, sets, reps, weight_kg) from EXERCISE_POOL
     ],
-    "metric_logging": [
-        "metric",   # "weight" | "sleep" | "calories"
-        "value",    # numeric value
+    "log_weight": [
+        "value",  # float kg
+    ],
+    "log_calories": [
+        "value",  # int kcal
+    ],
+    "log_sleep": [
+        "value",  # float hours
     ],
     "coaching_qa": [
         "goal",
@@ -114,7 +119,7 @@ PROGRESS_COMMENT_PROMPTS: list[str] = [
     "How is my training going? What areas need attention?",
 ]
 
-WORKOUT_LOGGING_PROMPTS: list[str] = [
+LOG_WORKOUT_PROMPTS: list[str] = [
     "I just finished my workout. Please log this session.",
     "Done for today. Log this and tell me how it aligns with my plan.",
     "Completed my training. Log it and flag anything unusual.",
@@ -122,12 +127,22 @@ WORKOUT_LOGGING_PROMPTS: list[str] = [
     "Finished my workout. Log it and note if I'm progressing as expected.",
 ]
 
-METRIC_LOGGING_PROMPTS: list[str] = [
+LOG_WEIGHT_PROMPTS: list[str] = [
     "Log my weight for today.",
-    "Log my sleep from last night.",
-    "Log my calorie intake for today.",
     "Record my body weight measurement.",
+    "My weight this morning was 82 kg. Log it.",
+]
+
+LOG_CALORIES_PROMPTS: list[str] = [
+    "Log my calorie intake for today.",
+    "I ate around 2200 kcal today. Please log that.",
+    "Record today's calories.",
+]
+
+LOG_SLEEP_PROMPTS: list[str] = [
+    "Log my sleep from last night.",
     "Log how many hours I slept.",
+    "I got 7.5 hours last night. Log my sleep.",
 ]
 
 COACHING_QA_PROMPTS: list[str] = [
@@ -155,7 +170,9 @@ PROMPT_EXAMPLES: dict[str, list[str]] = {
     "safety_adjustment": SAFETY_ADJUSTMENT_PROMPTS,
     "progress_adaptation": PROGRESS_ADAPTATION_PROMPTS,
     "progress_comment": PROGRESS_COMMENT_PROMPTS,
-    "workout_logging": WORKOUT_LOGGING_PROMPTS,
-    "metric_logging": METRIC_LOGGING_PROMPTS,
+    "log_workout": LOG_WORKOUT_PROMPTS,
+    "log_weight": LOG_WEIGHT_PROMPTS,
+    "log_calories": LOG_CALORIES_PROMPTS,
+    "log_sleep": LOG_SLEEP_PROMPTS,
     "coaching_qa": COACHING_QA_PROMPTS,
 }

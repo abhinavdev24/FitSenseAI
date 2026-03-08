@@ -73,6 +73,8 @@ def _build_reference_catalog(rng: np.random.Generator) -> dict[str, pd.DataFrame
                 "name": ex_name,
                 "primary_muscle": primary_muscle,
                 "notes": "synthetic_exercise",
+                "video_url": None,
+                "thumbnail_base64": None,
             }
         )
         equipment_id = equipment_ids[int(rng.integers(0, len(equipment_ids)))]
@@ -83,10 +85,20 @@ def _build_reference_catalog(rng: np.random.Generator) -> dict[str, pd.DataFrame
             }
         )
 
+    # Deduplicate to enforce the (exercise_id, equipment_id) composite PK.
+    # A random pick could assign the same equipment to the same exercise more
+    # than once if this function is ever extended to assign multiple items per
+    # exercise, causing a PK violation on insert.
+    ex_equipment_df = (
+        pd.DataFrame(ex_equipment_rows)
+        .drop_duplicates(subset=["exercise_id", "equipment_id"])
+        .reset_index(drop=True)
+    )
+
     return {
         "equipment": equipment_df,
         "exercises": pd.DataFrame(exercises_rows),
-        "exercise_equipment": pd.DataFrame(ex_equipment_rows),
+        "exercise_equipment": ex_equipment_df,
     }
 
 
@@ -100,6 +112,7 @@ def _build_plan_tables(
     rng: np.random.Generator,
 ) -> dict[str, pd.DataFrame]:
     plans_rows = []
+    plan_days_rows = []
     plan_exercises_rows = []
     plan_sets_rows = []
 
@@ -121,45 +134,64 @@ def _build_plan_tables(
             }
         )
 
-        count = int(rng.integers(min_exercises, max_exercises + 1))
-        selected = rng.choice(exercise_ids, size=count, replace=False)
+        num_plan_days = int(rng.integers(3, 6))
+        day_templates = ["PUSH", "PULL", "LEGS", "UPPER", "LOWER", "FULL"]
 
-        for position, exercise_id in enumerate(selected, start=1):
-            plan_exercise_id = _stable_uuid(
-                "plan_exercise", f"{plan_id}:{exercise_id}:{position}"
+        for day_order in range(1, num_plan_days + 1):
+            day_name = (
+                f"{day_templates[(day_order - 1) % len(day_templates)]}_{day_order}"
             )
-            plan_exercises_rows.append(
+            plan_day_id = _stable_uuid("plan_day", f"{plan_id}:{day_name}")
+            plan_days_rows.append(
                 {
-                    "plan_exercise_id": plan_exercise_id,
+                    "plan_day_id": plan_day_id,
                     "plan_id": plan_id,
-                    "exercise_id": str(exercise_id),
-                    "position": position,
-                    "notes": "synthetic_plan_exercise",
+                    "name": day_name,
+                    "day_order": day_order,
+                    "notes": "synthetic_plan_day",
                 }
             )
 
-            base_target_weight = round(float(rng.normal(42, 18)), 1)
-            base_target_weight = min(max(base_target_weight, 10.0), 140.0)
-            base_target_reps = int(rng.integers(6, 13))
-            base_target_rir = int(rng.integers(1, 4))
+            count = int(rng.integers(min_exercises, max_exercises + 1))
+            selected = rng.choice(exercise_ids, size=count, replace=False)
 
-            for set_number in range(1, sets_per_exercise + 1):
-                plan_sets_rows.append(
+            for position, exercise_id in enumerate(selected, start=1):
+                plan_exercise_id = _stable_uuid(
+                    "plan_exercise", f"{plan_day_id}:{exercise_id}:{position}"
+                )
+                plan_exercises_rows.append(
                     {
-                        "plan_set_id": _stable_uuid(
-                            "plan_set", f"{plan_exercise_id}:{set_number}"
-                        ),
                         "plan_exercise_id": plan_exercise_id,
-                        "set_number": set_number,
-                        "target_reps": base_target_reps,
-                        "target_weight": base_target_weight,
-                        "target_rir": base_target_rir,
-                        "rest_seconds": int(rng.integers(60, 181)),
+                        "plan_day_id": plan_day_id,
+                        "exercise_id": str(exercise_id),
+                        "position": position,
+                        "notes": "synthetic_plan_exercise",
                     }
                 )
 
+                base_target_weight = round(float(rng.normal(42, 18)), 1)
+                base_target_weight = min(max(base_target_weight, 10.0), 140.0)
+                base_target_reps = int(rng.integers(6, 13))
+                base_target_rir = int(rng.integers(1, 4))
+
+                for set_number in range(1, sets_per_exercise + 1):
+                    plan_sets_rows.append(
+                        {
+                            "plan_set_id": _stable_uuid(
+                                "plan_set", f"{plan_exercise_id}:{set_number}"
+                            ),
+                            "plan_exercise_id": plan_exercise_id,
+                            "set_number": set_number,
+                            "target_reps": base_target_reps,
+                            "target_weight": base_target_weight,
+                            "target_rir": base_target_rir,
+                            "rest_seconds": int(rng.integers(60, 181)),
+                        }
+                    )
+
     return {
         "workout_plans": pd.DataFrame(plans_rows),
+        "plan_days": pd.DataFrame(plan_days_rows),
         "plan_exercises": pd.DataFrame(plan_exercises_rows),
         "plan_sets": pd.DataFrame(plan_sets_rows),
     }
@@ -168,6 +200,7 @@ def _build_plan_tables(
 def _build_workout_execution_tables(
     users_df: pd.DataFrame,
     plans_df: pd.DataFrame,
+    plan_days_df: pd.DataFrame,
     plan_exercises_df: pd.DataFrame,
     plan_sets_df: pd.DataFrame,
     as_of: date,
@@ -179,13 +212,29 @@ def _build_workout_execution_tables(
     workout_ex_rows = []
     workout_sets_rows = []
 
-    plan_lookup = plans_df.set_index("user_id")["plan_id"].to_dict()
-    plan_ex_map = plan_exercises_df.groupby("plan_id")
+    # Build a per-user list of (plan_id, plan_day_id) pairs, sorted by
+    # plan creation order then day_order.  This supports users who have
+    # multiple plans — each workout is always tied to a (plan_id, plan_day_id)
+    # pair that genuinely belong together, eliminating the cross-plan
+    # consistency bug that arose when plan_lookup only kept one plan per user.
+    user_day_sequence: dict[str, list[tuple[str, str]]] = {}
+    for user_id in users_df["user_id"].tolist():
+        user_plans = plans_df[plans_df["user_id"] == user_id].sort_values("created_at")
+        pairs: list[tuple[str, str]] = []
+        for plan_id in user_plans["plan_id"]:
+            days = (
+                plan_days_df[plan_days_df["plan_id"] == plan_id]
+                .sort_values("day_order")["plan_day_id"]
+                .tolist()
+            )
+            pairs.extend((plan_id, day_id) for day_id in days)
+        user_day_sequence[user_id] = pairs
+
+    plan_ex_map = plan_exercises_df.groupby("plan_day_id")
     plan_set_map = plan_sets_df.groupby("plan_exercise_id")
 
     for user_id in users_df["user_id"].tolist():
-        plan_id = plan_lookup[user_id]
-        user_plan_exercises = plan_ex_map.get_group(plan_id).sort_values("position")
+        day_sequence = user_day_sequence[user_id]
 
         for session_idx in range(1, workouts_per_user + 1):
             days_ago = int(rng.integers(1, lookback_days + 1))
@@ -198,17 +247,29 @@ def _build_workout_execution_tables(
             duration = int(rng.integers(35, 95))
             end_dt = start_dt + timedelta(minutes=duration)
 
+            # Cycle through all (plan_id, plan_day_id) pairs across all of the
+            # user's plans — plan_id is derived from the selected day, so the
+            # two columns on `workouts` are always consistent.
+            plan_id, selected_plan_day_id = day_sequence[
+                (session_idx - 1) % len(day_sequence)
+            ]
+
             workout_id = _stable_uuid("workout", f"{user_id}:{session_idx}")
             workouts_rows.append(
                 {
                     "workout_id": workout_id,
                     "user_id": user_id,
                     "plan_id": plan_id,
+                    "plan_day_id": selected_plan_day_id,
                     "started_at": start_dt.isoformat(),
                     "ended_at": end_dt.isoformat(),
                     "notes": "synthetic_workout",
                 }
             )
+
+            user_plan_exercises = plan_ex_map.get_group(
+                selected_plan_day_id
+            ).sort_values("position")
 
             workout_ex_position = 1
             for row in user_plan_exercises.itertuples(index=False):
@@ -423,6 +484,7 @@ def generate_synthetic_workouts(
     execution_tables = _build_workout_execution_tables(
         users_df=users_df,
         plans_df=plan_tables["workout_plans"],
+        plan_days_df=plan_tables["plan_days"],
         plan_exercises_df=plan_tables["plan_exercises"],
         plan_sets_df=plan_tables["plan_sets"],
         as_of=as_of,
@@ -468,9 +530,7 @@ def generate_synthetic_workouts(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic workouts dataset")
-    parser.add_argument(
-        "--params", default="params.yaml", help="Path to params.yaml"
-    )
+    parser.add_argument("--params", default="params.yaml", help="Path to params.yaml")
     parser.add_argument(
         "--output-root", default=None, help="Optional output root override"
     )

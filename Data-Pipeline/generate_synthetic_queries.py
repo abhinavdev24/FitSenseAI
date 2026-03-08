@@ -158,9 +158,7 @@ def _format_user_context(
         ),
     ]
     if include_plan and plan_exercises:
-        plan_text = "; ".join(
-            f"{ex} {s}x{r} @ {w}kg" for ex, s, r, w in plan_exercises
-        )
+        plan_text = "; ".join(f"{ex} {s}x{r} @ {w}kg" for ex, s, r, w in plan_exercises)
         lines.append(f"Current plan: {plan_text}")
     return "\n".join(lines)
 
@@ -293,7 +291,7 @@ def _scenario_prompt(
                 "respect medical constraints and low-impact alternatives"
             )
 
-    elif prompt_type == "workout_logging":
+    elif prompt_type == "log_workout":
         num_exercises = int(rng.integers(2, 5))
         chosen_indices = rng.choice(
             len(EXERCISE_POOL), size=num_exercises, replace=False
@@ -326,17 +324,37 @@ def _scenario_prompt(
                 "respect medical constraints and low-impact alternatives"
             )
 
-    elif prompt_type == "metric_logging":
-        metric_type = str(rng.choice(["weight", "sleep", "calories"]))
-        if metric_type == "weight":
-            value = round(float(rng.uniform(50.0, 120.0)), 1)
-            metric_sentence = f"Log my weight as {value} kg today."
-        elif metric_type == "sleep":
-            value = round(float(rng.uniform(4.0, 10.0)), 1)
-            metric_sentence = f"I slept {value} hours last night."
-        else:
-            value = int(rng.integers(1200, 3500))
-            metric_sentence = f"I ate about {value} calories today."
+    elif prompt_type == "log_weight":
+        value = round(float(rng.uniform(50.0, 120.0)), 1)
+        metric_sentence = f"Log my weight as {value} kg today."
+        user_context_text = ""
+        full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
+        safety_constraints = [
+            "acknowledge the logged metric",
+            "flag outliers if value seems unusual",
+        ]
+        if conditions:
+            safety_constraints.append(
+                "respect medical constraints and low-impact alternatives"
+            )
+
+    elif prompt_type == "log_sleep":
+        value = round(float(rng.uniform(4.0, 10.0)), 1)
+        metric_sentence = f"I slept {value} hours last night."
+        user_context_text = ""
+        full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
+        safety_constraints = [
+            "acknowledge the logged metric",
+            "flag outliers if value seems unusual",
+        ]
+        if conditions:
+            safety_constraints.append(
+                "respect medical constraints and low-impact alternatives"
+            )
+
+    elif prompt_type == "log_calories":
+        value = int(rng.integers(1200, 3500))
+        metric_sentence = f"I ate about {value} calories today."
         user_context_text = ""
         full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
         safety_constraints = [
@@ -491,9 +509,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate synthetic teacher prompts from synthetic data"
     )
-    parser.add_argument(
-        "--params", default="params.yaml", help="Path to params.yaml"
-    )
+    parser.add_argument("--params", default="params.yaml", help="Path to params.yaml")
     parser.add_argument(
         "--raw-root", default=None, help="Optional raw data root override"
     )

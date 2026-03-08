@@ -29,6 +29,27 @@ from common.mock_data import (
 from common.reproducibility import apply_global_seed
 
 
+SEX_TO_DB = {
+    "male": "M",
+    "female": "F",
+    "non_binary": "other",
+}
+
+ACTIVITY_TO_DB = {
+    "sedentary": "sedentary",
+    "light": "lightly_active",
+    "moderate": "moderately_active",
+    "active": "very_active",
+    "very_active": "very_active",
+}
+
+SEVERITY_TO_DB = {
+    "mild": "mild",
+    "moderate": "moderate",
+    "high": "severe",
+}
+
+
 def _stable_uuid(kind: str, value: str) -> str:
     return str(uuid5(NAMESPACE_URL, f"fitsense:{kind}:{value}"))
 
@@ -65,10 +86,12 @@ def _create_users(
 
         age_years = int(rng.integers(18, 66))
         dob = as_of - timedelta(days=age_years * 365 + int(rng.integers(0, 365)))
-        sex = SEX_OPTIONS[int(rng.integers(0, len(SEX_OPTIONS)))]
+        sex = SEX_TO_DB[SEX_OPTIONS[int(rng.integers(0, len(SEX_OPTIONS)))]]
         height_cm = round(float(rng.normal(171.0, 10.0)), 1)
         height_cm = min(max(height_cm, 145.0), 205.0)
-        activity_level = ACTIVITY_LEVELS[int(rng.integers(0, len(ACTIVITY_LEVELS)))]
+        activity_level = ACTIVITY_TO_DB[
+            ACTIVITY_LEVELS[int(rng.integers(0, len(ACTIVITY_LEVELS)))]
+        ]
 
         profiles_rows.append(
             {
@@ -156,7 +179,9 @@ def _create_conditions_and_links(
                 {
                     "user_id": user_id,
                     "condition_id": str(condition_id),
-                    "severity": SEVERITIES[int(rng.integers(0, len(SEVERITIES)))],
+                    "severity": SEVERITY_TO_DB[
+                        SEVERITIES[int(rng.integers(0, len(SEVERITIES)))]
+                    ],
                     "notes": "synthetic_condition",
                 }
             )
@@ -181,7 +206,9 @@ def _create_medications(
                     "user_id": user_id,
                     "medication_name": med_name,
                     "dosage": f"{int(rng.integers(5, 501))} mg",
-                    "frequency": MEDICATION_FREQUENCIES[int(rng.integers(0, len(MEDICATION_FREQUENCIES)))],
+                    "frequency": MEDICATION_FREQUENCIES[
+                        int(rng.integers(0, len(MEDICATION_FREQUENCIES)))
+                    ],
                     "start_date": "2025-01-01",
                     "end_date": None,
                     "notes": "synthetic_medication",
@@ -207,8 +234,12 @@ def _create_allergies(
                     ),
                     "user_id": user_id,
                     "allergen": allergen,
-                    "reaction": ALLERGY_REACTIONS[int(rng.integers(0, len(ALLERGY_REACTIONS)))],
-                    "severity": SEVERITIES[int(rng.integers(0, len(SEVERITIES)))],
+                    "reaction": ALLERGY_REACTIONS[
+                        int(rng.integers(0, len(ALLERGY_REACTIONS)))
+                    ],
+                    "severity": SEVERITY_TO_DB[
+                        SEVERITIES[int(rng.integers(0, len(SEVERITIES)))]
+                    ],
                     "notes": "synthetic_allergy",
                 }
             )
@@ -230,9 +261,8 @@ def _create_targets(
 
     level_adjustment = {
         "sedentary": -250,
-        "light": -100,
-        "moderate": 0,
-        "active": 200,
+        "lightly_active": -100,
+        "moderately_active": 0,
         "very_active": 350,
     }
 
@@ -350,9 +380,7 @@ def generate_synthetic_profiles(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic profiles dataset")
-    parser.add_argument(
-        "--params", default="params.yaml", help="Path to params.yaml"
-    )
+    parser.add_argument("--params", default="params.yaml", help="Path to params.yaml")
     parser.add_argument(
         "--output-root", default=None, help="Optional output root override"
     )

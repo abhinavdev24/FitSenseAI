@@ -11,15 +11,36 @@ from pathlib import Path
 from typing import Any
 from uuid import NAMESPACE_URL, uuid5
 
-from groq import APIConnectionError, APIStatusError, Groq, RateLimitError
-
+from groq import APIConnectionError, APIStatusError, Groq
+from tqdm import tqdm
 from common.config import load_params
 from common.logging_utils import setup_logger
 from common.reproducibility import apply_global_seed
+from common.prompt_builder import build_system_prompt
+
+
+# Action types that benefit from extended reasoning (complex planning / safety-critical).
+# All other types use standard inference (thinking disabled) for lower latency and cost.
+THINKING_ENABLED_TYPES: frozenset[str] = frozenset(
+    {"plan_creation", "safety_adjustment", "progress_adaptation"}
+)
 
 
 class NonRetriableTeacherError(Exception):
     """Raised for configuration/auth/provider issues that should fail fast."""
+
+
+class TruncatedResponseError(ValueError):
+    """Raised when the model returned HTTP 200 but the output was cut off mid-generation.
+
+    This covers two observable symptoms of hitting the token limit:
+      - An unclosed ``<think>`` block (``</think>`` never appeared in the stream).
+      - A ``json.JSONDecodeError`` after the thinking block was stripped, meaning the
+        actual JSON payload was truncated before the closing brace.
+
+    Both cases are retriable: the retry loop will escalate the token budget so the
+    model has enough room to finish its output.
+    """
 
 
 def _stable_uuid(kind: str, value: str) -> str:
@@ -50,14 +71,6 @@ def _load_latest_queries(raw_root: Path) -> tuple[dict[str, Any], list[dict[str,
                 queries.append(json.loads(line))
 
     return latest_meta, queries
-
-
-def _build_system_prompt() -> str:
-    """Load the JSON-only coach system prompt from the prompts directory."""
-    path = Path("prompts/coach_system_prompt.md")
-    if not path.exists():
-        raise FileNotFoundError(f"Missing coach system prompt: {path}")
-    return path.read_text(encoding="utf-8").strip()
 
 
 def _load_env_file_if_present(repo_root: Path | None = None) -> None:
@@ -126,7 +139,12 @@ def _extract_thinking(response_text: str) -> tuple[str | None, str]:
 
     close_idx = response_text.find(close_tag, open_idx + len(open_tag))
     if close_idx == -1:
-        return None, response_text.strip()
+        # The closing tag is absent — the model was cut off inside the thinking block.
+        # Raise so the retry loop can escalate the token budget.
+        raise TruncatedResponseError(
+            "Response truncated: <think> opened but </think> never closed. "
+            "Output token limit was too low to finish the reasoning block."
+        )
 
     thinking_text = response_text[open_idx + len(open_tag) : close_idx]
     remaining = response_text[:open_idx] + response_text[close_idx + len(close_tag) :]
@@ -140,6 +158,7 @@ def _call_groq(
     cfg: dict[str, Any],
     system_prompt: str,
     logger: Any = None,
+    enable_thinking: bool = False,
 ) -> dict[str, Any]:
     api_key_env = str(cfg.get("api_key_env", "GROQ_API_KEY"))
     api_key = os.getenv(api_key_env)
@@ -156,19 +175,48 @@ def _call_groq(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_content},
     ]
-    create_kwargs: dict[str, Any] = {
-        "model": model,
-        "messages": messages,
-        "temperature": float(cfg.get("temperature", 0.2)),
-        "top_p": float(cfg.get("top_p", 1.0)),
-        "max_completion_tokens": int(cfg.get("max_output_tokens", 512)),
-    }
+
+    # Resolve token limits from the per-mode sub-block in params.yaml, falling back
+    # to the top-level max_output_tokens if the sub-block or key is absent.
+    # Qwen3 thinking mode also requires temperature=1 — enforced unconditionally here.
+    fallback_max_tokens = int(cfg.get("max_output_tokens", 2048))
+    if enable_thinking:
+        thinking_cfg = cfg.get("thinking", {})
+        max_output_tokens = int(
+            thinking_cfg.get("max_output_tokens", fallback_max_tokens)
+        )
+        budget_tokens = int(
+            thinking_cfg.get("thinking_budget_tokens", max_output_tokens // 3)
+        )
+        create_kwargs: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": 1.0,
+            "top_p": float(cfg.get("top_p", 1.0)),
+            "max_completion_tokens": max_output_tokens,
+            "thinking": {"type": "enabled", "budget_tokens": budget_tokens},
+        }
+    else:
+        non_thinking_cfg = cfg.get("non_thinking", {})
+        max_output_tokens = int(
+            non_thinking_cfg.get("max_output_tokens", fallback_max_tokens)
+        )
+        create_kwargs = {
+            "model": model,
+            "messages": messages,
+            "temperature": float(cfg.get("temperature", 0.2)),
+            "top_p": float(cfg.get("top_p", 1.0)),
+            "max_completion_tokens": max_output_tokens,
+        }
 
     if logger:
+        thinking_info = f"budget={budget_tokens}" if enable_thinking else "off"
         logger.info(
-            "  -> Groq API | model=%s | prompt_type=%s | timeout=%ds | prompt_chars=%d",
+            "  -> Groq API | model=%s | prompt_type=%s | thinking=%s | max_tokens=%d | timeout=%ds | prompt_chars=%d",
             model,
             query.get("prompt_type", "?"),
+            thinking_info,
+            max_output_tokens,
             timeout,
             len(user_content),
         )
@@ -205,10 +253,10 @@ def _call_groq(
     except json.JSONDecodeError as exc:
         if logger:
             logger.error(
-                "  !! JSON parse failed. Raw content (first 500 chars): %s",
+                "  !! JSON parse failed (likely truncated). Raw content (first 500 chars): %s",
                 content[:500],
             )
-        err = ValueError(f"Teacher response is not valid JSON: {exc}")
+        err = TruncatedResponseError(f"Teacher response is not valid JSON: {exc}")
         err._raw_response_text = content  # type: ignore[attr-defined]
         err._request_payload = create_kwargs  # type: ignore[attr-defined]
         raise err from exc
@@ -270,6 +318,36 @@ def _detect_safety_flags(
     return flags
 
 
+def _build_escalated_cfg(
+    cfg: dict[str, Any], originally_thinking: bool
+) -> dict[str, Any]:
+    """Return a shallow-copied cfg with token limits escalated for a truncation retry.
+
+    Rules
+    -----
+    - Non-thinking request that was truncated → retry WITH thinking enabled, using the
+      standard thinking token limits from ``cfg["thinking"]``.
+    - Thinking request that was truncated → retry with thinking still enabled but
+      ``max_output_tokens`` and ``thinking_budget_tokens`` both raised by 50 %.
+    """
+    escalated = dict(cfg)
+    thinking_cfg = dict(cfg.get("thinking", {}))
+    fallback_max = int(cfg.get("max_output_tokens", 2048))
+
+    if not originally_thinking:
+        # Promote to thinking mode using the standard thinking limits unchanged.
+        escalated["thinking"] = thinking_cfg
+    else:
+        # Already thinking — bump both caps by 50 %.
+        base_max = int(thinking_cfg.get("max_output_tokens", fallback_max))
+        base_budget = int(thinking_cfg.get("thinking_budget_tokens", base_max // 3))
+        thinking_cfg["max_output_tokens"] = int(base_max * 1.5)
+        thinking_cfg["thinking_budget_tokens"] = int(base_budget * 1.5)
+        escalated["thinking"] = thinking_cfg
+
+    return escalated
+
+
 def _invoke_teacher_with_retry(
     query: dict[str, Any],
     cfg: dict[str, Any],
@@ -284,14 +362,21 @@ def _invoke_teacher_with_retry(
     retries = int(cfg.get("max_retries", 3))
     backoff = float(cfg.get("retry_backoff_seconds", 1.5))
 
+    # Track whether thinking was originally requested for this prompt type, and
+    # whether the current attempt is running with thinking enabled (may be escalated).
+    originally_thinking = query.get("prompt_type") in THINKING_ENABLED_TYPES
+    enable_thinking = originally_thinking
+    active_cfg = cfg  # cfg used for the current attempt; may be escalated on truncation
+
     last_err: str | None = None
     for attempt in range(1, retries + 1):
         start = time.perf_counter()
         try:
             result = _call_groq(
                 query=query,
-                cfg=cfg,
+                cfg=active_cfg,
                 system_prompt=system_prompt,
+                enable_thinking=enable_thinking,
             )
             latency_ms = int((time.perf_counter() - start) * 1000)
             return {
@@ -316,8 +401,20 @@ def _invoke_teacher_with_retry(
                 "response_json": None,
                 "error": str(exc),
             }
+
+        except TruncatedResponseError as exc:
+            # HTTP 200 but output was cut off (unclosed <think> or invalid JSON).
+            # Escalate token limits and force thinking on for the next attempt.
+            last_err = str(exc)
+            if attempt < retries:
+                active_cfg = _build_escalated_cfg(
+                    active_cfg, originally_thinking=enable_thinking
+                )
+                enable_thinking = True  # always thinking after first truncation
+                time.sleep(backoff * attempt)
+
         except (ValueError, KeyError) as exc:
-            # Data/validation issues are deterministic and should not trigger long retries.
+            # Deterministic data/schema issues — not caused by truncation, not retriable.
             return {
                 "status": "failed",
                 "attempt_count": attempt,
@@ -344,7 +441,7 @@ def _invoke_teacher_with_retry(
                 }
             if attempt < retries:
                 time.sleep(backoff * attempt)
-        except (RateLimitError, APIConnectionError) as exc:
+        except APIConnectionError as exc:
             last_err = str(exc)
             if attempt < retries:
                 time.sleep(backoff * attempt)
@@ -381,16 +478,27 @@ def call_teacher_llm(
     if run_id is None:
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-    system_prompt = _build_system_prompt()
     output_dir = raw_root / "teacher_outputs" / run_id
     output_dir.mkdir(parents=True, exist_ok=True)
 
     request_delay = float(cfg.get("request_delay_seconds", 10))
     records: list[dict[str, Any]] = []
 
+    passed = 0
+    failed = 0
+    progress = tqdm(
+        total=len(queries),
+        desc="Teacher LLM",
+        unit="req",
+        bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}] {postfix}",
+        dynamic_ncols=True,
+    )
+    progress.set_postfix(passed=passed, failed=failed)
+
     for i, query in enumerate(queries):
         if i > 0:
             time.sleep(request_delay)
+        system_prompt = build_system_prompt(action=query["prompt_type"])
         invoke_result = _invoke_teacher_with_retry(
             query=query,
             cfg=cfg,
@@ -418,6 +526,7 @@ def call_teacher_llm(
             "scenario_id": query["scenario_id"],
             "user_id": query["user_id"],
             "prompt_type": query["prompt_type"],
+            "system_prompt": system_prompt,
             "prompt_text": query["prompt_text"],
             "provider": cfg.get("provider", "mock"),
             "model_name": cfg.get("model_name", "teacher-mock-v1"),
@@ -436,12 +545,22 @@ def call_teacher_llm(
         }
         records.append(record)
 
+        if invoke_result["status"] == "success":
+            passed += 1
+        else:
+            failed += 1
+        progress.set_postfix(passed=passed, failed=failed)
+        progress.update(1)
+
+    progress.close()
+
     responses_jsonl = output_dir / "responses.jsonl"
     responses_csv = output_dir / "responses.csv"
     summary_json = output_dir / "summary.json"
     failed_responses_jsonl = output_dir / "failed_responses.jsonl"
 
-    _write_jsonl(records=records, output_path=responses_jsonl)
+    success_records = [r for r in records if r["status"] == "success"]
+    _write_jsonl(records=success_records, output_path=responses_jsonl)
 
     failed_records = [r for r in records if r["status"] != "success"]
     _write_jsonl(records=failed_records, output_path=failed_responses_jsonl)
