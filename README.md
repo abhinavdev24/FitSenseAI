@@ -102,7 +102,7 @@ FitSenseAI includes an end-to-end synthetic-data MLOps pipeline under `Data-Pipe
 - synthetic query generation for a teacher LLM,
 - teacher response capture and storage,
 - distillation dataset creation (train/val/test JSONL),
-- validation, statistics, anomaly detection, and bias slicing,
+- validation, statistics, and anomaly detection,
 - Airflow DAG orchestration for the full workflow.
 
 Primary docs:
@@ -136,7 +136,6 @@ python Data-Pipeline/scripts/build_distillation_dataset.py
 python Data-Pipeline/scripts/validate_data.py
 python Data-Pipeline/scripts/compute_stats.py
 python Data-Pipeline/scripts/detect_anomalies.py
-python Data-Pipeline/scripts/bias_slicing.py
 ```
 
 Bootstrap outputs:

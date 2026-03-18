@@ -14,7 +14,7 @@ This complements existing pipeline checks in:
 
 - `Data-Pipeline/scripts/call_teacher_llm.py` (post-validation + safety flags)
 - `Data-Pipeline/scripts/build_distillation_dataset.py` (filters by post-validation and safety flags)
-- Phase 6 QA scripts (validation/stats/anomaly/bias slicing)
+- Phase 6 QA scripts (validation/stats/anomaly)
 
 ## 2. Scoring Inputs
 
@@ -83,4 +83,3 @@ Minimal MVP scores:
 
 - Offline: store per-run evaluation JSON in GCS under `reports/`.
 - Online: store `ai_interactions` references + model metadata in Cloud SQL, and aggregate metrics via logs-based metrics.
-

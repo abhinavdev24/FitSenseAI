@@ -38,7 +38,7 @@ Implemented today under `Data-Pipeline/`:
 - prompt generation with slice tags
 - teacher calling with post-validation and safety flags
 - distillation dataset creation with deterministic stratified splits
-- QA reports: validation, stats, anomaly detection, bias slicing
+- QA reports: validation, stats, and anomaly detection
 
 ## 4. Training Path (Distillation -> Student)
 
@@ -65,4 +65,3 @@ Single GPU inference is capacity-limited. The backend must:
 - cap per-request output tokens (target: 1024),
 - keep true GPU concurrency low (start at 2-3 in-flight sequences on vLLM),
 - queue excess requests (Cloud Tasks recommended) or return `429`.
-

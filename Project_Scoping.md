@@ -51,7 +51,7 @@ Solution components:
 - Daily health-adjacent tracking (calories, sleep, weight)
 - Teacher-student synthetic training data pipeline
 - Distillation dataset creation for student-model training
-- Data validation, anomaly detection, and bias slicing on pipeline outputs
+- Data validation and anomaly detection on pipeline outputs
 - Airflow orchestration for the data pipeline workflow
 
 ### 4.2 Out of Scope (Current Project Stage)
@@ -292,7 +292,7 @@ A release candidate is considered acceptable when:
 
 - plan quality metrics meet defined thresholds,
 - unsafe response rate remains below threshold on safety prompts,
-- bias slicing checks do not show unaddressed severe disparities under defined thresholds.
+- quality checks do not show unaddressed severe disparities under defined thresholds.
 
 ### Operational
 

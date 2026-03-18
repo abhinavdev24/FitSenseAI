@@ -48,6 +48,7 @@ jobs:
   run-scripts-and-generate-artifacts:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    needs: test
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     environment:
       name: data-pipeline-manual-trigger
@@ -86,7 +87,7 @@ jobs:
           python generate_synthetic_workouts.py --params params.yaml
           python generate_synthetic_queries.py --params params.yaml
 
-      - name: Prepare minimal inputs for validate.py and bias_slicing.py
+      - name: Prepare minimal inputs for validate.py
         working-directory: Data-Pipeline
         run: |
           mkdir -p data/raw/teacher-llm-responses/ci-smoke
@@ -94,20 +95,10 @@ jobs:
           {"response_id":"ci-response-1","status":"success","response_json":{"plan_name":"CI Smoke Plan","days":[{"name":"Day 1","day_order":1,"notes":"","exercises":[{"exercise_name":"Push-up","position":1,"notes":"","sets":[{"set_number":1,"target_reps":10,"target_rir":2,"rest_seconds":60}]}]}]}}
           JSONL
 
-          mkdir -p data/raw/distillation_dataset/ci-smoke
-          cat > data/raw/distillation_dataset/ci-smoke/all_records.jsonl <<'JSONL'
-          {"record_id":"ci-record-1","response":"Do 3 sets of 10 reps with moderate intensity.","context":{"slice_tags":{"age_band":"25-34","sex":"female","goal_type":"fat_loss","activity_level":"moderate","condition_flag":"none"}}}
-          JSONL
-
-          cat > data/raw/distillation_dataset/latest.json <<'JSON'
-          {"run_id":"ci-smoke","run_dir":"data/raw/distillation_dataset/ci-smoke"}
-          JSON
-
       - name: Run remaining top-level scripts except call_teacher.py
         working-directory: Data-Pipeline
         run: |
           python validate.py data/raw/teacher-llm-responses/ci-smoke/responses.jsonl
-          python bias_slicing.py --params params.yaml
           python find_rate_limit.py
 
       - name: Upload Data-Pipeline artifacts
@@ -122,5 +113,4 @@ jobs:
             Data-Pipeline/data/raw/synthetic_workouts/**
             Data-Pipeline/data/raw/synthetic_queries/**
             Data-Pipeline/data/raw/teacher-llm-responses/ci-smoke/**
-            Data-Pipeline/data/raw/distillation_dataset/**
             Data-Pipeline/logs/**

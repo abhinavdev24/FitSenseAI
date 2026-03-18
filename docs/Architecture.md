@@ -27,7 +27,7 @@ Phases implemented and orchestrated:
 4. synthetic natural-language query generation (prompt types + slice tags)
 5. teacher LLM calling + response capture (mock and openai-compatible providers)
 6. distillation dataset builder (filtering + deterministic stratified splits)
-7. QA: validation, statistics, anomaly detection, bias slicing
+7. QA: validation, statistics, and anomaly detection
 
 Airflow DAG:
 
@@ -90,7 +90,7 @@ Airflow DAG:
 - Distillation dataset:
   - `Data-Pipeline/data/raw/distillation_dataset/<run_id>/` (JSONL splits)
 - QA reports:
-  - `Data-Pipeline/data/reports/phase6/<run_id>/` (JSON)
+  - `Data-Pipeline/data/reports/` (JSON)
 
 ### 5.2 Online API (Planned)
 

@@ -32,7 +32,6 @@ This implementation intentionally does **not** use an external dataset. Instead,
 - Split sizes: **train=636**, **val=76**, **test=88**
 - Validation: **passed** (`valid=true`, `num_errors=0`)
 - Anomaly detection: **no anomalies** (`severity=none`)
-- Bias slicing: **no bias alert** (`bias_alert=false` under configured thresholds)
 
 ## 2. Data Card
 
@@ -197,21 +196,19 @@ Stored fields include:
 
 ![Distillation Split Sizes](docs_assets/distillation_split.svg)
 
-### 5.7 Phase 6: Validation, Statistics, Anomaly Detection, Bias Slicing
+### 5.7 Phase 6: Validation, Statistics, and Anomaly Detection
 
 Implemented modules:
 
 - `validate_data.py`
 - `compute_stats.py`
 - `detect_anomalies.py`
-- `bias_slicing.py`
 
 Generated reports:
 
 - `validation_report.json`
 - `stats_report.json`
 - `anomaly_report.json`
-- `bias_report.json`
 
 #### Prompt Type Distribution (current run)
 
@@ -225,13 +222,9 @@ Generated reports:
 
 ![Response Length Summary](docs_assets/response_length_summary.svg)
 
-#### Bias Slice Gap Summary (current run)
-
-![Bias Slice Gaps](docs_assets/bias_slice_gaps.svg)
-
 ## 6. Testing, Validation, and Monitoring
 
-Tests, schema/statistics generation, anomaly detection, and bias slicing are implemented in code and integrated into the pipeline.
+Tests, schema/statistics generation, and anomaly detection are implemented in code and integrated into the pipeline.
 
 ### 6.1 Tests Implemented
 
@@ -243,7 +236,6 @@ Tests present in `Data-Pipeline/tests/` include:
 - `test_generate_synthetic_queries.py`
 - `test_call_teacher_llm.py`
 - `test_build_distillation_dataset.py`
-- `test_phase6_modules.py`
 
 These cover:
 
@@ -252,7 +244,7 @@ These cover:
 - query metadata coverage,
 - teacher call output contracts,
 - distillation split integrity,
-- and phase-6 report generation.
+- and report generation.
 
 ### 6.2 Logging and Error Handling
 
@@ -283,20 +275,6 @@ Current run (`20260217T000000`) result:
 - `severity = none`
 - no active alerts
 
-### 6.4 Bias Slicing Analysis
-
-`bias_slicing.py` analyzes response-length disparity across slices:
-
-- `age_band`
-- `sex`
-- `goal_type`
-- `activity_level`
-- `condition_flag`
-
-Current run result:
-
-- `bias_alert = false` under configured threshold
-
 ## 7. DVC, Reproducibility, and Folder Structure
 
 ### 7.1 Folder Structure (actual implementation)
@@ -313,7 +291,6 @@ Data-Pipeline/
       teacher_outputs/
       distillation_dataset/
     reports/
-      phase6/
   logs/
   scripts/
     common/
@@ -326,7 +303,6 @@ Data-Pipeline/
     validate_data.py
     compute_stats.py
     detect_anomalies.py
-    bias_slicing.py
   tests/
   dvc.yaml
   params.yaml
@@ -360,7 +336,6 @@ python Data-Pipeline/scripts/build_distillation_dataset.py
 python Data-Pipeline/scripts/validate_data.py
 python Data-Pipeline/scripts/compute_stats.py
 python Data-Pipeline/scripts/detect_anomalies.py
-python Data-Pipeline/scripts/bias_slicing.py
 
 # Airflow local test
 export AIRFLOW_HOME=$PWD/.airflow

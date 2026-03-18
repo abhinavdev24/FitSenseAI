@@ -48,7 +48,7 @@ This document proposes a concrete system design for FitSenseAI on Google Cloud:
 
 1. Orchestrator triggers the offline pipeline run with a `run_id`.
 2. Batch jobs generate synthetic tables, prompts, teacher outputs, and a distillation dataset in GCS.
-3. QA jobs compute validation/stats/anomaly/bias slicing reports and store outputs in GCS.
+3. QA jobs compute validation/stats/anomaly reports and store outputs in GCS.
 4. Training job fine-tunes the student model from the distillation dataset and writes model artifacts + evaluation results to GCS with version metadata.
 
 ## 5. Data Storage Design
@@ -68,7 +68,7 @@ Use the schema in `database/postgresql.sql` (PostgreSQL) or `database/mysql.sql`
 
 - `gs://fitsenseai-mlops-{env}/datasets/distillation/<run_id>/...`
 - `gs://fitsenseai-mlops-{env}/teacher_outputs/<run_id>/...`
-- `gs://fitsenseai-mlops-{env}/reports/phase6/<run_id>/...`
+- `gs://fitsenseai-mlops-{env}/reports/<run_id>/...`
 - `gs://fitsenseai-mlops-{env}/models/student/<model_version>/...`
 
 ## 6. Training and Serving Design

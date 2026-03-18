@@ -12,7 +12,7 @@ This project is built around a teacher-student LLM workflow:
 - a larger teacher model generates high-quality coaching outputs for synthetic prompts,
 - a smaller student model is fine-tuned (distilled) for low-latency, predictable-cost deployment.
 
-The repository currently contains an implemented synthetic-data MLOps pipeline under `Data-Pipeline/` that generates synthetic user/workout/health data, produces teacher prompts, captures teacher outputs, builds a distillation dataset, and runs QA (validation/stats/anomaly detection/bias slicing) with Airflow orchestration.
+The repository currently contains an implemented synthetic-data MLOps pipeline under `Data-Pipeline/` that generates synthetic user/workout/health data, produces teacher prompts, captures teacher outputs, builds a distillation dataset, and runs QA (validation/stats/anomaly detection) with Airflow orchestration.
 
 ## 2. Problem Statement
 

@@ -46,7 +46,6 @@ From repo root:
 - `python Data-Pipeline/scripts/validate_data.py`
 - `python Data-Pipeline/scripts/compute_stats.py`
 - `python Data-Pipeline/scripts/detect_anomalies.py`
-- `python Data-Pipeline/scripts/bias_slicing.py`
 
 Artifacts appear under `Data-Pipeline/data/` and logs under `Data-Pipeline/logs/`.
 

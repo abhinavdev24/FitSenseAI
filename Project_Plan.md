@@ -8,7 +8,7 @@ The repository now contains an implemented synthetic-data MLOps pipeline under `
 - synthetic query generation for teacher prompting,
 - teacher LLM response capture,
 - distillation dataset construction for student-model training,
-- validation/statistics/anomaly detection/bias slicing,
+- validation/statistics/anomaly detection,
 - Airflow DAG orchestration (`fitsense_pipeline`),
 - local pipeline documentation and diagrams.
 
@@ -63,8 +63,7 @@ This phase is implemented in `Data-Pipeline/` and includes the project’s synth
    - `validate_data.py`
    - `compute_stats.py`
    - `detect_anomalies.py`
-   - `bias_slicing.py`
-   - reports under `Data-Pipeline/data/reports/phase6/`
+   - reports under `Data-Pipeline/data/reports/`
 
 7. **Airflow orchestration**
    - `Data-Pipeline/dags/fitsense_pipeline.py`
@@ -79,7 +78,7 @@ This phase is implemented in `Data-Pipeline/` and includes the project’s synth
 - Synthetic generators -> query generation
 - Query generation -> teacher response capture
 - Teacher responses -> distillation dataset build
-- Distillation dataset -> validation/stats/anomaly/bias reports
+- Distillation dataset -> validation/stats/anomaly reports
 - All scripts -> Airflow DAG orchestration
 
 ---

@@ -12,7 +12,7 @@ Delivered in `Data-Pipeline/`:
 - synthetic prompt generation
 - teacher calling + response capture
 - distillation dataset build with deterministic splits
-- QA reports: validation/stats/anomaly/bias slicing
+- QA reports: validation/stats/anomaly
 - Airflow DAG orchestration
 - tests
 
@@ -51,4 +51,3 @@ Deliverables:
 - cost monitoring and quotas
 - safety regression tests integrated into CI
 - incident runbook basics
-
