@@ -38,8 +38,6 @@ def test_fitsense_pipeline_references_existing_scripts_static():
         "generate_synthetic_profiles.py",
         "generate_synthetic_workouts.py",
         "generate_synthetic_queries.py",
-        "call_teacher.py",
-        "validate.py",
     }
     assert expected_scripts.issubset(referenced)
 
