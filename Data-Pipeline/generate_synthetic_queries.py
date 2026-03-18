@@ -1,10 +1,25 @@
-"""Generate synthetic teacher-ready prompts from synthetic profile/workout data."""
+"""Generate schema-aligned synthetic LLM query rows for FitSense AI.
+
+Each row represents a prompt that will be sent to the teacher model in a
+separate inference script.  This script only builds and persists the prompts;
+it does NOT call any LLM.
+
+Output fields per row
+---------------------
+query_id        : stable UUID derived from (prompt_type, user_id, variant_idx)
+user_id         : FK → users.user_id
+prompt_type     : "plan_creation" | "plan_updation"
+prompt_text     : fully-rendered natural-language prompt (no system prompt)
+source_run_ids  : {"synthetic_profiles": <run_id>, "synthetic_workouts": <run_id>}
+created_at      : ISO-8601 timestamp (UTC)
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+import textwrap
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
@@ -13,505 +28,445 @@ import pandas as pd
 
 from common.config import load_params
 from common.logging_utils import setup_logger
-from common.mock_data import EXERCISE_POOL
-from common.mock_queries import COACHING_QA_PROMPTS
 from common.reproducibility import apply_global_seed
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 
 def _stable_uuid(kind: str, value: str) -> str:
     return str(uuid5(NAMESPACE_URL, f"fitsense:{kind}:{value}"))
 
 
-def _load_latest_run(raw_root: Path, dataset_name: str) -> tuple[dict, Path]:
-    latest_path = raw_root / dataset_name / "latest.json"
-    if not latest_path.exists():
-        raise FileNotFoundError(f"Missing latest run pointer: {latest_path}")
+def _parse_as_of(as_of_date: str) -> date:
+    return date.fromisoformat(as_of_date)
 
+
+# ---------------------------------------------------------------------------
+# Data loaders
+# ---------------------------------------------------------------------------
+
+
+def _load_latest_profiles(raw_root: Path) -> tuple[dict[str, pd.DataFrame], str]:
+    latest_path = raw_root / "synthetic_profiles" / "latest.json"
+    if not latest_path.exists():
+        raise FileNotFoundError(
+            "Profiles run not found. Run generate_synthetic_profiles.py first."
+        )
     payload = json.loads(latest_path.read_text(encoding="utf-8"))
     run_dir = Path(payload["run_dir"])
-    return payload, run_dir
+    run_id: str = payload["run_id"]
+
+    tables = {}
+    for name in [
+        "users",
+        "user_profiles",
+        "goals",
+        "user_goals",
+        "conditions",
+        "user_conditions",
+        "user_medical_profiles",
+        "user_medications",
+        "user_allergies",
+    ]:
+        tables[name] = pd.read_csv(run_dir / f"{name}.csv")
+
+    return tables, run_id
 
 
-def _age_band(age: int) -> str:
-    if age < 25:
-        return "18-24"
-    if age < 35:
-        return "25-34"
-    if age < 45:
-        return "35-44"
-    if age < 55:
-        return "45-54"
-    return "55+"
-
-
-def _build_user_context(
-    raw_root: Path,
-) -> tuple[pd.DataFrame, dict[str, str], dict[str, str]]:
-    _, profile_dir = _load_latest_run(
-        raw_root=raw_root, dataset_name="synthetic_profiles"
-    )
-    _, workout_dir = _load_latest_run(
-        raw_root=raw_root, dataset_name="synthetic_workouts"
-    )
-
-    users = pd.read_csv(profile_dir / "users.csv")
-    user_profiles = pd.read_csv(profile_dir / "user_profiles.csv")
-    goals = pd.read_csv(profile_dir / "goals.csv")
-    user_goals = pd.read_csv(profile_dir / "user_goals.csv")
-    conditions = pd.read_csv(profile_dir / "conditions.csv")
-    user_conditions = pd.read_csv(profile_dir / "user_conditions.csv")
-
-    workouts = pd.read_csv(workout_dir / "workouts.csv")
-    workout_exercises = pd.read_csv(workout_dir / "workout_exercises.csv")
-    workout_sets = pd.read_csv(workout_dir / "workout_sets.csv")
-
-    goal_name_map = dict(zip(goals["goal_id"], goals["name"]))
-    cond_name_map = dict(zip(conditions["condition_id"], conditions["name"]))
-
-    primary_goals = user_goals.sort_values(["user_id", "priority"]).drop_duplicates(
-        "user_id", keep="first"
-    )[["user_id", "goal_id"]]
-    primary_goals["primary_goal"] = primary_goals["goal_id"].map(goal_name_map)
-
-    user_conditions["condition_name"] = user_conditions["condition_id"].map(
-        cond_name_map
-    )
-    cond_agg = (
-        user_conditions.groupby("user_id")["condition_name"]
-        .apply(lambda s: sorted([x for x in s.dropna().unique().tolist()]))
-        .reset_index(name="conditions")
-    )
-
-    workout_counts = (
-        workouts.groupby("user_id").size().reset_index(name="workout_count")
-    )
-
-    ws = workout_sets.merge(
-        workout_exercises[["workout_exercise_id", "workout_id"]],
-        on="workout_exercise_id",
-        how="inner",
-    ).merge(workouts[["workout_id", "user_id"]], on="workout_id", how="inner")
-
-    perf = (
-        ws.groupby("user_id")
-        .agg(
-            avg_reps=("reps", "mean"),
-            avg_weight=("weight", "mean"),
-            avg_rir=("rir", "mean"),
+def _load_latest_workouts(raw_root: Path) -> tuple[dict[str, pd.DataFrame], str]:
+    latest_path = raw_root / "synthetic_workouts" / "latest.json"
+    if not latest_path.exists():
+        raise FileNotFoundError(
+            "Workouts run not found. Run generate_synthetic_workouts.py first."
         )
-        .reset_index()
-    )
+    payload = json.loads(latest_path.read_text(encoding="utf-8"))
+    run_dir = Path(payload["run_dir"])
+    run_id: str = payload["run_id"]
 
-    context = (
-        users[["user_id", "name"]]
-        .merge(
-            user_profiles[["user_id", "date_of_birth", "sex", "activity_level"]],
-            on="user_id",
-            how="left",
-        )
-        .merge(primary_goals[["user_id", "primary_goal"]], on="user_id", how="left")
-        .merge(cond_agg, on="user_id", how="left")
-        .merge(workout_counts, on="user_id", how="left")
-        .merge(perf, on="user_id", how="left")
-    )
+    tables = {}
+    for name in [
+        "workout_plans",
+        "plan_days",
+        "plan_exercises",
+        "plan_sets",
+        "workouts",
+        "workout_exercises",
+        "workout_sets",
+        "exercises",
+    ]:
+        tables[name] = pd.read_csv(run_dir / f"{name}.csv")
 
-    context["conditions"] = context["conditions"].apply(
-        lambda x: x if isinstance(x, list) else []
-    )
-    context["workout_count"] = context["workout_count"].fillna(0).astype(int)
-    context["avg_reps"] = context["avg_reps"].fillna(0.0)
-    context["avg_weight"] = context["avg_weight"].fillna(0.0)
-    context["avg_rir"] = context["avg_rir"].fillna(0.0)
-
-    return context, goal_name_map, cond_name_map
+    return tables, run_id
 
 
-def _compute_age(dob_str: str) -> int:
-    dob = datetime.fromisoformat(dob_str).date()
-    today = datetime.now(timezone.utc).date()
-    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-    return max(age, 18)
+# ---------------------------------------------------------------------------
+# Per-user context builders
+# ---------------------------------------------------------------------------
 
 
-def _format_user_context(
-    row: pd.Series,
-    age_band: str,
-    include_plan: bool = False,
-    plan_exercises: list[tuple[str, int, int, int]] | None = None,
+def _build_bio_block(
+    user_id: str, profiles: dict[str, pd.DataFrame], as_of: date
 ) -> str:
-    """Format user context as a labeled text block for embedding in prompts.
-
-    No PII is included — no name, email, or identifying credentials.
-    """
-    cond_text = ", ".join(row["conditions"]) if row["conditions"] else "none"
-    lines = [
-        f"Age band: {age_band}",
-        f"Sex: {row['sex']}",
-        f"Activity level: {row['activity_level']}",
-        f"Primary goal: {row['primary_goal'] or 'general_fitness'}",
-        f"Medical conditions: {cond_text}",
-        f"Recent workouts: {int(row['workout_count'])} sessions",
-        (
-            f"Avg reps: {row['avg_reps']:.1f} | "
-            f"Avg weight: {row['avg_weight']:.1f} kg | "
-            f"Avg RIR: {row['avg_rir']:.1f}"
-        ),
+    """Return a compact bio/medical paragraph for a single user."""
+    prof_row = profiles["user_profiles"][
+        profiles["user_profiles"]["user_id"] == user_id
     ]
-    if include_plan and plan_exercises:
-        plan_text = "; ".join(f"{ex} {s}x{r} @ {w}kg" for ex, s, r, w in plan_exercises)
-        lines.append(f"Current plan: {plan_text}")
+    if prof_row.empty:
+        return "No profile data available."
+
+    r = prof_row.iloc[0]
+    dob = date.fromisoformat(str(r["date_of_birth"]))
+    age = (as_of - dob).days // 365
+
+    # Goals
+    user_goal_ids = (
+        profiles["user_goals"][profiles["user_goals"]["user_id"] == user_id]
+        .sort_values("priority")["goal_id"]
+        .tolist()
+    )
+    goals_df = profiles["goals"]
+    goal_names = goals_df[goals_df["goal_id"].isin(user_goal_ids)]["name"].tolist()
+
+    # Conditions
+    user_cond_ids = profiles["user_conditions"][
+        profiles["user_conditions"]["user_id"] == user_id
+    ]["condition_id"].tolist()
+    cond_names = profiles["conditions"][
+        profiles["conditions"]["condition_id"].isin(user_cond_ids)
+    ]["name"].tolist()
+
+    # Medical
+    med_row = profiles["user_medical_profiles"][
+        profiles["user_medical_profiles"]["user_id"] == user_id
+    ]
+    injury_text = "none"
+    if not med_row.empty and bool(med_row.iloc[0]["has_injuries"]):
+        injury_text = str(med_row.iloc[0]["injury_details"] or "unspecified")
+
+    # Medications
+    meds = profiles["user_medications"][
+        profiles["user_medications"]["user_id"] == user_id
+    ][["medication_name", "dosage", "frequency"]].to_dict("records")
+    med_text = (
+        ", ".join(
+            f"{m['medication_name']} {m['dosage']} {m['frequency']}" for m in meds
+        )
+        if meds
+        else "none"
+    )
+
+    # Allergies
+    allergies = profiles["user_allergies"][
+        profiles["user_allergies"]["user_id"] == user_id
+    ]["allergen"].tolist()
+    allergy_text = ", ".join(allergies) if allergies else "none"
+
+    lines = [
+        f"Age: {age}, Sex: {r['sex']}, Height: {r['height_cm']} cm",
+        f"Activity level: {r['activity_level']}",
+        f"Goals (priority order): {', '.join(goal_names) if goal_names else 'none'}",
+        f"Medical conditions: {', '.join(cond_names) if cond_names else 'none'}",
+        f"Injuries: {injury_text}",
+        f"Medications: {med_text}",
+        f"Allergies: {allergy_text}",
+    ]
     return "\n".join(lines)
 
 
-def _scenario_prompt(
-    prompt_type: str,
-    context_row: pd.Series,
-    rng: np.random.Generator,
-    age_band: str,
-) -> tuple[str, str, list[str]]:
-    """Build the user context text, full prompt text, and safety constraints for a scenario.
+def _build_current_plan_block(user_id: str, workouts: dict[str, pd.DataFrame]) -> str:
+    """Return a compact text summary of the user's active workout plan."""
+    plan_row = workouts["workout_plans"][
+        (workouts["workout_plans"]["user_id"] == user_id)
+        & (workouts["workout_plans"]["is_active"].astype(str).str.lower() == "true")
+    ]
+    if plan_row.empty:
+        return "No active plan found."
 
-    Returns:
-        A tuple of (user_context_text, full_prompt_text, safety_constraints).
-        full_prompt_text is the complete assembled prompt to send to the teacher LLM.
+    plan_id = plan_row.iloc[0]["plan_id"]
+    plan_name = plan_row.iloc[0]["name"]
+    days = workouts["plan_days"][
+        workouts["plan_days"]["plan_id"] == plan_id
+    ].sort_values("day_order")
+
+    exercises_df = workouts["exercises"]
+    lines = [f"Plan: {plan_name}"]
+    for _, day in days.iterrows():
+        plan_day_id = day["plan_day_id"]
+        lines.append(f"  Day {day['day_order']} — {day['name']}:")
+        plan_exs = workouts["plan_exercises"][
+            workouts["plan_exercises"]["plan_day_id"] == plan_day_id
+        ].sort_values("position")
+        for _, pex in plan_exs.iterrows():
+            ex_name_series = exercises_df[
+                exercises_df["exercise_id"] == pex["exercise_id"]
+            ]["name"]
+            ex_name = ex_name_series.iloc[0] if not ex_name_series.empty else "Unknown"
+            sets = workouts["plan_sets"][
+                workouts["plan_sets"]["plan_exercise_id"] == pex["plan_exercise_id"]
+            ].sort_values("set_number")
+            set_summary = "; ".join(
+                f"set {s['set_number']}: {s['target_reps']} reps @ RIR {s['target_rir']}"
+                for _, s in sets.iterrows()
+            )
+            lines.append(f"    {ex_name}: {set_summary}")
+    return "\n".join(lines)
+
+
+def _build_recent_workout_block(
+    user_id: str,
+    workouts: dict[str, pd.DataFrame],
+    n_sessions: int = 3,
+) -> str:
+    """Return a compact text summary of the last n_sessions completed workouts."""
+    user_workouts = (
+        workouts["workouts"][workouts["workouts"]["user_id"] == user_id]
+        .sort_values("started_at", ascending=False)
+        .head(n_sessions)
+    )
+
+    if user_workouts.empty:
+        return "No recorded workouts."
+
+    exercises_df = workouts["exercises"]
+    lines: list[str] = []
+    for _, w in user_workouts.iterrows():
+        workout_id = w["workout_id"]
+        lines.append(f"Workout on {str(w['started_at'])[:10]}:")
+        wx_rows = workouts["workout_exercises"][
+            workouts["workout_exercises"]["workout_id"] == workout_id
+        ].sort_values("position")
+        for _, wx in wx_rows.iterrows():
+            ex_name_series = exercises_df[
+                exercises_df["exercise_id"] == wx["exercise_id"]
+            ]["name"]
+            ex_name = ex_name_series.iloc[0] if not ex_name_series.empty else "Unknown"
+            w_sets = workouts["workout_sets"][
+                workouts["workout_sets"]["workout_exercise_id"]
+                == wx["workout_exercise_id"]
+            ].sort_values("set_number")
+            set_summary = "; ".join(
+                f"set {s['set_number']}: {s['reps']} reps @ {s['weight']} kg, RIR {s['rir']}"
+                for _, s in w_sets.iterrows()
+            )
+            lines.append(f"  {ex_name}: {set_summary}")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Prompt renderers
+# ---------------------------------------------------------------------------
+
+_PLAN_CREATION_VARIANTS = [
+    "Generate a new workout plan for me.",
+    "I want to start fresh with a new training plan.",
+    "Create a weekly workout plan suited to my profile.",
+    "Design a new plan optimised for my goals.",
+    "Build me a workout plan from scratch.",
+]
+
+_PLAN_UPDATION_VARIANTS = [
+    "Update my current plan based on how my last few sessions went.",
+    "I've been feeling the workouts are too easy. Adjust the plan.",
+    "My recovery has been poor lately. Dial the intensity back a bit.",
+    "Swap out any exercises that stress my injuries and update my plan.",
+    "I want to add more volume on push days. Update the plan accordingly.",
+    "Based on my recent workouts, make my plan more progressive.",
+    "I've hit a plateau. Update the plan to break it.",
+]
+
+
+def _render_plan_creation_prompt(bio_block: str, variant_request: str) -> str:
+    return textwrap.dedent(
+        f"""\
+        {variant_request}
+
+        ## My Profile
+        {bio_block}
+
+        ## Instructions
+        - Do NOT include any weights in the plan.
+        - Specify number of sets, target reps, and RIR (Reps In Reserve) for each set.
+        - RIR scale: 0 = to failure, 1 = 1 rep left, 2 = 2 reps left, 3 = comfortable.
+        - Respect all medical conditions, injuries, and medications listed above.
+        - Organise the plan into named training days (e.g. PUSH_1, PULL_1, LEGS_1).
+        - Return a valid JSON object and nothing else.
     """
-    goal = context_row["primary_goal"] or "general_fitness"
-    conditions = context_row["conditions"]
-    cond_text = ", ".join(conditions) if conditions else "none"
-
-    safety_constraints = ["avoid unsafe load spikes", "prioritize progressive overload"]
-    if conditions:
-        safety_constraints.append(
-            "respect medical constraints and low-impact alternatives"
-        )
-
-    if prompt_type == "plan_creation":
-        user_context_text = _format_user_context(row=context_row, age_band=age_band)
-        request_text = (
-            f"Create a 7-day workout plan for a user with goal '{goal}', "
-            f"activity level '{context_row['activity_level']}', "
-            f"conditions: {cond_text}. Include sets, reps, RIR, and rest guidance."
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-
-    elif prompt_type == "plan_modification":
-        num_exercises = int(rng.integers(2, 5))
-        chosen_indices = rng.choice(
-            len(EXERCISE_POOL), size=num_exercises, replace=False
-        )
-        plan_exercises = [EXERCISE_POOL[i] for i in chosen_indices]
-        user_context_text = _format_user_context(
-            row=context_row,
-            age_band=age_band,
-            include_plan=True,
-            plan_exercises=plan_exercises,
-        )
-        request_text = (
-            "Adjust intensity and exercise order for next week based on this user's "
-            "recent performance."
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-
-    elif prompt_type == "safety_adjustment":
-        num_exercises = int(rng.integers(2, 5))
-        chosen_indices = rng.choice(
-            len(EXERCISE_POOL), size=num_exercises, replace=False
-        )
-        plan_exercises = [EXERCISE_POOL[i] for i in chosen_indices]
-        user_context_text = _format_user_context(
-            row=context_row,
-            age_band=age_band,
-            include_plan=True,
-            plan_exercises=plan_exercises,
-        )
-        request_text = (
-            "Identify contraindicated movements given these conditions and suggest "
-            "safer substitutes."
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-
-    elif prompt_type == "progress_adaptation":
-        trend = str(rng.choice(["plateau", "improving", "fatigue_signals"]))
-        user_context_text = (
-            f"Goal: {goal}\n"
-            f"Activity level: {context_row['activity_level']}\n"
-            f"Recent workouts: {int(context_row['workout_count'])} sessions\n"
-            f"Avg reps: {context_row['avg_reps']:.1f} | "
-            f"Avg weight: {context_row['avg_weight']:.1f} kg | "
-            f"Avg RIR: {context_row['avg_rir']:.1f}\n"
-            f"Trend: {trend}"
-        )
-        request_text = (
-            f"Trend is '{trend}' with goal '{goal}'. Propose progression or deload "
-            "adjustments for the next 2 weeks, and explain why."
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-
-    elif prompt_type == "progress_comment":
-        workout_count = int(context_row["workout_count"])
-        avg_reps = context_row["avg_reps"]
-        avg_weight = context_row["avg_weight"]
-        user_context_text = (
-            f"Goal: {goal}\n"
-            f"Recent workouts: {workout_count} sessions\n"
-            f"Avg reps: {avg_reps:.1f} | Avg weight: {avg_weight:.1f} kg"
-        )
-        request_text = (
-            f"How am I doing toward my {goal} goal? I've done {workout_count} sessions "
-            f"so far, averaging {avg_reps:.1f} reps at {avg_weight:.1f} kg. "
-            "Can you summarize my recent progress and suggest what to focus on next?"
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-        safety_constraints = [
-            "provide encouraging but honest feedback",
-            "flag overtraining risk if relevant",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    elif prompt_type == "log_workout":
-        num_exercises = int(rng.integers(2, 5))
-        chosen_indices = rng.choice(
-            len(EXERCISE_POOL), size=num_exercises, replace=False
-        )
-        exercise_lines = []
-        for idx in chosen_indices:
-            name, sets, reps, weight = EXERCISE_POOL[idx]
-            actual_weight = max(0, weight + int(rng.integers(-10, 11)))
-            if actual_weight > 0:
-                exercise_lines.append(f"{name} {sets}x{reps} at {actual_weight} kg")
-            else:
-                exercise_lines.append(f"{name} {sets}x{reps} bodyweight")
-        exercises_text = ", ".join(exercise_lines)
-        user_context_text = f"Medical conditions: {cond_text}"
-        request_text = (
-            f"I just finished my workout. I did {exercises_text}. "
-            "Please log this session and let me know how it aligns with my current plan."
-        )
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-        safety_constraints = [
-            "validate exercise form cues",
-            "check load is appropriate for user level",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    elif prompt_type == "log_weight":
-        value = round(float(rng.uniform(50.0, 120.0)), 1)
-        metric_sentence = f"Log my weight as {value} kg today."
-        user_context_text = ""
-        full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
-        safety_constraints = [
-            "acknowledge the logged metric",
-            "flag outliers if value seems unusual",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    elif prompt_type == "log_sleep":
-        value = round(float(rng.uniform(4.0, 10.0)), 1)
-        metric_sentence = f"I slept {value} hours last night."
-        user_context_text = ""
-        full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
-        safety_constraints = [
-            "acknowledge the logged metric",
-            "flag outliers if value seems unusual",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    elif prompt_type == "log_calories":
-        value = int(rng.integers(1200, 3500))
-        metric_sentence = f"I ate about {value} calories today."
-        user_context_text = ""
-        full_prompt_text = f"[ACTION: {prompt_type}]\n\n{metric_sentence}"
-        safety_constraints = [
-            "acknowledge the logged metric",
-            "flag outliers if value seems unusual",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    elif prompt_type == "coaching_qa":
-        question = str(rng.choice(COACHING_QA_PROMPTS))
-        user_context_text = f"Goal: {goal}\nConditions: {cond_text}"
-        request_text = f"Goal: {goal}\nConditions: {cond_text}\n\n{question}"
-        full_prompt_text = (
-            f"[ACTION: {prompt_type}]\n\n"
-            f"[USER CONTEXT]\n{user_context_text}\n\n"
-            f"{request_text}"
-        )
-        safety_constraints = [
-            "provide evidence-based guidance",
-            "avoid medical diagnosis or prescription",
-        ]
-        if conditions:
-            safety_constraints.append(
-                "respect medical constraints and low-impact alternatives"
-            )
-
-    else:
-        raise ValueError(f"Unsupported prompt type: {prompt_type}")
-
-    return user_context_text, full_prompt_text, safety_constraints
+    ).strip()
 
 
-def _write_jsonl(records: list[dict], output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
-        for record in records:
-            handle.write(json.dumps(record) + "\n")
+def _render_plan_updation_prompt(
+    bio_block: str,
+    plan_block: str,
+    recent_block: str,
+    variant_request: str,
+) -> str:
+    return textwrap.dedent(
+        f"""\
+        {variant_request}
+
+        ## My Profile
+        {bio_block}
+
+        ## Current Plan
+        {plan_block}
+
+        ## Recent Workout History (last 3 sessions)
+        {recent_block}
+
+        ## Instructions
+        - Do NOT include any weights in the updated plan.
+        - Specify number of sets, target reps, and RIR for each set.
+        - Respect all medical conditions, injuries, and medications listed above.
+        - Return the full updated plan as a valid JSON object and nothing else.
+    """
+    ).strip()
+
+
+# ---------------------------------------------------------------------------
+# Main generator
+# ---------------------------------------------------------------------------
 
 
 def generate_synthetic_queries(
-    params: dict, raw_root: Path, run_id: str | None = None
+    params: dict,
+    output_root: Path,
+    run_id: str | None = None,
 ) -> tuple[pd.DataFrame, Path]:
-    cfg = params["phase3"]["synthetic_queries"]
-    prompt_types: list[str] = list(cfg["prompt_types"])
-    prompts_per_type = int(cfg["prompts_per_type"])
-
-    if prompts_per_type < 1:
-        raise ValueError("phase3.synthetic_queries.prompts_per_type must be >= 1")
+    synthetic_cfg = params["phase2"]["synthetic"]
+    queries_cfg = synthetic_cfg.get("queries", {})
 
     seed = int(params["reproducibility"]["seed"]) + 2
     rng = np.random.default_rng(seed)
+    as_of = _parse_as_of(str(synthetic_cfg["as_of_date"]))
 
-    profile_meta, _ = _load_latest_run(
-        raw_root=raw_root, dataset_name="synthetic_profiles"
+    profiles_tables, profiles_run_id = _load_latest_profiles(output_root)
+    workouts_tables, workouts_run_id = _load_latest_workouts(output_root)
+
+    source_run_ids = {
+        "synthetic_profiles": profiles_run_id,
+        "synthetic_workouts": workouts_run_id,
+    }
+
+    users_df = profiles_tables["users"]
+    # Optionally cap the number of users to generate queries for
+    max_users: int | None = queries_cfg.get("max_users", None)
+    if max_users is not None:
+        users_df = users_df.head(int(max_users))
+
+    queries_per_user_creation: int = int(
+        queries_cfg.get("queries_per_user_creation", 1)
     )
-    workout_meta, _ = _load_latest_run(
-        raw_root=raw_root, dataset_name="synthetic_workouts"
+    queries_per_user_updation: int = int(
+        queries_cfg.get("queries_per_user_updation", 1)
     )
-    context_df, _, _ = _build_user_context(raw_root=raw_root)
 
-    now_iso = datetime.now(timezone.utc).isoformat()
-    records: list[dict] = []
+    rows: list[dict] = []
+    created_at = datetime.now(timezone.utc).isoformat()
 
-    for _, row in context_df.iterrows():
-        user_id = row["user_id"]
-        age = _compute_age(str(row["date_of_birth"]))
-        age_band = _age_band(age)
-        conditions = row["conditions"] if isinstance(row["conditions"], list) else []
-        condition_flag = "has_condition" if conditions else "none"
+    for user_id in users_df["user_id"].tolist():
+        bio_block = _build_bio_block(user_id, profiles_tables, as_of)
+        plan_block = _build_current_plan_block(user_id, workouts_tables)
+        recent_block = _build_recent_workout_block(user_id, workouts_tables)
 
-        for prompt_type in prompt_types:
-            for variant_idx in range(prompts_per_type):
-                scenario_id = _stable_uuid(
-                    "scenario", f"{user_id}:{prompt_type}:{variant_idx}"
-                )
-                query_id = _stable_uuid("query", f"{scenario_id}")
-                user_context_text, prompt_text, safety_constraints = _scenario_prompt(
-                    prompt_type=prompt_type,
-                    context_row=row,
-                    rng=rng,
-                    age_band=age_band,
-                )
-
-                record = {
+        # ---- plan_creation queries ----
+        variant_indices = rng.choice(
+            len(_PLAN_CREATION_VARIANTS),
+            size=queries_per_user_creation,
+            replace=(
+                False
+                if queries_per_user_creation <= len(_PLAN_CREATION_VARIANTS)
+                else True
+            ),
+        ).tolist()
+        for vi, variant_idx in enumerate(variant_indices):
+            variant_request = _PLAN_CREATION_VARIANTS[int(variant_idx)]
+            prompt_text = _render_plan_creation_prompt(bio_block, variant_request)
+            query_id = _stable_uuid("query", f"plan_creation:{user_id}:{vi}")
+            rows.append(
+                {
                     "query_id": query_id,
-                    "scenario_id": scenario_id,
                     "user_id": user_id,
-                    "prompt_type": prompt_type,
-                    "prompt_variant": variant_idx,
-                    "user_context_text": user_context_text,
+                    "prompt_type": "plan_creation",
                     "prompt_text": prompt_text,
-                    "slice_tags": {
-                        "age_band": age_band,
-                        "sex": row["sex"],
-                        "goal_type": row["primary_goal"] or "general_fitness",
-                        "activity_level": row["activity_level"],
-                        "condition_flag": condition_flag,
-                    },
-                    "expected_safety_constraints": safety_constraints,
-                    "context_summary": {
-                        "workout_count": int(row["workout_count"]),
-                        "avg_reps": round(float(row["avg_reps"]), 2),
-                        "avg_weight": round(float(row["avg_weight"]), 2),
-                        "avg_rir": round(float(row["avg_rir"]), 2),
-                        "conditions": conditions,
-                    },
-                    "source_run_ids": {
-                        "synthetic_profiles": profile_meta["run_id"],
-                        "synthetic_workouts": workout_meta["run_id"],
-                    },
-                    "created_at": now_iso,
+                    "source_run_ids": json.dumps(source_run_ids),
+                    "created_at": created_at,
                 }
-                records.append(record)
+            )
 
-    queries_df = pd.DataFrame(records)
+        # ---- plan_updation queries ----
+        variant_indices = rng.choice(
+            len(_PLAN_UPDATION_VARIANTS),
+            size=queries_per_user_updation,
+            replace=(
+                False
+                if queries_per_user_updation <= len(_PLAN_UPDATION_VARIANTS)
+                else True
+            ),
+        ).tolist()
+        for vi, variant_idx in enumerate(variant_indices):
+            variant_request = _PLAN_UPDATION_VARIANTS[int(variant_idx)]
+            prompt_text = _render_plan_updation_prompt(
+                bio_block, plan_block, recent_block, variant_request
+            )
+            query_id = _stable_uuid("query", f"plan_updation:{user_id}:{vi}")
+            rows.append(
+                {
+                    "query_id": query_id,
+                    "user_id": user_id,
+                    "prompt_type": "plan_updation",
+                    "prompt_text": prompt_text,
+                    "source_run_ids": json.dumps(source_run_ids),
+                    "created_at": created_at,
+                }
+            )
 
+    queries_df = pd.DataFrame(rows)
+
+    # ---- Persist ----
     if run_id is None:
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-    run_dir = raw_root / "synthetic_queries" / run_id
+    run_dir = output_root / "synthetic_queries" / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    queries_df.to_csv(run_dir / "queries.csv", index=False)
+
     jsonl_path = run_dir / "queries.jsonl"
-    csv_path = run_dir / "queries.csv"
-    _write_jsonl(records=records, output_path=jsonl_path)
-    queries_df.to_csv(csv_path, index=False)
+    with jsonl_path.open("w", encoding="utf-8") as fh:
+        for record in queries_df.to_dict("records"):
+            # Deserialise source_run_ids back to dict for JSONL
+            record["source_run_ids"] = json.loads(record["source_run_ids"])
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     latest_payload = {
         "run_id": run_id,
         "run_dir": str(run_dir),
         "seed": seed,
-        "num_queries": int(len(queries_df)),
-        "prompt_types": prompt_types,
-        "prompts_per_type": prompts_per_type,
-        "source_run_ids": {
-            "synthetic_profiles": profile_meta["run_id"],
-            "synthetic_workouts": workout_meta["run_id"],
-        },
+        "as_of_date": str(as_of),
+        "source_run_ids": source_run_ids,
+        "query_counts": queries_df["prompt_type"].value_counts().to_dict(),
+        "total": len(queries_df),
     }
-
-    latest_path = raw_root / "synthetic_queries" / "latest.json"
+    latest_path = output_root / "synthetic_queries" / "latest.json"
     latest_path.parent.mkdir(parents=True, exist_ok=True)
     latest_path.write_text(json.dumps(latest_payload, indent=2), encoding="utf-8")
 
     return queries_df, run_dir
 
 
+# ---------------------------------------------------------------------------
+# CLI entry-point
+# ---------------------------------------------------------------------------
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Generate synthetic teacher prompts from synthetic data"
-    )
+    parser = argparse.ArgumentParser(description="Generate synthetic LLM query prompts")
     parser.add_argument("--params", default="params.yaml", help="Path to params.yaml")
     parser.add_argument(
-        "--raw-root", default=None, help="Optional raw data root override"
+        "--output-root", default=None, help="Optional output root override"
     )
     parser.add_argument("--run-id", default=None, help="Optional run id override")
     args = parser.parse_args()
@@ -522,9 +477,9 @@ def main() -> None:
         str(params["reproducibility"]["hash_seed"]),
     )
 
-    raw_root = (
-        Path(args.raw_root)
-        if args.raw_root
+    output_root = (
+        Path(args.output_root)
+        if args.output_root
         else Path(str(params["paths"]["raw_data_dir"]))
     )
     logger = setup_logger(
@@ -535,10 +490,10 @@ def main() -> None:
         fmt=str(params["logging"]["format"]),
     )
 
-    queries_df, run_dir = generate_synthetic_queries(
-        params=params, raw_root=raw_root, run_id=args.run_id
+    _, run_dir = generate_synthetic_queries(
+        params=params, output_root=output_root, run_id=args.run_id
     )
-    logger.info("Generated %d synthetic queries at %s", len(queries_df), run_dir)
+    logger.info("Generated synthetic query data at %s", run_dir)
 
 
 if __name__ == "__main__":

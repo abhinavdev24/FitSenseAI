@@ -1,4 +1,4 @@
-"""Airflow DAG for FitSenseAI synthetic-data-to-distillation pipeline (Phases 1-6)."""
+"""Airflow DAG for FitSenseAI synthetic data generation pipeline (Phases 1-3)."""
 
 from __future__ import annotations
 
@@ -18,17 +18,27 @@ if DAG is not None and BashOperator is not None:
     REPO_ROOT = Path(__file__).resolve().parents[2]
     PYTHON_BIN = os.getenv("FITSENSE_PYTHON_BIN", "python")
     DATA_PIPELINE_DIR = REPO_ROOT / "Data-Pipeline"
-    PARAMS_PATH = DATA_PIPELINE_DIR / "params.yaml"
 
-    def _script_cmd(script_name: str, run_id_expr: str = "{{ ts_nodash }}") -> str:
+    def _script_cmd(
+        script_name: str,
+        *,
+        include_params: bool,
+        include_run_id: bool,
+        run_id_expr: str = "{{ ts_nodash }}",
+        extra_args: str = "",
+    ) -> str:
         # Scripts run directly from Data-Pipeline/; Python adds that directory to
         # sys.path automatically, so `common` is importable without PYTHONPATH.
-        return (
-            f"cd {DATA_PIPELINE_DIR} && "
-            f"{PYTHON_BIN} {script_name} "
-            f"--params params.yaml "
-            f"--run-id {run_id_expr}"
-        )
+        args: list[str] = []
+        if include_params:
+            args.extend(["--params", "params.yaml"])
+        if include_run_id:
+            args.extend(["--run-id", run_id_expr])
+        if extra_args:
+            args.append(extra_args.strip())
+
+        joined_args = " ".join(args)
+        return f"cd {DATA_PIPELINE_DIR} && {PYTHON_BIN} {script_name} {joined_args}".strip()
 
     default_args = {
         "owner": "fitsense-mlops",
@@ -39,80 +49,54 @@ if DAG is not None and BashOperator is not None:
 
     with DAG(
         dag_id="fitsense_pipeline",
-        description="FitSenseAI MLOps pipeline: synthetic data -> queries -> teacher -> distillation -> QA reports",
+        description="FitSenseAI data pipeline: bootstrap -> synthetic profiles/workouts/queries",
         default_args=default_args,
         start_date=datetime(2026, 1, 1),
         schedule=None,
         catchup=False,
         max_active_runs=1,
-        tags=["fitsense", "mlops", "synthetic", "distillation"],
+        tags=["fitsense", "mlops", "synthetic"],
     ) as dag:
         bootstrap_phase1 = BashOperator(
             task_id="bootstrap_phase1",
-            bash_command=_script_cmd("bootstrap_phase1.py"),
+            bash_command=_script_cmd(
+                "bootstrap.py",
+                include_params=False,
+                include_run_id=False,
+            ),
             execution_timeout=timedelta(minutes=10),
         )
 
         generate_synthetic_profiles = BashOperator(
             task_id="generate_synthetic_profiles",
-            bash_command=_script_cmd("generate_synthetic_profiles.py"),
+            bash_command=_script_cmd(
+                "generate_synthetic_profiles.py",
+                include_params=True,
+                include_run_id=True,
+            ),
             execution_timeout=timedelta(minutes=20),
         )
 
         generate_synthetic_workouts = BashOperator(
             task_id="generate_synthetic_workouts",
-            bash_command=_script_cmd("generate_synthetic_workouts.py"),
+            bash_command=_script_cmd(
+                "generate_synthetic_workouts.py",
+                include_params=True,
+                include_run_id=True,
+            ),
             execution_timeout=timedelta(minutes=25),
         )
 
         generate_synthetic_queries = BashOperator(
             task_id="generate_synthetic_queries",
-            bash_command=_script_cmd("generate_synthetic_queries.py"),
+            bash_command=_script_cmd(
+                "generate_synthetic_queries.py",
+                include_params=True,
+                include_run_id=True,
+            ),
             execution_timeout=timedelta(minutes=20),
         )
 
-        call_teacher_llm = BashOperator(
-            task_id="call_teacher_llm",
-            bash_command=_script_cmd("call_teacher_llm.py"),
-            execution_timeout=timedelta(minutes=90),
-        )
-
-        build_distillation_dataset = BashOperator(
-            task_id="build_distillation_dataset",
-            bash_command=_script_cmd("build_distillation_dataset.py"),
-            execution_timeout=timedelta(minutes=20),
-        )
-
-        validate_data = BashOperator(
-            task_id="validate_data",
-            bash_command=_script_cmd("validate_data.py"),
-            execution_timeout=timedelta(minutes=10),
-        )
-
-        compute_stats = BashOperator(
-            task_id="compute_stats",
-            bash_command=_script_cmd("compute_stats.py"),
-            execution_timeout=timedelta(minutes=10),
-        )
-
-        detect_anomalies = BashOperator(
-            task_id="detect_anomalies",
-            bash_command=_script_cmd("detect_anomalies.py"),
-            execution_timeout=timedelta(minutes=10),
-        )
-
-        bias_slicing = BashOperator(
-            task_id="bias_slicing",
-            bash_command=_script_cmd("bias_slicing.py"),
-            execution_timeout=timedelta(minutes=10),
-        )
-
-        (
-            bootstrap_phase1
-            >> generate_synthetic_profiles
-            >> generate_synthetic_workouts
-            >> generate_synthetic_queries
-            >> call_teacher_llm
-            >> build_distillation_dataset
-            >> [validate_data, compute_stats, detect_anomalies, bias_slicing]
-        )
+        bootstrap_phase1.set_downstream(generate_synthetic_profiles)
+        generate_synthetic_profiles.set_downstream(generate_synthetic_workouts)
+        generate_synthetic_workouts.set_downstream(generate_synthetic_queries)
