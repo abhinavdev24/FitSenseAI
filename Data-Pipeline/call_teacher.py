@@ -868,13 +868,12 @@ def run(cfg: dict, paths_cfg: dict, params: dict, dry_run: bool) -> None:
         sess_total += total_tok
         all_records.append(record)
 
-        _append_jsonl(record, responses_path)
-
         is_failed = record["status"] != "success"
         if is_failed:
             _append_jsonl(record, failed_path)
             n_failed += 1
         else:
+            _append_jsonl(record, responses_path)
             n_success += 1
             # If this was a retry that succeeded, remove the old failed
             # entry from failed_responses.jsonl so it doesn't get re-queued
