@@ -8,11 +8,12 @@ reproducibility:
   timezone: "UTC"
 
 paths:
-  raw_data_dir: Data-Pipeline/data/raw
-  interim_data_dir: Data-Pipeline/data/interim
-  processed_data_dir: Data-Pipeline/data/processed
-  reports_dir: Data-Pipeline/data/reports
-  logs_dir: Data-Pipeline/logs
+  raw_data_dir: data/raw
+  interim_data_dir: data/interim
+  processed_data_dir: data/processed
+  reports_dir: data/reports
+  logs_dir: logs
+  teacher_llm_responses_dir: data/raw/teacher-llm-responses
 
 logging:
   level: INFO
@@ -33,47 +34,20 @@ phase2:
       min_exercises_per_plan: 4
       max_exercises_per_plan: 6
       sets_per_exercise: 3
+    queries:
+      max_users: null # set an int to subset during dev
+      queries_per_user_creation: 2
+      queries_per_user_updation: 2
 
-phase3:
-  synthetic_queries:
-    prompts_per_type: 1
-    prompt_types:
-      - plan_creation
-      - plan_modification
-      - safety_adjustment
-      - progress_adaptation
-
-phase4:
-  teacher_llm:
-    provider: mock
-    model_name: teacher-mock-v1
-    endpoint_url: ""
-    api_key_env: OPENAI_API_KEY
-    timeout_seconds: 30
-    max_retries: 3
-    retry_backoff_seconds: 1.5
-    temperature: 0.2
-    top_p: 1.0
-    max_output_tokens: 512
-    max_queries: null
-
-phase5:
-  distillation:
-    min_response_chars: 60
-    require_post_validation: true
-    reject_on_safety_flags: true
-    split:
-      train_ratio: 0.8
-      val_ratio: 0.1
-      test_ratio: 0.1
-
-phase6:
-  anomaly_detection:
-    duplicate_record_threshold: 0
-    missing_response_threshold: 0
-    min_response_chars: 60
-    max_response_chars: 2000
-    split_ratio_tolerance: 0.2
-  bias_slicing:
-    min_group_size: 20
-    max_mean_response_len_gap: 120
+teacher_llm:
+  provider: openrouter
+  model_name: qwen/qwen3-32b
+  temperature: 0.6
+  max_output_tokens: 8192 # max tokens in the response (output only)
+  timeout_seconds: 900 # per-request HTTP timeout
+  max_workers: 90 # single-threaded by default (Groq RPM limits)
+  max_queries: 800 # null = process all; set int to cap (useful for testing)
+  max_retries: 3
+  retry_backoff_seconds: 10.0 # base backoff; multiplied by attempt number on rate-limit
+  request_delay_seconds: 0.0 # sleep between requests to stay under Groq RPM limit
+  input_tokens_per_minute: 200000 # Groq hard limit for qwen3-32b input tokens/min

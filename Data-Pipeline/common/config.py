@@ -8,7 +8,7 @@ from typing import Any
 import yaml
 
 
-DEFAULT_PARAMS_PATH = Path("Data-Pipeline/params.yaml")
+DEFAULT_PARAMS_PATH = Path("params.yaml")
 
 
 def load_params(path: str | Path = DEFAULT_PARAMS_PATH) -> dict[str, Any]:

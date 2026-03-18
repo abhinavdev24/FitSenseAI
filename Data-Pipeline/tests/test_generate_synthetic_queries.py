@@ -1,83 +1,77 @@
-from pathlib import Path
+from __future__ import annotations
 
-from generate_synthetic_profiles import generate_synthetic_profiles
-from generate_synthetic_workouts import generate_synthetic_workouts
-from generate_synthetic_queries import generate_synthetic_queries
+import json
 
 
 def _params() -> dict:
     return {
-        "reproducibility": {"seed": 9, "hash_seed": "9"},
+        "reproducibility": {"seed": 34, "hash_seed": "seed34"},
         "phase2": {
             "synthetic": {
-                "as_of_date": "2026-02-17",
-                "num_users": 10,
-                "lookback_days": 28,
+                "as_of_date": "2026-03-01",
+                "num_users": 4,
+                "lookback_days": 14,
                 "profiles": {
-                    "max_conditions_per_user": 2,
+                    "max_conditions_per_user": 1,
                     "max_medications_per_user": 1,
                     "max_allergies_per_user": 1,
                 },
                 "workouts": {
-                    "workouts_per_user": 3,
-                    "min_exercises_per_plan": 3,
-                    "max_exercises_per_plan": 4,
-                    "sets_per_exercise": 3,
+                    "min_exercises_per_plan": 2,
+                    "max_exercises_per_plan": 3,
+                    "sets_per_exercise": 2,
+                    "workouts_per_user": 2,
+                },
+                "queries": {
+                    "max_users": 3,
+                    "queries_per_user_creation": 1,
+                    "queries_per_user_updation": 2,
                 },
             }
         },
-        "phase3": {
-            "synthetic_queries": {
-                "prompts_per_type": 1,
-                "prompt_types": [
-                    "plan_creation",
-                    "plan_modification",
-                    "safety_adjustment",
-                    "progress_adaptation",
-                ],
-            }
-        },
     }
 
 
-def test_generate_queries_coverage_and_metadata(tmp_path: Path) -> None:
+def test_generate_synthetic_queries_writes_csv_jsonl_and_latest(
+    tmp_path, module_loader
+):
+    profiles_module = module_loader("generate_synthetic_profiles.py")
+    workouts_module = module_loader("generate_synthetic_workouts.py")
+    queries_module = module_loader("generate_synthetic_queries.py")
     params = _params()
-    generate_synthetic_profiles(params=params, output_root=tmp_path, run_id="profiles")
-    generate_synthetic_workouts(params=params, output_root=tmp_path, run_id="workouts")
 
-    queries_df, run_dir = generate_synthetic_queries(params=params, raw_root=tmp_path, run_id="queries")
+    profiles_module.generate_synthetic_profiles(
+        params=params,
+        output_root=tmp_path,
+        run_id="RUN_PROFILES",
+    )
+    workouts_module.generate_synthetic_workouts(
+        params=params,
+        output_root=tmp_path,
+        run_id="RUN_WORKOUTS",
+    )
+
+    queries_df, run_dir = queries_module.generate_synthetic_queries(
+        params=params,
+        output_root=tmp_path,
+        run_id="RUN_QUERIES",
+    )
 
     assert run_dir.exists()
-    assert (run_dir / "queries.jsonl").exists()
     assert (run_dir / "queries.csv").exists()
+    assert (run_dir / "queries.jsonl").exists()
 
-    expected_prompt_types = set(params["phase3"]["synthetic_queries"]["prompt_types"])
-    assert set(queries_df["prompt_type"].unique()) == expected_prompt_types
-
-    counts = queries_df.groupby("user_id")["prompt_type"].nunique()
-    assert (counts == len(expected_prompt_types)).all()
-
-    required_cols = {
-        "query_id",
-        "scenario_id",
-        "user_id",
-        "prompt_type",
-        "prompt_text",
-        "slice_tags",
-        "expected_safety_constraints",
-        "context_summary",
-        "source_run_ids",
+    expected_total = 3 * (1 + 2)
+    assert len(queries_df) == expected_total
+    assert set(queries_df["prompt_type"].tolist()) == {
+        "plan_creation",
+        "plan_updation",
     }
-    assert required_cols.issubset(set(queries_df.columns))
 
-    for row in queries_df.itertuples(index=False):
-        assert isinstance(row.slice_tags, dict)
-        assert isinstance(row.expected_safety_constraints, list)
-        assert isinstance(row.context_summary, dict)
-        assert isinstance(row.source_run_ids, dict)
-
-        assert row.slice_tags["age_band"]
-        assert row.slice_tags["goal_type"]
-        assert row.slice_tags["activity_level"]
-        assert row.prompt_text
-        assert len(row.expected_safety_constraints) > 0
+    latest = json.loads(
+        (tmp_path / "synthetic_queries" / "latest.json").read_text(encoding="utf-8")
+    )
+    assert latest["run_id"] == "RUN_QUERIES"
+    assert latest["total"] == expected_total
+    assert latest["source_run_ids"]["synthetic_profiles"] == "RUN_PROFILES"
+    assert latest["source_run_ids"]["synthetic_workouts"] == "RUN_WORKOUTS"
