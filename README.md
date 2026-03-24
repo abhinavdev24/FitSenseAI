@@ -1,153 +1,305 @@
-# FitSenseAI
+# FitSense AI — Model Pipeline
 
-AI-powered fitness coaching application focused on personalized workouts, progress tracking, and health-aware guidance.
+## Overview
 
-## What’s In This Repository
+FitSense AI is a personalized fitness coaching system built on a teacher-student distillation architecture. A large teacher model (Llama 3.1 70B via OpenRouter) generates 50,000 synthetic training examples which are used to fine-tune a smaller student model (Qwen3-8B) for efficient, production-ready inference. The student model produces structured JSON workout plans that respect user profiles, medical conditions, injuries, and safety constraints.
 
-This repository currently includes:
+---
 
-- project planning artifacts,
-- database schema design for the FitSenseAI domain,
-- an implemented synthetic-data MLOps pipeline in `Data-Pipeline/` (data generation -> teacher LLM -> distillation dataset -> validation/monitoring),
-- Airflow DAG orchestration for the pipeline.
+## Project Structure
 
-## Project Scope
-
-FitSenseAI is designed to:
-
-- Create and adapt workout plans based on user goals, conditions, and workout history.
-- Log workout execution (exercises, sets, reps, weight, RIR, notes).
-- Store relevant user health context (medical profile, medications, allergies, injuries).
-- Recommend daily maintenance calories and allow optional daily calorie intake logging.
-- Recommend target sleep duration and allow optional daily sleep-duration logging.
-- Allow users to log body weight any time for progress tracking.
-
-Out of scope for current data model:
-
-- Detailed nutrition macro tracking (protein/carbs/fats).
-- Hydration tracking.
-
-## Repository Structure
-
-```txt
+```
 FitSenseAI/
-  README.md
-  FitSense_AI_Project_Plan.md
-  FitSense_AI_Project_Scoping_Complete-1.pdf
-  MLOPS-1-2_FitSenseAI_Execution_Guide.md
-  Data-Pipeline/
-    dags/
-    scripts/
-    tests/
-    data/
-    logs/
-    params.yaml
-    requirements.txt
-    dvc.yaml
-  database/
-    database_design.dbml
-    postgresql.sql
-    mysql.sql
-    UML_diagram.png
+├── Data-Pipeline/
+│   ├── generate_synthetic_profiles.py
+│   ├── generate_synthetic_workouts.py
+│   ├── generate_synthetic_queries.py
+│   ├── build_distillation_dataset.py
+│   ├── validate.py
+│   └── data/
+│       └── raw/
+│           ├── synthetic_profiles/
+│           ├── synthetic_workouts/
+│           ├── synthetic_queries/
+│           └── distillation_dataset/
+│               └── 20260308T234052Z/
+│                   ├── train.jsonl
+│                   ├── val.jsonl
+│                   └── test.jsonl
+├── Model-Pipeline/
+│   ├── Scripts/
+│   │   ├── prepare_training_data.py
+│   │   ├── trainmodel.py
+│   │   ├── evaluate_student.py
+│   │   ├── check_schema.py
+│   │   ├── bias_slicing.py
+│   │   └── push_to_registry.py
+│   ├── data/
+│   │   └── formatted/
+│   │       └── 20260308T234052Z/
+│   │           ├── train_formatted.jsonl
+│   │           ├── val_formatted.jsonl
+│   │           ├── test_formatted.jsonl
+│   │           └── manifest.json
+│   ├── adapters/
+│   │   └── qwen3-8b-fitsense/
+│   └── reports/
+│       ├── eval_report_20260308T234052Z.json
+│       ├── student_eval_20260308T234052Z.json
+│       └── bias_report_20260308T234052Z.json
+└── .github/
+    └── workflows/
+        └── data-pipeline-ci.yml
 ```
 
-## Database Design
+---
 
-Primary schema file:
+## 1. Data Pipeline Integration
 
-- `database/database_design.dbml`
+Training data is loaded directly from the output of the Data Pipeline — a versioned distillation dataset identified by `run_id: 20260308T234052Z`. The `prepare_training_data.py` script reads from:
 
-Live ER diagram (no upload needed):
+```
+Data-Pipeline/data/raw/distillation_dataset/<run_id>/{train,val,test}.jsonl
+```
 
-- https://dbdiagram.io/d/FitSenseAI-69850002bd82f5fce2cfe02c
+Each record is formatted into Qwen3 ChatML format with:
+- A structured system prompt containing an explicit JSON schema skeleton
+- `/no_think` appended to every user turn to disable Qwen3's reasoning mode
+- An empty `<think></think>` block before the assistant response to train the model to skip reasoning and output JSON directly
 
-Core model areas:
+A `manifest.json` is written alongside the formatted splits recording the system prompt, token statistics, and run metadata for reproducibility.
 
-- User and goals: `users`, `goals`, `user_goals`
-- Health context: `conditions`, `user_conditions`, `user_profiles`, `user_medical_profiles`, `user_medications`, `user_allergies`
-- Workouts: `workout_plans`, `plan_exercises`, `plan_sets`, `workouts`, `workout_exercises`, `workout_sets`
-- Guidance + tracking:
-  - Calories: `calorie_targets`, `calorie_intake_logs`
-  - Sleep: `sleep_targets`, `sleep_duration_logs`
-  - Weight: `weight_logs`
-- AI interactions: `ai_interactions`
+---
 
-## Quick Start (Schema)
+## 2. Model Architecture
 
-1. Open the live diagram: [UML Diagram](https://dbdiagram.io/d/FitSenseAI-69850002bd82f5fce2cfe02c)
-2. No DBML upload is required for viewers; they can access the schema directly from the link.
-3. Use `database/postgresql.sql` (PostgreSQL) or `database/mysql.sql` (MySQL) as the base SQL export for database setup.
-4. Prefer PostgreSQL for implementation (recommended for this project’s relational complexity and future analytics needs).
+| Component | Detail |
+|---|---|
+| Base model | `unsloth/Qwen3-8B-bnb-4bit` |
+| Fine-tuning method | LoRA (Low-Rank Adaptation) via PEFT |
+| Quantization | 4-bit (BitsAndBytes) |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Target modules | q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj |
+| Training framework | Unsloth + TRL SFTTrainer |
+| Training hardware | Google Colab T4 GPU |
 
-## Planned Architecture (High Level)
+### Why LoRA?
 
-- Backend API: user onboarding, goal capture, workout planning, logging, and AI endpoints.
-- Mobile/Web client: plan viewing, workout execution logging, and daily check-ins (calories/sleep/weight).
-- AI layer: plan generation/adaptation and conversational guidance.
-- Data layer: relational DB for user/workout/health data and model interaction logs.
+Fine-tuning all 8 billion parameters would require 80+ GB of VRAM. LoRA freezes the base model and attaches small trainable adapter matrices (~20-40M parameters), reducing VRAM requirements to ~5GB while still teaching the model FitSense-specific behavior — the correct JSON schema, safety constraint handling, and plan structure.
 
-See `FitSense_AI_Project_Plan.md` for phase-wise execution details.
+---
 
-## Architecture Diagram (Detailed)
+## 3. Training
 
-For a more complete write-up, see `docs/Architecture.md`.
+**Script:** `Model-Pipeline/Scripts/trainmodel.py`
 
-![FitSenseAI Detailed Architecture Diagram](docs/assets/fitsenseai_architecture.svg)
+### Hyperparameters
 
-## Data Pipeline (Overview)
+| Parameter | Value | Rationale |
+|---|---|---|
+| Learning rate | 1e-4 | Standard for LoRA fine-tuning |
+| Batch size | 1 (effective 8 with grad accum) | T4 VRAM constraint |
+| Gradient accumulation steps | 8 | Simulates larger batch |
+| Max steps | 60 | Light fine-tune sufficient to teach schema |
+| LR scheduler | Cosine | Smooth decay for stable convergence |
+| Optimizer | adamw_8bit | Memory-efficient Adam |
+| Warmup steps | 10 | Prevents early instability |
+| Max sequence length | 2048 | Covers full plan + context |
 
-FitSenseAI includes an end-to-end synthetic-data MLOps pipeline under `Data-Pipeline/` that covers:
+### Checkpointing
 
-- synthetic profile/workout/health data generation,
-- synthetic query generation for a teacher LLM,
-- teacher response capture and storage,
-- distillation dataset creation (train/val/test JSONL),
-- validation, statistics, and anomaly detection,
-- Airflow DAG orchestration for the full workflow.
+Checkpoints are saved every 20 steps (steps 20, 40, 60) to prevent data loss from Colab session disconnections. `resume_from_checkpoint=True` allows training to automatically resume from the latest checkpoint if interrupted.
 
-Primary docs:
+### Think Tag Handling
 
-- `Data-Pipeline/README.md` for the full pipeline usage and Airflow commands
+Qwen3-8B supports a dual-mode architecture — thinking mode (chain-of-thought reasoning) and non-thinking mode. For structured JSON generation, thinking mode is explicitly disabled:
 
-### Pipeline Component Diagram
+- `/no_think` is appended to every user message as a soft switch
+- An empty `<think></think>` block is injected in training data so the model learns to skip reasoning entirely
+- At inference time, a fallback `split("</think>")` strips any leaked think content before JSON extraction
 
-![FitSenseAI Data Pipeline Components](Data-Pipeline/docs_assets/pipeline_components.svg)
+This prevents think tokens from consuming the `max_new_tokens` budget and causing truncated JSON output.
 
-### Airflow DAG Diagram
+---
 
-![FitSenseAI Airflow DAG](Data-Pipeline/docs_assets/fitsense_pipeline_dag.svg)
+## 4. Model Validation
 
-### Pipeline Quick Start
+**Script:** `Model-Pipeline/Scripts/evaluate_student.py`
 
+Evaluation is performed on a hold-out test set (`test_formatted.jsonl`) not used during training. Metrics computed per record and aggregated:
+
+| Metric | Description |
+|---|---|
+| JSON Validity Rate | % of predictions containing parseable JSON |
+| Schema Validity Rate | % of predictions matching the required plan schema |
+| ROUGE-L | Longest common subsequence overlap with reference |
+| BERTScore F1 | Semantic similarity using contextual embeddings |
+
+### Results
+
+| Metric | Pre Fine-Tuning (Baseline) | Post Fine-Tuning |
+|---|---|---|
+| Schema Validity | 35.06% | TBD after eval |
+| JSON Validity | 54.76% | TBD after eval |
+| ROUGE-L | 0.1657 | TBD after eval |
+| BERTScore F1 | 0.7718 | TBD after eval |
+
+All metrics are logged to Weights & Biases for experiment tracking and visualization.
+
+---
+
+## 5. Experiment Tracking
+
+**Tool:** Weights & Biases (W&B)
+
+**Project:** `fitsense-model-pipeline`
+
+Each evaluation run logs:
+- Aggregate metrics (JSON validity, schema validity, ROUGE-L, BERTScore F1)
+- Per-sample table with predictions, references, and per-record scores
+- Hyperparameter configuration
+- Run metadata (model name, run ID, timestamp)
+
+W&B dashboard: https://wandb.ai/harinihari-jk-/fitsense-model-pipeline
+
+---
+
+## 6. Hyperparameter Sensitivity
+
+The key hyperparameters and their sensitivity:
+
+| Hyperparameter | Effect |
+|---|---|
+| `max_new_tokens` | Directly controls truncation — too low (1024) causes JSON cut-off; set to 2048 |
+| `lora_r` (rank) | Higher rank = more expressive adapter but more VRAM; r=16 balances both |
+| `lora_alpha` | Controls adapter scaling; alpha=32 (2x rank) is standard practice |
+| `max_steps` | 60 steps is a light fine-tune — sufficient for schema learning, not overfitting |
+| `learning_rate` | 1e-4 chosen as standard LoRA rate; too high causes instability on short runs |
+
+The most impactful finding was that disabling Qwen3's thinking mode (`/no_think`) had a larger effect on schema validity than any hyperparameter change — think tokens were consuming the token budget before the JSON even started generating.
+
+---
+
+## 7. Bias Detection
+
+**Script:** `Model-Pipeline/Scripts/bias_slicing.py`
+
+The model is evaluated across five demographic and contextual slices to detect performance disparities:
+
+| Slice | Values |
+|---|---|
+| `goal_type` | strength, mobility, sleep_improvement, longevity, etc. |
+| `condition_flag` | has_condition, no_condition |
+| `activity_level` | sedentary, lightly_active, moderately_active, very_active |
+| `age_band` | various age groups |
+| `sex` | M, F, other |
+
+### Metrics Tracked Per Slice
+- ROUGE-L mean
+- JSON validity rate
+- Schema validity rate
+
+### Disparity Detection
+
+Any slice whose schema validity rate deviates more than 15 percentage points from the overall mean is flagged as a potential bias signal.
+
+### Bias Mitigation Strategies
+
+If disparities are detected:
+1. **Oversample** underperforming slices in fine-tuning data
+2. **Add slice-specific schema examples** to the system prompt
+3. **Post-hoc JSON repair** for known failure patterns in specific slices
+4. **Re-weighting** loss function to penalize errors on underperforming groups more heavily
+
+Bias reports are saved to `Model-Pipeline/reports/bias_report_<run_id>.json`.
+
+---
+
+## 8. Model Registry
+
+**Script:** `Model-Pipeline/Scripts/push_to_registry.py`
+
+Once the model passes validation and bias checks, the LoRA adapter is:
+1. Packaged as a `.tar.gz` archive
+2. Uploaded to Google Cloud Storage at `gs://<bucket>/models/fitsense-qwen3-8b/<run_id>/`
+3. Registered in Vertex AI Model Registry with eval metrics and bias report attached as metadata
+
+A local `registry_record_<run_id>.json` is saved recording the GCS URI, Vertex resource name, hyperparameters, and push timestamp for full reproducibility.
+
+---
+
+## 9. CI/CD Pipeline
+
+**File:** `.github/workflows/data-pipeline-ci.yml`
+
+The pipeline runs on every push to `main` that affects `Data-Pipeline/` or `Model-Pipeline/`.
+
+### Jobs
+
+| Job | Trigger | What it does |
+|---|---|---|
+| `test` | Every push/PR | Runs Data Pipeline pytest suite |
+| `run-scripts-and-generate-artifacts` | Push to main / manual | Runs synthetic data generation scripts |
+| `model-pipeline-validation` | After data pipeline succeeds | Runs schema check, bias slicing, quality gate |
+
+### Quality Gate
+
+The pipeline **fails automatically** if schema validity drops below 50%, blocking any downstream deployment or registry push.
+
+### Rollback Mechanism
+
+Training checkpoints are saved every 20 steps. If a newly trained model performs worse than the previous version, the previous checkpoint can be restored by loading from `checkpoint-40` or `checkpoint-20` in the adapter directory.
+
+---
+
+## 10. Reproduction Steps
+
+### Prerequisites
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r Data-Pipeline/requirements.txt
-
-# bootstrap
-python Data-Pipeline/scripts/bootstrap_phase1.py
-
-# run pipeline stages (script-by-script)
-python Data-Pipeline/scripts/generate_synthetic_profiles.py
-python Data-Pipeline/scripts/generate_synthetic_workouts.py
-python Data-Pipeline/scripts/generate_synthetic_queries.py
-python Data-Pipeline/scripts/call_teacher_llm.py
-python Data-Pipeline/scripts/build_distillation_dataset.py
-python Data-Pipeline/scripts/validate_data.py
-python Data-Pipeline/scripts/compute_stats.py
-python Data-Pipeline/scripts/detect_anomalies.py
+pip install unsloth trl transformers peft datasets rouge-score bert-score wandb
+pip install google-cloud-aiplatform google-cloud-storage
 ```
 
-Bootstrap outputs:
+### Step 1 — Prepare training data
+```bash
+python Model-Pipeline/Scripts/prepare_training_data.py
+```
 
-- `Data-Pipeline/data/reports/phase1_bootstrap.json`
-- `Data-Pipeline/logs/pipeline.log`
+### Step 2 — Train model (requires GPU — run on Google Colab)
+```bash
+python Model-Pipeline/Scripts/trainmodel.py
+```
 
-## Roadmap Snapshot
+### Step 3 — Evaluate
+```bash
+python Model-Pipeline/Scripts/evaluate_student.py
+```
 
-- Phase 1: Foundation and data schemas
-- Phase 2: Model development (teacher/student workflow)
-- Phase 3: Backend + app MVP
-- Phase 4: Adaptation engine and instrumentation
-- Phase 5: Safety, monitoring, hardening
-- Phase 6: Pilot, iteration, final validation
+### Step 4 — Schema validation
+```bash
+python Model-Pipeline/Scripts/check_schema.py
+```
+
+### Step 5 — Bias analysis
+```bash
+python Model-Pipeline/Scripts/bias_slicing.py
+```
+
+### Step 6 — Push to registry
+```bash
+python Model-Pipeline/Scripts/push_to_registry.py
+```
+
+---
+
+## 11. Key Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| Qwen3-8B over larger models | Fits on T4 GPU (16GB) with 4-bit quantization |
+| LoRA over full fine-tuning | 400x fewer trainable parameters, same schema learning |
+| `/no_think` in training | Prevents reasoning tokens from truncating JSON output |
+| Explicit schema in system prompt | Eliminates wrong key generation (`workout_plan`, `phases` etc.) |
+| `max_new_tokens=2048` | Prevents plan truncation for complex multi-day workouts |
+| Checkpointing every 20 steps | Guards against Colab session disconnections |
