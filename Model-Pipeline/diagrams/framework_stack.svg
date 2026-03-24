@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 620" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <filter id="sh" x="-3%" y="-4%" width="106%" height="112%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2.5" flood-color="#00000016"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="760" height="620" rx="12" fill="#fafbfc"/>
+
+  <!-- Title -->
+  <text x="380" y="36" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">QLoRA Training Stack</text>
+  <text x="380" y="54" text-anchor="middle" font-size="12" fill="#64748b">How each framework layer connects at runtime</text>
+
+  <!-- ── Layer 1: Data ── -->
+  <rect x="32" y="72" width="696" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" filter="url(#sh)"/>
+  <!-- badge -->
+  <rect x="32" y="72" width="96" height="60" rx="10" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="80" y="97" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">DATA</text>
+  <text x="80" y="115" text-anchor="middle" font-size="9" fill="#3b82f6">HF Datasets</text>
+  <!-- content -->
+  <text x="148" y="95" font-size="13" font-weight="600" fill="#1e293b">datasets.load_dataset()</text>
+  <text x="148" y="113" font-size="11" fill="#64748b">Loads train.jsonl / val.jsonl → HF DatasetDict with "messages" column</text>
+  <!-- arrow -->
+  <line x1="380" y1="132" x2="380" y2="152" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── Layer 2: Model ── -->
+  <rect x="32" y="154" width="696" height="70" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="32" y="154" width="96" height="70" rx="10" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+  <text x="80" y="182" text-anchor="middle" font-size="10" font-weight="700" fill="#15803d">MODEL</text>
+  <text x="80" y="198" text-anchor="middle" font-size="9" fill="#16a34a">Unsloth</text>
+  <text x="80" y="212" text-anchor="middle" font-size="9" fill="#16a34a">bitsandbytes</text>
+  <text x="148" y="177" font-size="13" font-weight="600" fill="#1e293b">FastLanguageModel.from_pretrained()</text>
+  <text x="148" y="195" font-size="11" fill="#64748b">Loads Qwen3-8B / 4B with 4-bit NF4 quantization (bitsandbytes)</text>
+  <text x="148" y="213" font-size="11" fill="#64748b">2× faster training, 70% less VRAM vs vanilla HF</text>
+  <!-- arrow -->
+  <line x1="380" y1="224" x2="380" y2="244" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── Layer 3: Adapter ── -->
+  <rect x="32" y="246" width="696" height="70" rx="10" fill="#fefce8" stroke="#fde047" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="32" y="246" width="96" height="70" rx="10" fill="#fef9c3" stroke="#fde047" stroke-width="1.5"/>
+  <text x="80" y="274" text-anchor="middle" font-size="10" font-weight="700" fill="#a16207">ADAPTER</text>
+  <text x="80" y="290" text-anchor="middle" font-size="9" fill="#ca8a04">PEFT</text>
+  <text x="148" y="269" font-size="13" font-weight="600" fill="#1e293b">FastLanguageModel.get_peft_model()</text>
+  <text x="148" y="287" font-size="11" fill="#64748b">Injects LoRA adapters: rank=64, alpha=128, dropout=0.05</text>
+  <text x="148" y="305" font-size="11" fill="#64748b">7 targets: q/k/v/o_proj + gate/up/down_proj · Only ~100MB trainable</text>
+  <!-- arrow -->
+  <line x1="380" y1="316" x2="380" y2="336" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── Layer 4: Training ── -->
+  <rect x="32" y="338" width="696" height="90" rx="10" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="32" y="338" width="96" height="90" rx="10" fill="#fce7f3" stroke="#f9a8d4" stroke-width="1.5"/>
+  <text x="80" y="369" text-anchor="middle" font-size="10" font-weight="700" fill="#be185d">TRAINING</text>
+  <text x="80" y="385" text-anchor="middle" font-size="9" fill="#db2777">TRL</text>
+  <text x="80" y="401" text-anchor="middle" font-size="9" fill="#db2777">PyTorch</text>
+  <text x="148" y="361" font-size="13" font-weight="600" fill="#1e293b">SFTTrainer + SFTConfig</text>
+  <text x="148" y="379" font-size="11" fill="#64748b">apply_chat_template per sample · Loss masked to assistant tokens only</text>
+  <text x="148" y="397" font-size="11" fill="#64748b">Sequence packing · Cosine LR · bf16 · AdamW optimizer</text>
+  <text x="148" y="415" font-size="11" fill="#64748b">Updates only LoRA adapter weights via autograd (base model frozen)</text>
+  <!-- arrow -->
+  <line x1="380" y1="428" x2="380" y2="448" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── Layer 5: Output ── -->
+  <rect x="32" y="450" width="696" height="60" rx="10" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="32" y="450" width="96" height="60" rx="10" fill="#ede9fe" stroke="#c4b5fd" stroke-width="1.5"/>
+  <text x="80" y="476" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">OUTPUT</text>
+  <text x="80" y="492" text-anchor="middle" font-size="9" fill="#7c3aed">HF PEFT</text>
+  <text x="148" y="475" font-size="13" font-weight="600" fill="#1e293b">model.save_pretrained()  ·  tokenizer.save_pretrained()</text>
+  <text x="148" y="493" font-size="11" fill="#64748b">Saves only the LoRA adapter (~100–200 MB) — base model not included</text>
+  <!-- arrow -->
+  <line x1="380" y1="510" x2="380" y2="530" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ── Layer 6: Tracking ── -->
+  <rect x="32" y="532" width="696" height="60" rx="10" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="32" y="532" width="96" height="60" rx="10" fill="#fef3c7" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="80" y="558" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">TRACKING</text>
+  <text x="80" y="574" text-anchor="middle" font-size="9" fill="#b45309">W&amp;B</text>
+  <text x="148" y="557" font-size="13" font-weight="600" fill="#1e293b">Weights &amp; Biases</text>
+  <text x="148" y="575" font-size="11" fill="#64748b">Loss curves, LR schedule, GPU util, eval metrics, adapter artifact, hparam trials</text>
+</svg>

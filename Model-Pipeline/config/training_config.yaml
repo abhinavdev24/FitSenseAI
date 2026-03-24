@@ -1,0 +1,60 @@
+# FitSenseAI — QLoRA SFT Training Configuration
+# Student model: Qwen3-8B with LoRA adapter via Unsloth + TRL
+
+# ---------------------------------------------------------------------------
+# Model
+# ---------------------------------------------------------------------------
+model_name: "Qwen/Qwen3-8B"
+max_seq_length: 8192
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+train_path: "Model-Pipeline/data/training/train.jsonl"
+val_path: "Model-Pipeline/data/training/val.jsonl"
+
+# ---------------------------------------------------------------------------
+# LoRA
+# ---------------------------------------------------------------------------
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.05
+target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+# ---------------------------------------------------------------------------
+# Training
+# ---------------------------------------------------------------------------
+batch_size: 2
+gradient_accumulation_steps: 8
+num_epochs: 3
+learning_rate: 2e-4
+lr_scheduler_type: "cosine"
+warmup_ratio: 0.05
+bf16: true
+max_grad_norm: 1.0
+
+# ---------------------------------------------------------------------------
+# Evaluation & saving
+# ---------------------------------------------------------------------------
+logging_steps: 10
+eval_steps: 50
+save_steps: 50
+save_total_limit: 3
+
+# ---------------------------------------------------------------------------
+# Experiment tracking
+# ---------------------------------------------------------------------------
+report_to: "wandb"
+wandb_project: "fitsense-sft"
+
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+output_dir: "Model-Pipeline/outputs"
