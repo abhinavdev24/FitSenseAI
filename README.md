@@ -302,4 +302,4 @@ python Model-Pipeline/Scripts/push_to_registry.py
 | `/no_think` in training | Prevents reasoning tokens from truncating JSON output |
 | Explicit schema in system prompt | Eliminates wrong key generation (`workout_plan`, `phases` etc.) |
 | `max_new_tokens=2048` | Prevents plan truncation for complex multi-day workouts |
-| Checkpointing every 20 steps | Guards against Colab session disconnections |
+| Checkpointing every 20 steps | Guards against Colab session disconnections 
