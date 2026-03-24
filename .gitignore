@@ -83,3 +83,20 @@ mlruns/
 
 .claude
 CLAUDE.md
+
+# Unsloth & Model Cache
+unsloth_compiled_cache/
+huggingface_tokenizers_cache/
+__pycache__/
+
+# Large Model Weights (Adapters)
+Model-Pipeline/adapters/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Temporary / Local Files
+data.zip
+.env
+wandb/
