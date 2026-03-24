@@ -1,0 +1,55 @@
+_wandb:
+    value:
+        cli_version: 0.25.1
+        e:
+            jtkthmnvivqnhap6m085sc78cov0ivqg:
+                codePath: Model-Pipeline\Scripts\evaluate_student.py
+                codePathLocal: Model-Pipeline\Scripts\evaluate_student.py
+                cpu_count: 8
+                cpu_count_logical: 8
+                disk:
+                    /:
+                        total: "1001092280320"
+                        used: "232750927872"
+                email: harinihari.jk@gmail.com
+                executable: C:\Users\harin\AppData\Local\Programs\Python\Python313\python.exe
+                git:
+                    commit: 59054f3cbe2109c543a2257faf61da8c563e3e55
+                    remote: git@github.com:abhinavdev24/FitSenseAI.git
+                host: Harini_Hari
+                memory:
+                    total: "33895956480"
+                os: Windows-11-10.0.26200-SP0
+                program: C:\COLLEGE\MLOps project\FitSenseAI\Model-Pipeline\Scripts\evaluate_student.py
+                python: CPython 3.13.9
+                root: C:\COLLEGE\MLOps project\FitSenseAI
+                startedAt: "2026-03-23T23:07:48.168152Z"
+                writerId: jtkthmnvivqnhap6m085sc78cov0ivqg
+        m: []
+        python_version: 3.13.9
+        t:
+            "1":
+                - 1
+                - 11
+                - 49
+            "2":
+                - 1
+                - 11
+                - 49
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.13.9
+            "5": 0.25.1
+            "6": 5.3.0
+            "8":
+                - 3
+            "12": 0.25.1
+            "13": windows-amd64
+model:
+    value: qwen/qwen3-8b:openrouter
+records:
+    value: 77
+run_id:
+    value: 20260308T234052Z

@@ -83,3 +83,11 @@ mlruns/
 
 .claude
 CLAUDE.md
+
+unsloth_compiled_cache/
+__pycache__/
+*.pyc
+venv/
+.env
+wandb/
+*.zip
