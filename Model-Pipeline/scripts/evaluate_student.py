@@ -15,9 +15,9 @@ import wandb
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# 2. Configuration
-BASE_MODEL = "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
-ADAPTER_PATH = "Model-Pipeline/adapters/qwen-fitsense"
+# 2. Configuration — FIXED to match Qwen3-8B training
+BASE_MODEL = "unsloth/Qwen3-8B-bnb-4bit"
+ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-8b-fitsense"
 FORMATTED_BASE = Path("Model-Pipeline/data/formatted")
 RUN_ID = "20260308T234052Z"
 TEST_FILE = FORMATTED_BASE / RUN_ID / "test_formatted.jsonl"
@@ -27,7 +27,7 @@ REPORTS_DIR = Path("Model-Pipeline/reports")
 wandb.init(
     project="fitsense-model-pipeline",
     name=f"eval_student_{RUN_ID}",
-    config={"model": "Qwen-2.5-7B-Student", "run_id": RUN_ID}
+    config={"model": "Qwen3-8B-Student", "run_id": RUN_ID}
 )
 
 # 4. Load Model (Native Path for stability on T4)
@@ -42,31 +42,42 @@ model = PeftModel.from_pretrained(model, ADAPTER_PATH)
 model.eval()
 
 def call_model(user_message):
-    prompt = f"### Instruction:\nGenerate a FitSense workout plan.\n{user_message}\n\n### Response:\n"
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2000).to("cuda")
+    """Generate using the same ChatML template used during training."""
+    prompt = (
+        f"<|im_start|>user\n{user_message}<|im_end|>\n"
+        f"<|im_start|>assistant\n"
+    )
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to("cuda")
     with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=1024, temperature=0.1, do_sample=False)
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return decoded.split("### Response:")[1].strip() if "### Response:" in decoded else decoded.strip()
+        outputs = model.generate(**inputs, max_new_tokens=1024, do_sample=False)
+    # Decode only newly generated tokens (skip the prompt)
+    generated_ids = outputs[0][inputs["input_ids"].shape[1]:]
+    decoded = tokenizer.decode(generated_ids, skip_special_tokens=True)
+    return decoded.strip()
 
 def main():
     with open(TEST_FILE, "r") as f:
         records = [json.loads(line) for line in f if line.strip()]
     
-    sample = random.sample(records, 10)
+    sample = random.sample(records, min(10, len(records)))
     preds, refs, json_valid_results = [], [], []
 
     for i, rec in enumerate(sample):
-        log.info(f"Evaluating {i+1}/10...")
+        log.info(f"Evaluating {i+1}/{len(sample)}...")
         prediction = call_model(rec["user_message"])
         preds.append(prediction)
         refs.append(rec["assistant"])
         
         # JSON Validity Check
         try:
-            json.loads(prediction[prediction.find("{"):prediction.rfind("}")+1])
-            json_valid_results.append(1)
-        except:
+            start = prediction.find("{")
+            end = prediction.rfind("}")
+            if start != -1 and end != -1:
+                json.loads(prediction[start:end + 1])
+                json_valid_results.append(1)
+            else:
+                json_valid_results.append(0)
+        except Exception:
             json_valid_results.append(0)
 
     # 5. Compute Advanced Metrics
@@ -84,6 +95,21 @@ def main():
 
     # 6. Final Logging & Saving
     wandb.log(avg_metrics)
+
+    # Log a W&B table with per-sample results for the dashboard
+    table = wandb.Table(columns=["sample_id", "user_message", "prediction", "reference", "rougeL", "bertscore_f1", "json_valid"])
+    for i in range(len(sample)):
+        table.add_data(
+            i + 1,
+            sample[i]["user_message"][:300],
+            preds[i][:500],
+            refs[i][:500],
+            round(rouge_l[i], 4),
+            round(F1[i].item(), 4),
+            json_valid_results[i],
+        )
+    wandb.log({"eval_samples": table})
+
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
     
