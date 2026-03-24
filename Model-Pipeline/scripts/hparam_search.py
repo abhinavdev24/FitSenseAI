@@ -394,11 +394,11 @@ def log_wandb_hparam_summary(
     try:
         import wandb  # type: ignore[import]
 
-        run = wandb.init(
-            project="fitsense-sft",
-            name=f"{study_name}-summary",
-            job_type="hparam_search",
-            config=best_record.get("best_params", {}),
+        wandb.init(
+        project="fitsense-sft",
+        name=f"{study_name}-summary",
+        job_type="hparam_search",
+        config=best_record.get("best_params", {}),
         )
         wandb.summary["best_eval_loss"] = best_record.get("best_eval_loss")
         wandb.summary["best_trial_number"] = best_record.get("best_trial_number")

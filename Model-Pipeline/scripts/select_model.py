@@ -169,7 +169,6 @@ def generate_rationale(
 
     other_model = next(m for m in scores.keys() if m != selected)
     other_score = scores[other_model]["composite_score"]
-    score_diff = selected_score - other_score
 
     # Find primary differentiator
     selected_metrics = eval_results_map[selected].get("metrics", {})
@@ -182,7 +181,6 @@ def generate_rationale(
         metric_diffs[key] = s_val - o_val
 
     primary_metric = max(metric_diffs.keys(), key=lambda k: metric_diffs[k])
-    primary_diff = metric_diffs[primary_metric]
     selected_val = selected_metrics.get(primary_metric, 0.0)
     other_val = other_metrics.get(primary_metric, 0.0)
 
