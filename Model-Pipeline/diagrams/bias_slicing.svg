@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="s" x="-2%" y="-4%" width="104%" height="112%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#00000012"/>
+    </filter>
+  </defs>
+
+  <rect width="780" height="420" rx="12" fill="#fafbfc"/>
+  <text x="390" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#1e293b">Bias Detection — Slicing Dimensions</text>
+  <text x="390" y="52" text-anchor="middle" font-size="12" fill="#64748b">Each validation sample is sliced by 5 demographic attributes extracted from the user message</text>
+
+  <!-- Dimension 1: Age Group -->
+  <rect x="32" y="80" width="140" height="180" rx="10" fill="#eff6ff" stroke="#60a5fa" stroke-width="1.5" filter="url(#s)"/>
+  <text x="102" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">Age Group</text>
+  <line x1="48" y1="114" x2="156" y2="114" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="52" y="124" width="96" height="22" rx="6" fill="#dbeafe"/>
+  <text x="100" y="139" text-anchor="middle" font-size="11" fill="#1e40af">18 – 25</text>
+  <rect x="52" y="150" width="96" height="22" rx="6" fill="#dbeafe"/>
+  <text x="100" y="165" text-anchor="middle" font-size="11" fill="#1e40af">26 – 35</text>
+  <rect x="52" y="176" width="96" height="22" rx="6" fill="#dbeafe"/>
+  <text x="100" y="191" text-anchor="middle" font-size="11" fill="#1e40af">36 – 45</text>
+  <rect x="52" y="202" width="96" height="22" rx="6" fill="#dbeafe"/>
+  <text x="100" y="217" text-anchor="middle" font-size="11" fill="#1e40af">46 – 55</text>
+  <rect x="52" y="228" width="96" height="22" rx="6" fill="#dbeafe"/>
+  <text x="100" y="243" text-anchor="middle" font-size="11" fill="#1e40af">56+</text>
+
+  <!-- Dimension 2: Gender -->
+  <rect x="188" y="80" width="140" height="140" rx="10" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5" filter="url(#s)"/>
+  <text x="258" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#db2777">Gender</text>
+  <line x1="204" y1="114" x2="312" y2="114" stroke="#fbcfe8" stroke-width="1"/>
+  <rect x="208" y="124" width="96" height="22" rx="6" fill="#fce7f3"/>
+  <text x="256" y="139" text-anchor="middle" font-size="11" fill="#9d174d">Male</text>
+  <rect x="208" y="150" width="96" height="22" rx="6" fill="#fce7f3"/>
+  <text x="256" y="165" text-anchor="middle" font-size="11" fill="#9d174d">Female</text>
+  <rect x="208" y="176" width="96" height="22" rx="6" fill="#fce7f3"/>
+  <text x="256" y="191" text-anchor="middle" font-size="11" fill="#9d174d">Non-binary</text>
+
+  <!-- Dimension 3: Fitness Level -->
+  <rect x="344" y="80" width="140" height="140" rx="10" fill="#f0fdf4" stroke="#4ade80" stroke-width="1.5" filter="url(#s)"/>
+  <text x="414" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#16a34a">Fitness Level</text>
+  <line x1="360" y1="114" x2="468" y2="114" stroke="#bbf7d0" stroke-width="1"/>
+  <rect x="364" y="124" width="96" height="22" rx="6" fill="#dcfce7"/>
+  <text x="412" y="139" text-anchor="middle" font-size="11" fill="#166534">Beginner</text>
+  <rect x="364" y="150" width="96" height="22" rx="6" fill="#dcfce7"/>
+  <text x="412" y="165" text-anchor="middle" font-size="11" fill="#166534">Intermediate</text>
+  <rect x="364" y="176" width="96" height="22" rx="6" fill="#dcfce7"/>
+  <text x="412" y="191" text-anchor="middle" font-size="11" fill="#166534">Advanced</text>
+
+  <!-- Dimension 4: Goal Type -->
+  <rect x="500" y="80" width="140" height="192" rx="10" fill="#fefce8" stroke="#facc15" stroke-width="1.5" filter="url(#s)"/>
+  <text x="570" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#ca8a04">Goal Type</text>
+  <line x1="516" y1="114" x2="624" y2="114" stroke="#fef08a" stroke-width="1"/>
+  <rect x="516" y="124" width="110" height="22" rx="6" fill="#fef9c3"/>
+  <text x="571" y="139" text-anchor="middle" font-size="11" fill="#854d0e">Weight Loss</text>
+  <rect x="516" y="150" width="110" height="22" rx="6" fill="#fef9c3"/>
+  <text x="571" y="165" text-anchor="middle" font-size="11" fill="#854d0e">Muscle Gain</text>
+  <rect x="516" y="176" width="110" height="22" rx="6" fill="#fef9c3"/>
+  <text x="571" y="191" text-anchor="middle" font-size="11" fill="#854d0e">Endurance</text>
+  <rect x="516" y="202" width="110" height="22" rx="6" fill="#fef9c3"/>
+  <text x="571" y="217" text-anchor="middle" font-size="11" fill="#854d0e">Flexibility</text>
+  <rect x="516" y="228" width="110" height="22" rx="6" fill="#fef9c3"/>
+  <text x="571" y="243" text-anchor="middle" font-size="11" fill="#854d0e">General Fitness</text>
+
+  <!-- Dimension 5: BMI Category -->
+  <rect x="656" y="80" width="108" height="166" rx="10" fill="#f5f3ff" stroke="#a78bfa" stroke-width="1.5" filter="url(#s)"/>
+  <text x="710" y="106" text-anchor="middle" font-size="12" font-weight="700" fill="#7c3aed">BMI</text>
+  <line x1="672" y1="114" x2="748" y2="114" stroke="#ddd6fe" stroke-width="1"/>
+  <rect x="668" y="124" width="80" height="22" rx="6" fill="#ede9fe"/>
+  <text x="708" y="139" text-anchor="middle" font-size="10" fill="#5b21b6">&lt;18.5 Under</text>
+  <rect x="668" y="150" width="80" height="22" rx="6" fill="#ede9fe"/>
+  <text x="708" y="165" text-anchor="middle" font-size="10" fill="#5b21b6">18.5-25 Normal</text>
+  <rect x="668" y="176" width="80" height="22" rx="6" fill="#ede9fe"/>
+  <text x="708" y="191" text-anchor="middle" font-size="10" fill="#5b21b6">25-30 Over</text>
+  <rect x="668" y="202" width="80" height="22" rx="6" fill="#ede9fe"/>
+  <text x="708" y="217" text-anchor="middle" font-size="10" fill="#5b21b6">30+ Obese</text>
+
+  <!-- Metrics section -->
+  <rect x="32" y="300" width="732" height="100" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#s)"/>
+  <text x="390" y="324" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">Metrics Computed Per Slice</text>
+  <line x1="48" y1="332" x2="748" y2="332" stroke="#e2e8f0" stroke-width="1"/>
+
+  <rect x="52" y="344" width="120" height="28" rx="6" fill="#dbeafe"/>
+  <text x="112" y="362" text-anchor="middle" font-size="10" font-weight="600" fill="#1e40af">Tool Accuracy</text>
+
+  <rect x="184" y="344" width="120" height="28" rx="6" fill="#dcfce7"/>
+  <text x="244" y="362" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">JSON Parse Rate</text>
+
+  <rect x="316" y="344" width="120" height="28" rx="6" fill="#fce7f3"/>
+  <text x="376" y="362" text-anchor="middle" font-size="10" font-weight="600" fill="#9d174d">Schema Compl.</text>
+
+  <rect x="448" y="344" width="130" height="28" rx="6" fill="#fef9c3"/>
+  <text x="513" y="362" text-anchor="middle" font-size="10" font-weight="600" fill="#854d0e">Thinking Presence</text>
+
+  <rect x="590" y="344" width="130" height="28" rx="6" fill="#ede9fe"/>
+  <text x="655" y="362" text-anchor="middle" font-size="10" font-weight="600" fill="#5b21b6">Avg Response Len</text>
+
+  <!-- Threshold callout -->
+  <rect x="220" y="384" width="340" height="24" rx="12" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+  <text x="390" y="400" text-anchor="middle" font-size="11" font-weight="600" fill="#dc2626">Flagged if any slice deviates &gt;10% from overall mean</text>
+</svg>

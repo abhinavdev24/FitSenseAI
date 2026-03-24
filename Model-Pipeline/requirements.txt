@@ -1,0 +1,31 @@
+# Core ML / training
+torch>=2.1.0
+unsloth>=2024.8
+transformers>=4.43.0
+trl>=0.9.0
+peft>=0.12.0
+bitsandbytes>=0.43.0
+datasets>=2.20.0
+accelerate>=0.33.0
+
+# Hyperparameter search
+optuna>=3.6.0
+
+# Experiment tracking
+wandb>=0.17.0
+
+# Config
+pyyaml>=6.0
+
+# Visualization
+matplotlib>=3.8.0
+seaborn>=0.13.0
+numpy>=1.26.0
+
+# GCP
+google-cloud-storage>=2.16.0
+
+# Linting & testing (dev)
+ruff>=0.4.0
+pytest>=8.0.0
+pyright>=1.1.360
