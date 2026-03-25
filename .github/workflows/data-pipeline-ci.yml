@@ -150,14 +150,14 @@ jobs:
       # ── Schema validation ──────────────────────────────────────────────────
       - name: Run schema validation
         run: |
-          python Model-Pipeline/Scripts/check_schema.py
+          python Model-Pipeline/scripts/check_schema.py
         env:
           PYTHONPATH: ${{ github.workspace }}
 
       # ── Bias slicing ───────────────────────────────────────────────────────
       - name: Run bias slicing analysis
         run: |
-          python Model-Pipeline/Scripts/bias_slicing.py
+          python Model-Pipeline/scripts/bias_slicing.py
         env:
           PYTHONPATH: ${{ github.workspace }}
 
