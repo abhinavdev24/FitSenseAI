@@ -406,4 +406,4 @@ py Model-Pipeline/Scripts/push_to_registry.py
 | `DISTILLATION_RUN_ID` | Override auto-detected run ID |
 | `GCP_PROJECT` | GCP project ID |
 | `GCS_BUCKET` | GCS bucket for model registry push |
-| `GCP_REGION` | GCP region (default: us-central1) |
+| `GCP_REGION` | GCP region (default: us-central1) 
