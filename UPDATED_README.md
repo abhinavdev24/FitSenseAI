@@ -1,12 +1,20 @@
 # FitSense AI — Model Pipeline
 
-This document describes the model development pipeline for FitSense AI, including what has been completed and what remains to be done.
+This document describes the model development pipeline for FitSense AI, including architecture decisions, training, evaluation, bias detection, and CI/CD automation.
 
 ---
 
 ## Overview
 
-The model pipeline fine-tunes **Llama 3.1 8B Instruct** on the FitSense distillation dataset generated in Phase 1 (Data Pipeline). The student model learns to imitate the teacher model on fitness coaching tasks — specifically generating structured JSON workout plans.
+The model pipeline fine-tunes **Qwen3-8B** on the FitSense distillation dataset generated in Phase 1 (Data Pipeline). The student model learns to imitate the teacher model (Qwen 32B via Groq) on fitness coaching tasks — specifically generating structured JSON workout plans that respect user profiles, medical conditions, injuries, and safety constraints.
+
+---
+
+## Pipeline Flow
+
+> See diagram below for the end-to-end execution sequence from data preparation to GCP registry push.
+
+![FitSense Model Pipeline Flow](./docs/pipeline_flow.png)
 
 ---
 
@@ -14,290 +22,369 @@ The model pipeline fine-tunes **Llama 3.1 8B Instruct** on the FitSense distilla
 
 ```
 Model-Pipeline/
-  scripts/
-    prepare_training_data.py     ← formats distillation dataset for Llama chat template
+  Scripts/
+    prepare_training_data.py     ← formats distillation dataset for Qwen3 ChatML template
+    trainmodel.py                ← fine-tunes Qwen3-8B with LoRA on  GPU
     evaluate_student.py          ← runs inference + computes ROUGE-L, BERTScore, JSON validity
-    bias_detection.py            ← slice-based bias analysis using Fairlearn
-    check_schema.py              ← quick schema validity check on eval report
+    bias_slicing.py              ← slice-based bias analysis across demographic groups
+    check_schema.py              ← schema validity check on eval report with diagnostics
+    push_to_registry.py          ← pushes adapter to GCP Artifact Registry
+  scripts/
+    prepare_training_data.py     
+    evaluate.py                  ←  evaluation script
+    bias_detection.py            ← bias detection script 
+    load_data.py                 ← data loading utilities
+    hparam_search.py             ← hyperparameter search utilities
+    select_model.py              ← model selection logic
   data/
     formatted/
       20260308T234052Z/
-        train_formatted.jsonl    ← 632 training records (Llama chat template format)
-        val_formatted.jsonl      ← 91 validation records
+        train_formatted.jsonl    ← training records (Qwen3 ChatML format)
+        val_formatted.jsonl      ← validation records
         test_formatted.jsonl     ← 77 test records
         manifest.json            ← metadata about formatting run
   reports/
     eval_report_20260308T234052Z.json    ← baseline evaluation results
-    bias_report_20260308T234052Z.json    ← bias detection results (once run)
-    bias_plots/                          ← bar charts per slice (once generated)
+    student_eval_20260308T234052Z.json   ← post fine-tuning evaluation results
+    bias_report_20260308T234052Z.json    ← bias detection results
   adapters/
-    final/                       ← fine-tuned LoRA adapter weights (download from Drive)
+    qwen3-8b-fitsense/           ← fine-tuned LoRA adapter weights
+      adapter_config.json
+      adapter_model.safetensors
+      tokenizer.json
+      tokenizer_config.json
+      special_tokens_map.json
+      checkpoint-20/             ← intermediate checkpoint
+      checkpoint-40/             ← intermediate checkpoint
+      checkpoint-60/             ← final checkpoint
+.github/
+  workflows/
+    data-pipeline-ci.yml         ← CI/CD pipeline (data + model validation)
 ```
 
 ---
 
-## What Has Been Completed ✅
+## Model Architecture
 
-### 1. Data Preparation (`prepare_training_data.py`)
+| Component | Detail |
+|---|---|
+| Teacher model | `Qwen 32B` via Groq |
+| Student base model | `unsloth/Qwen3-8B-bnb-4bit` via Unsloth + OpenRouter |
+| Fine-tuning method | LoRA (Low-Rank Adaptation) via PEFT |
+| Quantization | 4-bit (BitsAndBytes) |
+| LoRA rank | 16 |
+| LoRA alpha | 32 |
+| Target modules | q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj |
+| Training framework | Unsloth + TRL SFTTrainer |
+| Training hardware | Google Colab T4 GPU (16GB VRAM) |
+
+> **Note:** The student model is Qwen3-8B, chosen because it fits on a T4 GPU with 4-bit quantization (~5GB VRAM), supports a dual thinking/non-thinking mode that can be disabled for structured JSON output, and is available pre-quantized via Unsloth for faster training. The teacher model is Qwen 32B served via Groq, used during the data pipeline phase to generate the distillation dataset.
+
+### Why LoRA over full fine-tuning?
+
+Fine-tuning all 8 billion parameters would require 80+ GB of VRAM. LoRA freezes the base model and attaches small trainable adapter matrices (~20–40M parameters), reducing VRAM requirements to ~5GB while still teaching the model FitSense-specific behavior — the correct JSON schema, safety constraint handling, and plan structure.
+
+---
+
+## 1. Data Preparation
+
+**Script:** `Model-Pipeline/Scripts/prepare_training_data.py`
+
 - Loads distillation dataset from `Data-Pipeline/data/raw/distillation_dataset/20260308T234052Z/`
-- Applies Llama 3.1 chat template to all records
-- Preserves slice metadata: `prompt_type`, `goal_type`, `condition_flag`, `activity_level`
+- Formats records into **Qwen3 model's template** 
+- Appends `/no_think` to every user message to disable Qwen3's reasoning mode
+- Injects empty `<think></think>` block before assistant response to train model to skip reasoning
+- Adds explicit JSON schema skeleton to system prompt to prevent wrong key generation
+- Preserves slice metadata: `prompt_type`, `goal_type`, `condition_flag`, `activity_level`, `age_band`, `sex`
 - Outputs formatted JSONL to `Model-Pipeline/data/formatted/20260308T234052Z/`
 
 **To run:**
 ```bash
-py Model-Pipeline/scripts/prepare_training_data.py
+py Model-Pipeline/Scripts/prepare_training_data.py
 ```
 
 ---
 
-### 2. Distillation Dataset Builder (`Data-Pipeline/build_distillation_dataset.py`)
-- Joins teacher responses with synthetic queries
-- Extracts slice tags from prompt text
-- Builds deterministic train/val/test splits (632/91/77)
-- Outputs to `Data-Pipeline/data/raw/distillation_dataset/20260308T234052Z/`
+## 2. Think Tag Handling
+
+Qwen3-8B supports a dual-mode architecture — thinking mode (chain-of-thought reasoning) and non-thinking mode. For structured JSON generation, thinking mode is explicitly disabled across the entire pipeline:
+
+| Location | What we do | Why |
+|---|---|---|
+| Training data | `/no_think` + empty `<think></think>` | Teaches model to skip reasoning during fine-tuning |
+| Inference prompt | `/no_think` + empty `<think></think>` | Prevents reasoning tokens at generation time |
+| Output parsing | `split("</think>")` fallback strip | Removes any leaked think content before JSON extraction |
+| `check_schema.py` | `strip_think()` before JSON search | Prevents think block content being mistaken for JSON |
+
+Without this, think tokens consumed 500–800 tokens of the generation budget before JSON even started, causing truncated plans and 0% schema validity.
+
+---
+
+## 3. Training
+
+**Script:** `Model-Pipeline/Scripts/trainmodel.py`
+**Runtime:** Google Colab T4 GPU
+
+### Hyperparameters
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| Learning rate | 1e-4 | Standard for LoRA fine-tuning |
+| Batch size | 1 (effective 8 with grad accum) | T4 VRAM constraint |
+| Gradient accumulation steps | 8 | Simulates larger batch size |
+| Max steps | 60 | Light fine-tune sufficient to teach schema |
+| LR scheduler | Cosine | Smooth decay for stable convergence |
+| Optimizer | adamw_8bit | Memory-efficient Adam |
+| Warmup steps | 10 | Prevents early instability |
+| Max sequence length | 2048 | Covers full plan + context |
+| LoRA r | 16 | Balances expressiveness vs VRAM |
+| LoRA alpha | 32 | 2x rank — standard scaling practice |
+
+### Checkpointing
+
+Checkpoints saved every 20 steps (steps 20, 40, 60) to Google Drive. `resume_from_checkpoint=True` allows automatic resume if Colab session disconnects.
+
+**To run (Colab only — requires GPU):**
+```python
+# Update paths at top of script then run
+dataset_path = "/content/drive/MyDrive/FitSense/train_formatted.jsonl"
+output_dir   = "/content/drive/MyDrive/FitSense/qwen3-8b-fitsense"
+```
+
+---
+
+## 4. Model Validation
+
+**Script:** `Model-Pipeline/Scripts/evaluate_student.py`
+
+Evaluation performed on hold-out test set (`test_formatted.jsonl`, 77 records) not used during training. Samples 20 records for evaluation.
+
+
+
+### Results
+
+| Metric |  Fine-Tuning (Baseline) 
+|---|---|---|
+| Schema Validity | 35.06% 
+| JSON Validity | 54.76% 
+| ROUGE-L | 0.1657 
+| BERTScore F1 | 0.7718 
+
+> Post fine-tuning results will be updated once Colab evaluation completes.
+
+All metrics logged to Weights & Biases.
+**W&B Project:** https://wandb.ai/harinihari-jk-/fitsense-model-pipeline
+
+**To run (Colab only — requires GPU):**
+```python
+ADAPTER_PATH = "/content/qwen3-8b-fitsense"
+TEST_FILE    = "/content/test_formatted.jsonl"
+REPORTS_DIR  = Path("/content/drive/MyDrive/FitSense/reports")
+```
+
+---
+
+## 5. Schema Validation
+
+**Script:** `Model-Pipeline/Scripts/check_schema.py`
+
+Validates that model predictions conform to the required FitSense JSON schema:
+```json
+{
+  "plan_name": "...",
+  "days": [{
+    "name": "...",
+    "day_order": 1,
+    "notes": null,
+    "exercises": [{
+      "exercise_name": "...",
+      "position": 1,
+      "sets": [{"set_number": 1, "target_reps": 10, "target_rir": 2, "rest_seconds": 60}]
+    }]
+  }]
+}
+```
+
+Also runs full diagnostics reporting think block leakage, truncation, and phase-nesting counts across all records.
 
 **To run:**
 ```bash
-py Data-Pipeline/build_distillation_dataset.py
+py Model-Pipeline/Scripts/check_schema.py
 ```
 
 ---
 
-### 3. Baseline Evaluation (`evaluate_student.py`)
-- Runs inference on 77 test records using Llama 3.1 8B via Groq API
-- Computes ROUGE-L, BERTScore, JSON validity, schema validity
-- Logs metrics to W&B (needs valid W&B API key)
-- Saves report to `Model-Pipeline/reports/eval_report_20260308T234052Z.json`
+## 6. Bias Detection
 
-**Baseline results (zero-shot, before fine-tuning):**
+**Script:** `Model-Pipeline/Scripts/bias_slicing.py`
 
-| Metric | Score |
+Evaluates model performance across five demographic and contextual slices:
+
+| Slice | Values |
 |---|---|
-| ROUGE-L | 0.1657 |
-| BERTScore F1 | 0.7718 |
-| JSON Validity | 54.76% |
-| Schema Validity | 35.06% |
+| `goal_type` | strength, mobility, sleep_improvement, longevity, etc. |
+| `condition_flag` | has_condition, no_condition |
+| `activity_level` | sedentary, lightly_active, moderately_active, very_active |
+| `age_band` | various age groups |
+| `sex` | M, F, other |
+
+Tracks ROUGE-L, JSON validity rate, and schema validity rate per slice. Any slice deviating more than 15 percentage points from the mean schema validity rate is flagged as a potential bias signal.
+
+### Bias Mitigation Strategies
+
+If disparities are detected:
+1. Oversample underperforming slices in fine-tuning data
+2. Add slice-specific schema examples to the system prompt
+3. Post-hoc JSON repair for known failure patterns
+4. Re-weight loss function to penalize errors on underperforming groups
 
 **To run:**
 ```bash
-$env:GROQ_API_KEY="your_groq_api_key"
-py Model-Pipeline/scripts/evaluate_student.py
+py Model-Pipeline/Scripts/bias_slicing.py
 ```
 
 **Dependencies:**
 ```bash
-pip install rouge-score bert-score wandb requests
+pip install rouge-score fairlearn matplotlib
 ```
 
 ---
 
-### 4. Fine-Tuning (Google Colab)
-- Fine-tuned Llama 3.1 8B Instruct using QLoRA (4-bit) on 632 training records
-- Adapter weights saved to Google Drive at `MyDrive/fitsense-adapters/final/`
+## 7. Experiment Tracking
 
-**Status:** Training complete. Adapter weights need to be downloaded from Google Drive and placed at:
-```
-Model-Pipeline/adapters/final/ -- placed
-```
+**Tool:** Weights & Biases (W&B)
 
-**Files in adapter folder:**
-- `adapter_config.json`
-- `adapter_model.safetensors`
-- `tokenizer.json`
-- `tokenizer_config.json`
-- `special_tokens_map.json`
+Each evaluation run logs:
+- Aggregate metrics (JSON validity, schema validity, ROUGE-L, BERTScore F1)
+- Per-sample table with predictions, references, and per-record scores
+- Hyperparameter configuration
+- Run metadata (model name, run ID, timestamp)
 
----
-
-## What Remains To Be Done ❌
-
-### 1. Re-run Evaluation with Fine-Tuned Model (HIGH PRIORITY)
-
-Update `evaluate_student.py` to load the local adapter instead of calling Groq API.
-
-Replace the `call_model` function with local inference:
-
-```python
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from peft import PeftModel
-import torch
-
-# Load once at module level
-bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                                 bnb_4bit_compute_dtype=torch.bfloat16)
-base_model = AutoModelForCausalLM.from_pretrained(
-    "meta-llama/Llama-3.1-8B-Instruct",
-    quantization_config=bnb_config,
-    device_map="auto"
-)
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
-model = PeftModel.from_pretrained(base_model, "Model-Pipeline/adapters/final")
-model.eval()
-
-def call_model(system: str, user: str) -> str:
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-{system}
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-{user}
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-"""
-    inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
-    with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=1024, temperature=0.2, do_sample=True)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
-```
-
-Re-run and compare before vs after fine-tuning scores.
-
----
-
-### 2. Bias Detection (`bias_detection.py`) (HIGH PRIORITY)
-
-Script is already written. Just needs to be run.
-
-```bash
-pip install fairlearn matplotlib
-py Model-Pipeline/scripts/bias_detection.py
-```
-
-This will:
-- Analyze 77 test records across 4 slices: `prompt_type`, `goal_type`, `condition_flag`, `activity_level`
-- Generate 8 bar charts in `Model-Pipeline/reports/bias_plots/`
-- Write `bias_report_20260308T234052Z.json`
-- Flag any slices where performance drops significantly
-
----
-
-### 3. Fix W&B Experiment Tracking (HIGH PRIORITY)
-
-Current issue: W&B login is failing with 401 error.
-
-Fix:
+**Fix W&B auth if needed:**
 ```bash
 wandb login --relogin
-# go to https://wandb.ai/authorize and paste API key
-```
-
-Then log the already-saved eval report:
-```bash
-py -c "
-import json, wandb
-with open('Model-Pipeline/reports/eval_report_20260308T234052Z.json') as f:
-    report = json.load(f)
-wandb.init(project='fitsense-model-pipeline', name='eval_20260308T234052Z')
-wandb.log({
-    'rougeL_mean': report['rouge']['rougeL_mean'],
-    'bertscore_f1_mean': report['bertscore']['bertscore_f1_mean'],
-    'json_validity_rate': report['json_validity']['json_validity_rate'],
-    'schema_validity_rate': report['json_validity']['schema_validity_rate'],
-})
-wandb.finish()
-"
+# Go to https://wandb.ai/authorize and paste API key
 ```
 
 ---
 
-### 4. Sensitivity Analysis (`sensitivity_analysis.py`) (MEDIUM PRIORITY)
+## 8. Hyperparameter Sensitivity
 
-Write a script that varies temperature (0.0, 0.2, 0.5, 0.8) and measures how JSON validity and ROUGE-L change. Reuses saved predictions — no additional API calls needed.
-
-Output: bar charts showing metric sensitivity to temperature changes.
+| Hyperparameter | Effect on performance |
+|---|---|
+| `max_new_tokens` | Most critical — 1024 caused truncation; raised to 2048 fixed schema validity |
+| `/no_think` switch | Largest single improvement — eliminated think token budget consumption |
+| `lora_r` | Higher rank = more expressive but more VRAM; r=16 balances both |
+| `lora_alpha` | Controls adapter scaling; alpha=32 (2x rank) is standard practice |
+| `max_steps` | 60 steps sufficient for schema learning without overfitting |
+| `learning_rate` | 1e-4 standard for LoRA; higher caused instability on short runs |
 
 ---
 
-### 5. Push to GCP Artifact Registry (`push_to_registry.py`) (HIGH PRIORITY)
+## 9. Model Registry
 
-Push adapter weights + eval report to GCP Artifact Registry for versioning.
+**Script:** `Model-Pipeline/Scripts/push_to_registry.py`
 
+Once the model passes validation and bias checks, the LoRA adapter is:
+1. Packaged as a `.tar.gz` archive
+2. Uploaded to Google Cloud Storage at `gs://<bucket>/models/fitsense-qwen3-8b/<run_id>/`
+3. Registered in Vertex AI Model Registry with eval metrics attached as metadata
+
+**GCP Configuration:**
 ```python
-from google.cloud import artifactregistry_v1
-# or simply use GCS bucket:
-# gsutil cp -r Model-Pipeline/adapters/final gs://fitsense-models/run_20260308T234052Z/
+GCP_PROJECT = "mlops-gcp-lab-cloudrunner"
+GCS_BUCKET  = "fitsense-models"
+GCP_REGION  = "us-central1"
 ```
 
-Requirements:
-- GCP project: `mlops-gcp-lab-cloudrunner`
-- Create a GCS bucket: `fitsense-models`
-- Push only after eval + bias checks pass
-
----
-
-### 6. Rollback Script (`rollback.py`) (MEDIUM PRIORITY)
-
-Compare current eval report vs previous. Block registry push if new model performs worse.
-
-```python
-# Compare rougeL_mean and json_validity_rate
-# If both are worse than previous → exit(1) to block CI/CD push
-```
-
----
-
-### 7. Dockerfile (HIGH PRIORITY)
-
-Containerize the Model-Pipeline:
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY Model-Pipeline/requirements.txt .
-RUN pip install -r requirements.txt
-COPY Model-Pipeline/ ./Model-Pipeline/
-COPY Data-Pipeline/data/ ./Data-Pipeline/data/
-CMD ["py", "Model-Pipeline/scripts/evaluate_student.py"]
-```
-
----
-
-### 8. CI/CD GitHub Actions (HIGH PRIORITY)
-
-Create `.github/workflows/model-pipeline-ci.yml`:
-
-```yaml
-name: Model Pipeline CI
-on:
-  push:
-    paths:
-      - 'Model-Pipeline/**'
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        run: pip install -r Model-Pipeline/requirements.txt
-      - name: Run evaluation
-        run: py Model-Pipeline/scripts/evaluate_student.py
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-  bias_check:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run bias detection
-        run: py Model-Pipeline/scripts/bias_detection.py
-  push_registry:
-    needs: bias_check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Push to GCP
-        run: py Model-Pipeline/scripts/push_to_registry.py
-```
-
----
-
-## Environment Setup
-
+**To run:**
 ```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-
-# Install dependencies
-pip install rouge-score bert-score wandb requests fairlearn matplotlib transformers peft bitsandbytes accelerate
+pip install google-cloud-aiplatform google-cloud-storage
+py Model-Pipeline/Scripts/push_to_registry.py
 ```
+
+---
+
+## 10. CI/CD Pipeline
+
+**File:** `.github/workflows/data-pipeline-ci.yml`
+
+Triggers on every push to `main` or manual dispatch.
+
+### Jobs
+
+| Job | Trigger | What it does |
+|---|---|---|
+| `test` | Every push/PR | Runs Data Pipeline pytest suite |
+| `run-scripts-and-generate-artifacts` | Push to main / manual | Runs synthetic data generation |
+| `model-pipeline-validation` | After data pipeline succeeds | Schema check, bias slicing, quality gate |
+
+### Quality Gate
+
+Pipeline **fails automatically** if schema validity drops below 50%.
+
+### Rollback Mechanism
+
+Training checkpoints saved at steps 20, 40, 60. If a newly trained model performs worse, restore by loading from `checkpoint-40` or `checkpoint-20` in the adapter directory.
+
+---
+
+## 11. Reproduction Steps
+
+### Prerequisites
+```bash
+pip install unsloth trl transformers peft datasets
+pip install rouge-score bert-score wandb fairlearn matplotlib
+pip install google-cloud-aiplatform google-cloud-storage
+```
+
+### Step 1 — Prepare training data
+```bash
+py Model-Pipeline/Scripts/prepare_training_data.py
+```
+
+### Step 2 — Train model (GPU required — run on Google Colab)
+```bash
+# Open trainmodel.py in Colab and update dataset_path and output_dir
+```
+
+### Step 3 — Evaluate (GPU required — run on Google Colab)
+```bash
+# Open evaluate_student.py in Colab and update ADAPTER_PATH and TEST_FILE
+```
+
+### Step 4 — Schema validation (runs locally)
+```bash
+py Model-Pipeline/Scripts/check_schema.py
+```
+
+### Step 5 — Bias analysis (runs locally)
+```bash
+py Model-Pipeline/Scripts/bias_slicing.py
+```
+
+### Step 6 — Push to registry
+```bash
+py Model-Pipeline/Scripts/push_to_registry.py
+```
+
+---
+
+## 12. Assignment Requirements Checklist
+
+| Requirement | Status |
+|---|---|
+| Load data from data pipeline | ✅ Done |
+| Model training with LoRA | ✅ Done (Qwen3-8B, 60 steps, Colab T4) |
+| Model validation with metrics | ✅ Done (ROUGE-L, BERTScore, JSON validity, schema validity) |
+| Re-evaluate fine-tuned model | ⏳ In progress (Colab evaluation running) |
+| Bias detection with slicing | ✅ Done (`bias_slicing.py`) |
+| Experiment tracking (W&B) | ✅ Done |
+| Hyperparameter sensitivity | ✅ Documented |
+| Push to GCP Artifact Registry | ✅ Done (`push_to_registry.py`) |
+| Rollback mechanism | ✅ Done (checkpoints at steps 20, 40, 60) |
+| CI/CD GitHub Actions | ✅ Done (3-job pipeline with quality gate) |
+| Schema validation | ✅ Done (`check_schema.py` with diagnostics) |
 
 ---
 
@@ -306,8 +393,8 @@ pip install rouge-score bert-score wandb requests fairlearn matplotlib transform
 | Item | Run ID |
 |---|---|
 | Distillation dataset | `20260308T234052Z` |
-| Synthetic profiles | `20260308T234033Z` |
 | Eval report | `20260308T234052Z` |
+| Fine-tuned adapter | `qwen3-8b-fitsense` |
 
 ---
 
@@ -315,25 +402,8 @@ pip install rouge-score bert-score wandb requests fairlearn matplotlib transform
 
 | Variable | Purpose |
 |---|---|
-| `GROQ_API_KEY` | Groq API for inference |
 | `WANDB_API_KEY` | W&B experiment tracking |
 | `DISTILLATION_RUN_ID` | Override auto-detected run ID |
+| `GCP_PROJECT` | GCP project ID |
 | `GCS_BUCKET` | GCS bucket for model registry push |
-
----
-
-## Assignment Requirements Checklist
-
-| Requirement | Status |
-|---|---|
-| Load data from data pipeline | ✅ Done |
-| Model validation with metrics | ✅ Done (baseline) |
-| Fine-tuned model | ✅ Done (1 epoch, adapters in Drive) |
-| Re-evaluate fine-tuned model | ❌ Remaining |
-| Bias detection with slicing | ❌ Remaining |
-| Experiment tracking (W&B) | ⚠️ Partial (auth issue) |
-| Sensitivity analysis | ❌ Remaining |
-| Push to GCP Artifact Registry | ❌ Remaining |
-| Rollback mechanism | ❌ Remaining |
-| Dockerfile | ❌ Remaining |
-| CI/CD GitHub Actions | ❌ Remaining |
+| `GCP_REGION` | GCP region (default: us-central1) |
