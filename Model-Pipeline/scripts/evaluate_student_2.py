@@ -16,28 +16,13 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 # 2. Configuration
-<<<<<<< HEAD
-BASE_MODEL = "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
-ADAPTER_PATH = "Model-Pipeline/adapters/qwen-fitsense"
-=======
 BASE_MODEL = "unsloth/Qwen3-8B-bnb-4bit"
-ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-8b-fitsense"
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
+ADAPTER_PATH = r"Model-Pipeline\adapters\qwen3-8b-fitsense"
 FORMATTED_BASE = Path("Model-Pipeline/data/formatted")
 RUN_ID = "20260308T234052Z"
 TEST_FILE = FORMATTED_BASE / RUN_ID / "test_formatted.jsonl"
 REPORTS_DIR = Path("Model-Pipeline/reports")
 
-<<<<<<< HEAD
-# 3. Initialize W&B (Cloud persistence)
-wandb.init(
-    project="fitsense-model-pipeline",
-    name=f"eval_student_{RUN_ID}",
-    config={"model": "Qwen-2.5-7B-Student", "run_id": RUN_ID}
-)
-
-# 4. Load Model (Native Path for stability on T4)
-=======
 # 3. Initialize W&B
 wandb.init(
     project="fitsense-model-pipeline",
@@ -46,7 +31,6 @@ wandb.init(
 )
 
 # 4. Load Model
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
 log.info("Loading model and adapter...")
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_PATH)
 model = AutoModelForCausalLM.from_pretrained(
@@ -57,15 +41,6 @@ model = AutoModelForCausalLM.from_pretrained(
 model = PeftModel.from_pretrained(model, ADAPTER_PATH)
 model.eval()
 
-<<<<<<< HEAD
-def call_model(user_message):
-    prompt = f"### Instruction:\nGenerate a FitSense workout plan.\n{user_message}\n\n### Response:\n"
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2000).to("cuda")
-    with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=1024, temperature=0.1, do_sample=False)
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return decoded.split("### Response:")[1].strip() if "### Response:" in decoded else decoded.strip()
-=======
 
 def call_model(user_message):
     """
@@ -94,39 +69,12 @@ def call_model(user_message):
 
     return decoded.strip()
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
 
 def main():
     with open(TEST_FILE, "r") as f:
         records = [json.loads(line) for line in f if line.strip()]
-<<<<<<< HEAD
-    
-    sample = random.sample(records, 10)
-    preds, refs, json_valid_results = [], [], []
 
-    for i, rec in enumerate(sample):
-        log.info(f"Evaluating {i+1}/10...")
-        prediction = call_model(rec["user_message"])
-        preds.append(prediction)
-        refs.append(rec["assistant"])
-        
-        # JSON Validity Check
-        try:
-            json.loads(prediction[prediction.find("{"):prediction.rfind("}")+1])
-            json_valid_results.append(1)
-        except:
-            json_valid_results.append(0)
-
-    # 5. Compute Advanced Metrics
-    log.info("Computing ROUGE and BERTScore...")
-    r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
-    rouge_l = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
-    
-    P, R, F1 = bert_score(preds, refs, lang="en", verbose=False)
-    
-=======
-
-    sample = random.sample(records, min(10, len(records)))
+    sample = random.sample(records, min(20, len(records)))
     preds, refs, json_valid_results = [], [], []
 
     for i, rec in enumerate(sample):
@@ -154,20 +102,12 @@ def main():
 
     P, R, F1 = bert_score(preds, refs, lang="en", verbose=False)
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
     avg_metrics = {
         "json_validity_rate": sum(json_valid_results) / len(json_valid_results),
         "rougeL_mean": sum(rouge_l) / len(rouge_l),
         "bertscore_f1_mean": F1.mean().item()
     }
 
-<<<<<<< HEAD
-    # 6. Final Logging & Saving
-    wandb.log(avg_metrics)
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
-    
-=======
     # 6. Log & Save
     wandb.log(avg_metrics)
 
@@ -187,16 +127,12 @@ def main():
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
     with open(report_file, "w") as f:
         json.dump({"run_id": RUN_ID, "metrics": avg_metrics}, f, indent=2)
 
     log.info(f"✅ Evaluation Complete. Report saved to {report_file}")
     wandb.finish()
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
 if __name__ == "__main__":
     main()
