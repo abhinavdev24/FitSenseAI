@@ -16,38 +16,21 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 # 2. Configuration
-<<<<<<< HEAD
-BASE_MODEL = "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
-ADAPTER_PATH = "Model-Pipeline/adapters/qwen-fitsense"
-=======
-BASE_MODEL = "unsloth/Qwen3-8B-bnb-4bit"
-ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-8b-fitsense"
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
-FORMATTED_BASE = Path("Model-Pipeline/data/formatted")
-RUN_ID = "20260308T234052Z"
-TEST_FILE = FORMATTED_BASE / RUN_ID / "test_formatted.jsonl"
-REPORTS_DIR = Path("Model-Pipeline/reports")
+BASE_MODEL   = "unsloth/Qwen3-4B-bnb-4bit"
+ADAPTER_PATH = "/content/project_folder/FitSenseAI_Final/Model-Pipeline/adapters/qwen3-4b-fitsense"
+TEST_FILE    = "/content/project_folder/Model-Pipeline/data/formatted/test.jsonl"
+REPORTS_DIR  = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/reports")
+RUN_ID       = "20260331Z"
 
-<<<<<<< HEAD
-# 3. Initialize W&B (Cloud persistence)
-wandb.init(
-    project="fitsense-model-pipeline",
-    name=f"eval_student_{RUN_ID}",
-    config={"model": "Qwen-2.5-7B-Student", "run_id": RUN_ID}
-)
-
-# 4. Load Model (Native Path for stability on T4)
-=======
 # 3. Initialize W&B
 wandb.init(
     project="fitsense-model-pipeline",
-    name=f"eval_student_{RUN_ID}",
-    config={"model": "Qwen3-8B-Student", "run_id": RUN_ID}
+    name=f"eval_student_4b_{RUN_ID}",
+    config={"model": "Qwen3-4B-Student", "run_id": RUN_ID}
 )
 
 # 4. Load Model
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
-log.info("Loading model and adapter...")
+log.info("Loading Qwen3-4B model and adapter...")
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_PATH)
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
@@ -57,88 +40,89 @@ model = AutoModelForCausalLM.from_pretrained(
 model = PeftModel.from_pretrained(model, ADAPTER_PATH)
 model.eval()
 
-<<<<<<< HEAD
-def call_model(user_message):
-    prompt = f"### Instruction:\nGenerate a FitSense workout plan.\n{user_message}\n\n### Response:\n"
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2000).to("cuda")
-    with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=1024, temperature=0.1, do_sample=False)
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return decoded.split("### Response:")[1].strip() if "### Response:" in decoded else decoded.strip()
-=======
 
 def call_model(user_message):
-    """
-    Generate using ChatML template with /no_think to disable Qwen3 thinking mode.
-    The empty <think></think> block forces the model to skip reasoning and output
-    JSON directly, preventing think tokens from consuming the token budget.
-    As a fallback, any leaked </think> content is stripped before returning.
-    """
+    """Generate using ChatML template with /no_think."""
     prompt = (
         f"<|im_start|>user\n{user_message} /no_think<|im_end|>\n"
         f"<|im_start|>assistant\n<think>\n</think>\n"
     )
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to("cuda")
     with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=2048,   # raised from 1024 — plans need room to breathe
-            do_sample=False
-        )
+        outputs = model.generate(**inputs, max_new_tokens=2048, do_sample=False)
     generated_ids = outputs[0][inputs["input_ids"].shape[1]:]
     decoded = tokenizer.decode(generated_ids, skip_special_tokens=True)
-
-    # Strip any residual think block (fallback safety)
     if "</think>" in decoded:
         decoded = decoded.split("</think>", 1)[-1].strip()
-
     return decoded.strip()
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
+
+def extract_user_message(rec):
+    """Extract user message from request_payload.messages."""
+    try:
+        messages = rec["request_payload"]["messages"]
+        # Get the last user message
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                return msg["content"]
+    except (KeyError, TypeError):
+        pass
+    return ""
+
+
+def extract_assistant_response(rec):
+    """Extract assistant response — prefer response_json, fallback to response_text."""
+    # Try response_json first (already parsed JSON object)
+    resp_json = rec.get("response_json")
+    if resp_json:
+        if isinstance(resp_json, str):
+            return resp_json.strip()
+        if isinstance(resp_json, dict):
+            return json.dumps(resp_json)
+
+    # Fallback to response_text
+    resp_text = rec.get("response_text", "")
+    if resp_text:
+        # Strip think tags if present
+        if "<think>" in resp_text:
+            resp_text = resp_text.split("</think>")[-1].strip()
+        return resp_text.strip()
+
+    return ""
+
 
 def main():
+    # Load test file
+    if not os.path.exists(TEST_FILE):
+        raise FileNotFoundError(f"Could not find test file at {TEST_FILE}")
+
     with open(TEST_FILE, "r") as f:
         records = [json.loads(line) for line in f if line.strip()]
-<<<<<<< HEAD
-    
-    sample = random.sample(records, 10)
-    preds, refs, json_valid_results = [], [], []
 
-    for i, rec in enumerate(sample):
-        log.info(f"Evaluating {i+1}/10...")
-        prediction = call_model(rec["user_message"])
-        preds.append(prediction)
-        refs.append(rec["assistant"])
-        
-        # JSON Validity Check
-        try:
-            json.loads(prediction[prediction.find("{"):prediction.rfind("}")+1])
-            json_valid_results.append(1)
-        except:
-            json_valid_results.append(0)
+    # Filter only successful records
+    records = [r for r in records if r.get("status") == "success"]
+    log.info(f"Found {len(records)} successful records.")
 
-    # 5. Compute Advanced Metrics
-    log.info("Computing ROUGE and BERTScore...")
-    r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
-    rouge_l = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
-    
-    P, R, F1 = bert_score(preds, refs, lang="en", verbose=False)
-    
-=======
-
-    sample = random.sample(records, min(10, len(records)))
+    sample = random.sample(records, min(20, len(records)))
     preds, refs, json_valid_results = [], [], []
 
     for i, rec in enumerate(sample):
         log.info(f"Evaluating {i+1}/{len(sample)}...")
-        prediction = call_model(rec["user_message"])
+
+        user_message   = extract_user_message(rec)
+        assistant_ref  = extract_assistant_response(rec)
+
+        if not user_message or not assistant_ref:
+            log.warning(f"Record {i} missing content. Skipping.")
+            continue
+
+        prediction = call_model(user_message)
         preds.append(prediction)
-        refs.append(rec["assistant"])
+        refs.append(assistant_ref)
 
         # JSON Validity Check
         try:
-            start = prediction.find("{")
-            end = prediction.rfind("}")
+            start, end = prediction.find("{"), prediction.rfind("}")
             if start != -1 and end != -1:
                 json.loads(prediction[start:end + 1])
                 json_valid_results.append(1)
@@ -147,56 +131,50 @@ def main():
         except Exception:
             json_valid_results.append(0)
 
-    # 5. Compute Metrics
-    log.info("Computing ROUGE and BERTScore...")
-    r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
-    rouge_l = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
+    if not preds:
+        log.error("❌ ERROR: No samples were successfully parsed. Check your dataset keys.")
+        return
 
+    # 5. Compute Metrics
+    log.info("Computing Metrics...")
+    r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
+    rouge_l  = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
     P, R, F1 = bert_score(preds, refs, lang="en", verbose=False)
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
     avg_metrics = {
         "json_validity_rate": sum(json_valid_results) / len(json_valid_results),
-        "rougeL_mean": sum(rouge_l) / len(rouge_l),
-        "bertscore_f1_mean": F1.mean().item()
+        "rougeL_mean":        sum(rouge_l) / len(rouge_l),
+        "bertscore_f1_mean":  F1.mean().item()
     }
 
-<<<<<<< HEAD
-    # 6. Final Logging & Saving
-    wandb.log(avg_metrics)
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
-    
-=======
+    log.info(f"Metrics: {avg_metrics}")
+
     # 6. Log & Save
     wandb.log(avg_metrics)
-
-    table = wandb.Table(columns=["sample_id", "user_message", "prediction", "reference", "rougeL", "bertscore_f1", "json_valid"])
-    for i in range(len(sample)):
-        table.add_data(
-            i + 1,
-            sample[i]["user_message"][:300],
-            preds[i][:500],
-            refs[i][:500],
-            round(rouge_l[i], 4),
-            round(F1[i].item(), 4),
-            json_valid_results[i],
-        )
+    table = wandb.Table(columns=["sample_id", "prediction", "reference", "rougeL", "bertscore_f1", "json_valid"])
+    for i in range(len(preds)):
+        table.add_data(i+1, preds[i][:500], refs[i][:500], round(rouge_l[i], 4), round(F1[i].item(), 4), json_valid_results[i])
     wandb.log({"eval_samples": table})
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    per_record = []
+    for i in range(len(preds)):
+        per_record.append({
+            "record_id":    i + 1,
+            "prompt_type":  sample[i].get("prompt_type", "plan_creation"),
+            "prediction":   preds[i],
+            "reference":    refs[i],
+            "rougeL":       round(rouge_l[i], 4),
+            "bertscore_f1": round(F1[i].item(), 4),
+            "json_valid":   bool(json_valid_results[i]),
+        })
     report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
-
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
     with open(report_file, "w") as f:
-        json.dump({"run_id": RUN_ID, "metrics": avg_metrics}, f, indent=2)
+        json.dump({"run_id": RUN_ID, "metrics": avg_metrics, "per_record": per_record}, f, indent=2)
 
     log.info(f"✅ Evaluation Complete. Report saved to {report_file}")
     wandb.finish()
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
 if __name__ == "__main__":
     main()

@@ -1,0 +1,54 @@
+{
+  "run_id": "20260401Z",
+  "n_total": 20,
+  "slices": {
+    "goal_type": {
+      "unknown": {
+        "n": 20,
+        "rougeL_mean": 0.1734,
+        "json_validity_rate": 0.45,
+        "schema_validity_rate": 0.1
+      }
+    },
+    "condition_flag": {
+      "unknown": {
+        "n": 20,
+        "rougeL_mean": 0.1734,
+        "json_validity_rate": 0.45,
+        "schema_validity_rate": 0.1
+      }
+    },
+    "activity_level": {
+      "unknown": {
+        "n": 20,
+        "rougeL_mean": 0.1734,
+        "json_validity_rate": 0.45,
+        "schema_validity_rate": 0.1
+      }
+    },
+    "age_band": {
+      "unknown": {
+        "n": 20,
+        "rougeL_mean": 0.1734,
+        "json_validity_rate": 0.45,
+        "schema_validity_rate": 0.1
+      }
+    },
+    "sex": {
+      "unknown": {
+        "n": 20,
+        "rougeL_mean": 0.1734,
+        "json_validity_rate": 0.45,
+        "schema_validity_rate": 0.1
+      }
+    }
+  },
+  "disparities": {
+    "goal_type": [],
+    "condition_flag": [],
+    "activity_level": [],
+    "age_band": [],
+    "sex": []
+  },
+  "mitigation_notes": "Disparities above 15pp deviation from mean schema validity rate are flagged. Suggested mitigations: (1) oversample underperforming slices in fine-tuning data, (2) add slice-specific schema examples to the system prompt, (3) apply post-hoc JSON repair for known failure patterns."
+}

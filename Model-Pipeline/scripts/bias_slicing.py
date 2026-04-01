@@ -17,10 +17,10 @@ from collections import defaultdict
 from rouge_score import rouge_scorer
 
 # ── Config ────────────────────────────────────────────────────────────────────
-RUN_ID        = "20260308T234052Z"
-FORMATTED_DIR = Path("Model-Pipeline/data/formatted") / RUN_ID
-EVAL_REPORT   = Path("Model-Pipeline/reports") / f"eval_report_{RUN_ID}.json"
-OUTPUT_DIR    = Path("Model-Pipeline/reports")
+RUN_ID        = "20260401Z"
+FORMATTED_DIR = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/data/formatted/20260308T234052Z")
+EVAL_REPORT   = Path("/content/Model-Pipeline/reports/student_eval_20260331Z.json")
+OUTPUT_DIR    = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/reports")
 
 SLICE_KEYS = ["goal_type", "condition_flag", "activity_level", "age_band", "sex"]
 

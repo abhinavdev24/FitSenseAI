@@ -110,3 +110,22 @@ data.zip
 .env
 wandb/
 >>>>>>> fa3788e7322f6c3b4708c33047fa9cce653a9ffb
+
+# Wandb logs
+wandb/
+
+# HuggingFace cache
+huggingface_tokenizers_cache/
+
+# Large adapter binary files
+*.safetensors
+*.pt
+*.bin
+*.tar.gz
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Staging
+Model-Pipeline/staging/
