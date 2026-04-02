@@ -10,8 +10,8 @@ torch.cuda.empty_cache()
 # 2. Configuration
 MODEL_NAME     = "unsloth/Qwen3-4B-bnb-4bit"
 MAX_SEQ_LENGTH = 2048
-DATASET_PATH   = "/content/project_folder/FitSenseAI_Final/Model-Pipeline/data/formatted/20260308T234052Z/train_formatted.jsonl"
-OUTPUT_DIR     = "/content/project_folder/FitSenseAI_Final/Model-Pipeline/adapters/qwen3-4b-v2"
+DATASET_PATH   = "Model-Pipeline/data/formatted/20260308T234052Z/train_formatted.jsonl"
+OUTPUT_DIR     = "Model-Pipeline/adapters/qwen3-4b-v2"
 
 # 3. Load Model & Tokenizer
 model, tokenizer = FastLanguageModel.from_pretrained(

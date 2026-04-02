@@ -17,9 +17,9 @@ log = logging.getLogger(__name__)
 
 # 2. Configuration
 BASE_MODEL   = "unsloth/Qwen3-4B-bnb-4bit"
-ADAPTER_PATH = "/content/project_folder/FitSenseAI_Final/Model-Pipeline/adapters/qwen3-4b-fitsense"
-TEST_FILE    = "/content/project_folder/Model-Pipeline/data/formatted/test.jsonl"
-REPORTS_DIR  = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/reports")
+ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-4b-fitsense"
+TEST_FILE    = "Model-Pipeline/data/formatted/test.jsonl"
+REPORTS_DIR  = Path("Model-Pipeline/reports")
 RUN_ID       = "20260331Z"
 
 # 3. Initialize W&B

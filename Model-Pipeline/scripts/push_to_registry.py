@@ -31,9 +31,9 @@ GCS_BUCKET  = os.environ.get("GCS_BUCKET",  "fitsenseai-model-registry")
 MODEL_NAME  = "fitsense-qwen3-4b"
 RUN_ID      = "20260401Z"
 
-ADAPTER_DIR = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/adapters/qwen3-4b-v2")
-REPORTS_DIR = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/reports")
-STAGING_DIR = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/staging")
+ADAPTER_DIR = Path("Model-Pipeline/adapters/qwen3-4b-v2")
+REPORTS_DIR = Path("Model-Pipeline/reports")
+STAGING_DIR = Path("Model-Pipeline/staging")
 
 # ── Step 1: Package adapter ───────────────────────────────────────────────────
 

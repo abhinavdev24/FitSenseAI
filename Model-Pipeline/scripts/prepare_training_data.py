@@ -16,8 +16,8 @@ from datetime import datetime
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-DISTILLATION_BASE = Path("/content/project_folder/FitSenseAI_Final/Data-Pipeline/data/raw/distillation_dataset")
-OUTPUT_BASE       = Path("/content/project_folder/FitSenseAI_Final/Model-Pipeline/data/formatted")
+DISTILLATION_BASE = Path("Data-Pipeline/data/raw/distillation_dataset")
+OUTPUT_BASE       = Path("Model-Pipeline/data/formatted")
 SPLITS            = ["train", "val", "test"]
 MAX_TOKENS_FLAG   = 2048
 

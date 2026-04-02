@@ -1,6 +1,6 @@
 import json, re
 
-REPORT_PATH = "/content/project_folder/FitSenseAI_Final/Model-Pipeline/reports/student_eval_20260331Z.json"
+REPORT_PATH = "Model-Pipeline/reports/student_eval_20260331Z.json"
 
 def strip_think(t):
     if "</think>" in t:
