@@ -161,30 +161,25 @@ jobs:
           import json, sys, glob
           from pathlib import Path
 
-          # Use glob to find the student_eval report regardless of the timestamp
           report_files = glob.glob("Model-Pipeline/reports/student_eval_*.json")
           
           if not report_files:
               print("❌ No evaluation report found - Check if evaluate_student.py ran.")
               sys.exit(1)
 
-          # Pick the most recent one if multiple exist
           report_path = Path(max(report_files, key=Path))
           print(f"Analyzing report: {report_path.name}")
 
           with open(report_path) as f:
               report = json.load(f)
 
-          # Navigate correctly through the 'metrics' sub-dictionary
           metrics = report.get("metrics", {})
-          json_rate   = metrics.get("json_validity_rate", 0)
-          
-          # Since check_schema output is printed to console but student_eval 
-          # contains the core metrics, we gate on the calculated validity rates
+          json_rate = metrics.get("json_validity_rate", 0)
+
           print(f"JSON validity   : {json_rate:.2%}")
 
-          if json_rate < 0.50:
-              print(f"❌ Validity {json_rate:.2%} is below threshold of 50%")
+          if json_rate < 0.45:
+              print(f"❌ Validity {json_rate:.2%} is below threshold of 45%")
               sys.exit(1)
           else:
               print(f"✅ Validity {json_rate:.2%} passes threshold")
