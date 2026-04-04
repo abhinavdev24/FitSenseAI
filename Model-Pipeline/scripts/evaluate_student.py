@@ -3,6 +3,7 @@ import os
 import torch
 import logging
 import random
+import gc
 from pathlib import Path
 from datetime import datetime
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
@@ -11,25 +12,21 @@ from rouge_score import rouge_scorer
 from bert_score import score as bert_score
 import wandb
 
-# 1. Setup Logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-# 2. Configuration
 BASE_MODEL   = "unsloth/Qwen3-4B-bnb-4bit"
 ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-4b-fitsense"
-TEST_FILE    = "Model-Pipeline/data/formatted/test.jsonl"
+TEST_FILE    = "Model-Pipeline/data/formatted/20260308T234052Z/test_formatted.jsonl"
 REPORTS_DIR  = Path("Model-Pipeline/reports")
-RUN_ID       = "20260331Z"
+RUN_ID       = "20260403Z"
 
-# 3. Initialize W&B
 wandb.init(
     project="fitsense-model-pipeline",
     name=f"eval_student_4b_{RUN_ID}",
     config={"model": "Qwen3-4B-Student", "run_id": RUN_ID}
 )
 
-# 4. Load Model
 log.info("Loading Qwen3-4B model and adapter...")
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_PATH)
 model = AutoModelForCausalLM.from_pretrained(
@@ -58,10 +55,11 @@ def call_model(user_message):
 
 
 def extract_user_message(rec):
-    """Extract user message from request_payload.messages."""
+    """Extract user message from record."""
+    if rec.get("user_message"):
+        return rec["user_message"].strip()
     try:
         messages = rec["request_payload"]["messages"]
-        # Get the last user message
         for msg in reversed(messages):
             if msg.get("role") == "user":
                 return msg["content"]
@@ -71,38 +69,40 @@ def extract_user_message(rec):
 
 
 def extract_assistant_response(rec):
-    """Extract assistant response — prefer response_json, fallback to response_text."""
-    # Try response_json first (already parsed JSON object)
+    """Extract assistant response."""
+    if rec.get("assistant"):
+        resp = rec["assistant"]
+        if isinstance(resp, str):
+            return resp.strip()
+        if isinstance(resp, dict):
+            return json.dumps(resp)
     resp_json = rec.get("response_json")
     if resp_json:
         if isinstance(resp_json, str):
             return resp_json.strip()
         if isinstance(resp_json, dict):
             return json.dumps(resp_json)
-
-    # Fallback to response_text
     resp_text = rec.get("response_text", "")
     if resp_text:
-        # Strip think tags if present
         if "<think>" in resp_text:
             resp_text = resp_text.split("</think>")[-1].strip()
         return resp_text.strip()
-
     return ""
 
 
 def main():
-    # Load test file
     if not os.path.exists(TEST_FILE):
         raise FileNotFoundError(f"Could not find test file at {TEST_FILE}")
 
     with open(TEST_FILE, "r") as f:
         records = [json.loads(line) for line in f if line.strip()]
 
-    # Filter only successful records
-    records = [r for r in records if r.get("status") == "success"]
-    log.info(f"Found {len(records)} successful records.")
+    records_with_status = [r for r in records if r.get("status") == "success"]
+    if records_with_status:
+        records = records_with_status
+    log.info(f"Found {len(records)} records.")
 
+    random.seed(42)
     sample = random.sample(records, min(20, len(records)))
     preds, refs, json_valid_results = [], [], []
 
@@ -120,7 +120,6 @@ def main():
         preds.append(prediction)
         refs.append(assistant_ref)
 
-        # JSON Validity Check
         try:
             start, end = prediction.find("{"), prediction.rfind("}")
             if start != -1 and end != -1:
@@ -132,14 +131,20 @@ def main():
             json_valid_results.append(0)
 
     if not preds:
-        log.error("❌ ERROR: No samples were successfully parsed. Check your dataset keys.")
+        log.error("No samples were successfully parsed. Check your dataset keys.")
         return
 
-    # 5. Compute Metrics
+    log.info("Freeing GPU memory for BERTScore...")
+    global model, tokenizer
+    del model
+    del tokenizer
+    gc.collect()
+    torch.cuda.empty_cache()
+
     log.info("Computing Metrics...")
     r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
     rouge_l  = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
-    P, R, F1 = bert_score(preds, refs, lang="en", verbose=False)
+    P, R, F1 = bert_score(preds, refs, model_type="roberta-base", num_layers=9, verbose=False, device="cuda")
 
     avg_metrics = {
         "json_validity_rate": sum(json_valid_results) / len(json_valid_results),
@@ -149,7 +154,6 @@ def main():
 
     log.info(f"Metrics: {avg_metrics}")
 
-    # 6. Log & Save
     wandb.log(avg_metrics)
     table = wandb.Table(columns=["sample_id", "prediction", "reference", "rougeL", "bertscore_f1", "json_valid"])
     for i in range(len(preds)):
@@ -172,9 +176,8 @@ def main():
     with open(report_file, "w") as f:
         json.dump({"run_id": RUN_ID, "metrics": avg_metrics, "per_record": per_record}, f, indent=2)
 
-    log.info(f"✅ Evaluation Complete. Report saved to {report_file}")
+    log.info(f"Evaluation Complete. Report saved to {report_file}")
     wandb.finish()
-
 
 if __name__ == "__main__":
     main()
