@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="70" y="38" font-family="Arial" font-size="22" font-weight="bold" fill="#111827">Goal Type Distribution</text>
+<line x1="70" y1="70" x2="70" y2="430" stroke="#374151"/>
+<line x1="70" y1="430" x2="870" y2="430" stroke="#374151"/>
+<rect x="90.0" y="70.0" width="175.0" height="360.0" fill="#10b981" opacity="0.9"/>
+<text x="177.5" y="62.0" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">232</text>
+<text x="177.5" y="448" text-anchor="end" transform="rotate(-25 177.5,448)" font-family="Arial" font-size="12" fill="#111827">general_fitness</text>
+<rect x="285.0" y="119.7" width="175.0" height="310.3" fill="#10b981" opacity="0.9"/>
+<text x="372.5" y="111.7" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">200</text>
+<text x="372.5" y="448" text-anchor="end" transform="rotate(-25 372.5,448)" font-family="Arial" font-size="12" fill="#111827">fat_loss</text>
+<rect x="480.0" y="119.7" width="175.0" height="310.3" fill="#10b981" opacity="0.9"/>
+<text x="567.5" y="111.7" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">200</text>
+<text x="567.5" y="448" text-anchor="end" transform="rotate(-25 567.5,448)" font-family="Arial" font-size="12" fill="#111827">strength</text>
+<rect x="675.0" y="169.3" width="175.0" height="260.7" fill="#10b981" opacity="0.9"/>
+<text x="762.5" y="161.3" text-anchor="middle" font-family="Arial" font-size="12" fill="#111827">168</text>
+<text x="762.5" y="448" text-anchor="end" transform="rotate(-25 762.5,448)" font-family="Arial" font-size="12" fill="#111827">muscle_gain</text>
+</svg>

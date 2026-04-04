@@ -1,0 +1,116 @@
+name: Data Pipeline CI
+
+on:
+  push:
+    paths:
+      - Data-Pipeline/**
+      - .github/workflows/data-pipeline-ci.yml
+  pull_request:
+    paths:
+      - Data-Pipeline/**
+      - .github/workflows/data-pipeline-ci.yml
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for triggering this workflow"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: Data-Pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r Data-Pipeline/requirements.txt
+
+      - name: Run Data-Pipeline tests
+        working-directory: Data-Pipeline
+        run: |
+          pytest tests -v
+
+  run-scripts-and-generate-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    environment:
+      name: data-pipeline-manual-trigger
+    env:
+      PYTHONUNBUFFERED: "1"
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: Data-Pipeline/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r Data-Pipeline/requirements.txt
+
+      - name: Enforce required secret for API rate check
+        run: |
+          if [[ -z "${OPENROUTER_API_KEY}" ]]; then
+            echo "::error::OPENROUTER_API_KEY is required to run Data-Pipeline/find_rate_limit.py"
+            exit 1
+          fi
+
+      - name: Run synthetic data generation scripts (excluding call_teacher.py)
+        working-directory: Data-Pipeline
+        run: |
+          python bootstrap.py
+          python generate_synthetic_profiles.py --params params.yaml
+          python generate_synthetic_workouts.py --params params.yaml
+          python generate_synthetic_queries.py --params params.yaml
+
+      - name: Prepare minimal inputs for validate.py
+        working-directory: Data-Pipeline
+        run: |
+          mkdir -p data/raw/teacher-llm-responses/ci-smoke
+          cat > data/raw/teacher-llm-responses/ci-smoke/responses.jsonl <<'JSONL'
+          {"response_id":"ci-response-1","status":"success","response_json":{"plan_name":"CI Smoke Plan","days":[{"name":"Day 1","day_order":1,"notes":"","exercises":[{"exercise_name":"Push-up","position":1,"notes":"","sets":[{"set_number":1,"target_reps":10,"target_rir":2,"rest_seconds":60}]}]}]}}
+          JSONL
+
+      - name: Run remaining top-level scripts except call_teacher.py
+        working-directory: Data-Pipeline
+        run: |
+          python validate.py data/raw/teacher-llm-responses/ci-smoke/responses.jsonl
+          python find_rate_limit.py
+
+      - name: Upload Data-Pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-pipeline-artifacts
+          retention-days: 14
+          path: |
+            Data-Pipeline/data/reports/**
+            Data-Pipeline/data/raw/synthetic_profiles/**
+            Data-Pipeline/data/raw/synthetic_workouts/**
+            Data-Pipeline/data/raw/synthetic_queries/**
+            Data-Pipeline/data/raw/teacher-llm-responses/ci-smoke/**
+            Data-Pipeline/logs/**

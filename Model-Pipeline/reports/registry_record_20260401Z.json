@@ -1,0 +1,13 @@
+{
+  "run_id": "20260401Z",
+  "model_name": "fitsense-qwen3-4b",
+  "gcs_uri": "gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/20260401Z/fitsense-qwen3-4b_20260401Z.tar.gz",
+  "vertex_resource_name": "gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/20260401Z/fitsense-qwen3-4b_20260401Z.tar.gz",
+  "pushed_at": "2026-04-01T21:22:45.267913Z",
+  "base_model": "unsloth/Qwen3-4B-bnb-4bit",
+  "adapter_type": "LoRA",
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "max_steps": 150,
+  "learning_rate": 0.0001
+}
