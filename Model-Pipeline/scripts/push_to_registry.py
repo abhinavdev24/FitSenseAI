@@ -25,15 +25,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger(__name__)
 
 # ── Config — update these to match your GCP project ──────────────────────────
-GCP_PROJECT    = os.environ.get("GCP_PROJECT", "your-gcp-project-id")
-GCP_REGION     = os.environ.get("GCP_REGION",  "us-central1")
-GCS_BUCKET     = os.environ.get("GCS_BUCKET",  "your-gcs-bucket-name")
-MODEL_NAME     = "fitsense-qwen3-8b"
-RUN_ID         = "20260308T234052Z"
+GCP_PROJECT = os.environ.get("GCP_PROJECT", "fitsenseai-492020")
+GCP_REGION  = os.environ.get("GCP_REGION",  "us-central1")
+GCS_BUCKET  = os.environ.get("GCS_BUCKET",  "fitsenseai-model-registry")
+MODEL_NAME  = "fitsense-qwen3-4b"
+RUN_ID      = "20260401Z"
 
-ADAPTER_DIR    = Path("Model-Pipeline/adapters/qwen3-8b-fitsense")
-REPORTS_DIR    = Path("Model-Pipeline/reports")
-STAGING_DIR    = Path("Model-Pipeline/staging")
+ADAPTER_DIR = Path("Model-Pipeline/adapters/qwen3-4b-v2")
+REPORTS_DIR = Path("Model-Pipeline/reports")
+STAGING_DIR = Path("Model-Pipeline/staging")
 
 # ── Step 1: Package adapter ───────────────────────────────────────────────────
 
@@ -54,12 +54,16 @@ def package_adapter(adapter_dir: Path, staging_dir: Path, run_id: str) -> Path:
 
 def upload_to_gcs(tar_path: Path, bucket_name: str, run_id: str) -> str:
     """Upload the packaged adapter to Google Cloud Storage."""
+    import subprocess
+    import google.oauth2.credentials
     from google.cloud import storage
 
     gcs_path = f"models/{MODEL_NAME}/{run_id}/{tar_path.name}"
     log.info(f"Uploading to gs://{bucket_name}/{gcs_path}")
 
-    client = storage.Client(project=GCP_PROJECT)
+    token = subprocess.check_output(["gcloud", "auth", "print-access-token"]).decode().strip()
+    creds = google.oauth2.credentials.Credentials(token)
+    client = storage.Client(project=GCP_PROJECT, credentials=creds)
     bucket = client.bucket(bucket_name)
     blob   = bucket.blob(gcs_path)
     blob.upload_from_filename(str(tar_path))
@@ -72,9 +76,13 @@ def upload_to_gcs(tar_path: Path, bucket_name: str, run_id: str) -> str:
 
 def register_model(gcs_uri: str, run_id: str) -> str:
     """Register the model artifact in Vertex AI Model Registry."""
+    import subprocess
+    import google.oauth2.credentials
     from google.cloud import aiplatform
 
-    aiplatform.init(project=GCP_PROJECT, location=GCP_REGION)
+    token = subprocess.check_output(["gcloud", "auth", "print-access-token"]).decode().strip()
+    creds = google.oauth2.credentials.Credentials(token)
+    aiplatform.init(project=GCP_PROJECT, location=GCP_REGION, credentials=creds)
 
     log.info(f"Registering model '{MODEL_NAME}' in Vertex AI...")
 
@@ -94,16 +102,16 @@ def register_model(gcs_uri: str, run_id: str) -> str:
 
     model = aiplatform.Model.upload(
         display_name=f"{MODEL_NAME}-{run_id}",
-        artifact_uri=gcs_uri,
+        artifact_uri=f"gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/{run_id}/",
         serving_container_image_uri="us-docker.pkg.dev/vertex-ai/prediction/pytorch-gpu.2-0:latest",
         labels={
-            "run_id":      run_id,
-            "base_model":  "qwen3-8b",
-            "framework":   "lora",
-            "project":     "fitsense",
+            "run-id":     run_id.lower(),
+            "base-model": "qwen3-4b",
+            "framework":  "lora",
+            "project":    "fitsense",
         },
         description=(
-            f"FitSense AI fine-tuned Qwen3-8B student model. "
+            f"FitSense AI fine-tuned Qwen3-4B student model. "
             f"Run ID: {run_id}. "
             f"JSON validity: {metrics.get('json_validity_rate', 'N/A')}. "
             f"ROUGE-L: {metrics.get('rougeL_mean', 'N/A')}. "
@@ -118,17 +126,17 @@ def register_model(gcs_uri: str, run_id: str) -> str:
 
 def save_registry_record(gcs_uri: str, model_resource_name: str, run_id: str):
     record = {
-        "run_id":              run_id,
-        "model_name":          MODEL_NAME,
-        "gcs_uri":             gcs_uri,
+        "run_id":               run_id,
+        "model_name":           MODEL_NAME,
+        "gcs_uri":              gcs_uri,
         "vertex_resource_name": model_resource_name,
-        "pushed_at":           datetime.utcnow().isoformat() + "Z",
-        "base_model":          "unsloth/Qwen3-8B-bnb-4bit",
-        "adapter_type":        "LoRA",
-        "lora_r":              16,
-        "lora_alpha":          32,
-        "max_steps":           60,
-        "learning_rate":       1e-4,
+        "pushed_at":            datetime.utcnow().isoformat() + "Z",
+        "base_model":           "unsloth/Qwen3-4B-bnb-4bit",
+        "adapter_type":         "LoRA",
+        "lora_r":               16,
+        "lora_alpha":           32,
+        "max_steps":            60,
+        "learning_rate":        1e-4,
     }
     out_path = REPORTS_DIR / f"registry_record_{run_id}.json"
     with open(out_path, "w") as f:
@@ -146,21 +154,12 @@ def main():
 
     log.info(f"Starting model push for run_id={RUN_ID}")
 
-    # Package
-    tar_path = package_adapter(ADAPTER_DIR, STAGING_DIR, RUN_ID)
+    tar_path            = package_adapter(ADAPTER_DIR, STAGING_DIR, RUN_ID)
+    gcs_uri             = upload_to_gcs(tar_path, GCS_BUCKET, RUN_ID)
+    model_resource_name = f"gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/{RUN_ID}/fitsense-qwen3-4b_{RUN_ID}.tar.gz"
+    log.info(f"Skipping Vertex AI registration — using GCS URI as resource name")
 
-    # Upload
-    gcs_uri = upload_to_gcs(tar_path, GCS_BUCKET, RUN_ID)
-
-    # Register
-    model_resource_name = register_model(gcs_uri, RUN_ID)
-
-    # Record
-    save_registry_record(gcs_uri, model_resource_name, RUN_ID)
-
-    # Cleanup staging
     shutil.rmtree(STAGING_DIR, ignore_errors=True)
-
     log.info("✅ Model successfully pushed to GCP Artifact Registry.")
 
 if __name__ == "__main__":

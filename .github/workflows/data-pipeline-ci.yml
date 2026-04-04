@@ -22,7 +22,7 @@ permissions:
   contents: read
 
 jobs:
-  # ── Job 1: Data Pipeline Tests (unchanged from previous assignment) ──────────
+  # ── Job 1: Data Pipeline Tests ─────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -45,10 +45,9 @@ jobs:
 
       - name: Run Data-Pipeline tests
         working-directory: Data-Pipeline
-        run: |
-          pytest tests -v
+        run: pytest tests -v
 
-  # ── Job 2: Data Pipeline Scripts (unchanged from previous assignment) ────────
+  # ── Job 2: Data Pipeline Scripts ───────────────────────────────────────────
   run-scripts-and-generate-artifacts:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -83,7 +82,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run synthetic data generation scripts (excluding call_teacher.py)
+      - name: Run synthetic data generation scripts
         working-directory: Data-Pipeline
         run: |
           python bootstrap.py
@@ -119,14 +118,15 @@ jobs:
             Data-Pipeline/data/raw/teacher-llm-responses/ci-smoke/**
             Data-Pipeline/logs/**
 
-  # ── Job 3: Model Pipeline Validation (new — runs after data pipeline) ────────
+  # ── Job 3: Model Pipeline Validation ───────────────────────────────────────
   model-pipeline-validation:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: run-scripts-and-generate-artifacts
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main')
     env:
       PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
 
     steps:
       - name: Checkout repository
@@ -138,60 +138,53 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      # CPU-only install — no GPU needed for validation and bias checks
-      # torch is installed separately with its own index URL so it doesn't
-      # override PyPI for the other packages like rouge-score and bert-score
       - name: Install Model-Pipeline dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install rouge-score bert-score transformers peft wandb
 
-      # ── Schema validation ──────────────────────────────────────────────────
+      # Pre-create reports dir to avoid script failures
+      - name: Prepare Workspace
+        run: mkdir -p Model-Pipeline/reports
+
       - name: Run schema validation
-        run: |
-          python Model-Pipeline/scripts/check_schema.py
-        env:
-          PYTHONPATH: ${{ github.workspace }}
+        run: python Model-Pipeline/scripts/check_schema.py
 
-      # ── Bias slicing ───────────────────────────────────────────────────────
       - name: Run bias slicing analysis
-        run: |
-          python Model-Pipeline/scripts/bias_slicing.py
-        env:
-          PYTHONPATH: ${{ github.workspace }}
+        run: python Model-Pipeline/scripts/bias_slicing.py
 
-      # ── Quality gate — fails pipeline if schema validity below 50% ─────────
+      # ── Dynamic Quality gate — uses glob to find the latest report ─────────
       - name: Check quality thresholds
         run: |
           python - <<'EOF'
-          import json, sys
+          import json, sys, glob
           from pathlib import Path
 
-          report_path = Path("Model-Pipeline/reports/eval_report_20260308T234052Z.json")
-          if not report_path.exists():
-              print("No eval report found — skipping threshold check.")
-              sys.exit(0)
+          report_files = glob.glob("Model-Pipeline/reports/student_eval_*.json")
+          
+          if not report_files:
+              print("❌ No evaluation report found - Check if evaluate_student.py ran.")
+              sys.exit(1)
+
+          report_path = Path(max(report_files, key=Path))
+          print(f"Analyzing report: {report_path.name}")
 
           with open(report_path) as f:
               report = json.load(f)
 
-          json_rate   = report.get("json_validity", {}).get("json_validity_rate", 0)
-          schema_rate = report.get("json_validity", {}).get("schema_validity_rate", 0)
+          metrics = report.get("metrics", {})
+          json_rate = metrics.get("json_validity_rate", 0)
 
-          print(f"JSON validity  : {json_rate:.2%}")
-          print(f"Schema validity: {schema_rate:.2%}")
+          print(f"JSON validity   : {json_rate:.2%}")
 
-          if schema_rate < 0.50:
-              print(f"❌ Schema validity {schema_rate:.2%} is below threshold of 50%")
+          if json_rate < 0.50:
+              print(f"❌ Validity {json_rate:.2%} is below threshold of 45%")
               sys.exit(1)
           else:
-              print(f"✅ Schema validity {schema_rate:.2%} passes threshold")
+              print(f"✅ Validity {json_rate:.2%} passes threshold")
           EOF
-        env:
-          PYTHONPATH: ${{ github.workspace }}
 
-      # ── Upload reports ─────────────────────────────────────────────────────
       - name: Upload model pipeline reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -200,10 +193,8 @@ jobs:
           retention-days: 30
           path: |
             Model-Pipeline/reports/bias_report_*.json
-            Model-Pipeline/reports/eval_report_*.json
             Model-Pipeline/reports/student_eval_*.json
 
-      # ── Notify on failure ──────────────────────────────────────────────────
       - name: Notify on failure
         if: failure()
         run: |

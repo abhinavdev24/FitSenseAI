@@ -1,23 +1,22 @@
 import os
 import torch
 from unsloth import FastLanguageModel
-from trl import SFTTrainer
-from transformers import TrainingArguments
+from trl import SFTTrainer, SFTConfig
 from datasets import load_dataset
 
 # 1. Clear GPU memory
 torch.cuda.empty_cache()
 
 # 2. Configuration
-model_name = "unsloth/Qwen3-8B-bnb-4bit"
-max_seq_length = 2048
-dataset_path = "Model-Pipeline/data/formatted/20260308T234052Z/train_formatted.jsonl"
-output_dir = "Model-Pipeline/adapters/qwen3-8b-fitsense"
+MODEL_NAME     = "unsloth/Qwen3-4B-bnb-4bit"
+MAX_SEQ_LENGTH = 2048
+DATASET_PATH   = "Model-Pipeline/data/formatted/20260308T234052Z/train_formatted.jsonl"
+OUTPUT_DIR     = "Model-Pipeline/adapters/qwen3-4b-v2"
 
 # 3. Load Model & Tokenizer
 model, tokenizer = FastLanguageModel.from_pretrained(
-    model_name=model_name,
-    max_seq_length=max_seq_length,
+    model_name=MODEL_NAME,
+    max_seq_length=MAX_SEQ_LENGTH,
     load_in_4bit=True,
 )
 
@@ -34,23 +33,28 @@ model = FastLanguageModel.get_peft_model(
 model.gradient_checkpointing_enable()
 
 # 5. Prepare Dataset
-# Uses /no_think to disable Qwen3 thinking mode for structured JSON output.
-# Empty <think></think> block is injected so the model learns to skip reasoning
-# and go straight to the JSON plan — avoids think tokens eating into max_new_tokens.
 def formatting_prompts_func(examples):
-    instructions = examples["user_message"]
-    outputs = examples["assistant"]
+    # AUTO-DETECT KEY: Handles 'formatted_text' or variations
+    column_name = "formatted_text" if "formatted_text" in examples else list(examples.keys())[0]
+    
     texts = []
-    for instruction, output in zip(instructions, outputs):
-        text = (
-            f"<|im_start|>user\n{instruction} /no_think<|im_end|>\n"
-            f"<|im_start|>assistant\n<think>\n</think>\n{output}<|im_end|>"
-            + tokenizer.eos_token
-        )
+    for full_text in examples[column_name]:
+        if "<|im_start|>assistant\n" in full_text and "<think>" not in full_text:
+            parts = full_text.split("<|im_start|>assistant\n")
+            header = parts[0]
+            body = parts[1]
+            text = (
+                header.replace("<|im_end|>", " /no_think<|im_end|>") +
+                "<|im_start|>assistant\n<think>\n</think>\n" +
+                body + tokenizer.eos_token
+            )
+        else:
+            text = full_text + tokenizer.eos_token
         texts.append(text)
     return {"text": texts}
 
-dataset = load_dataset("json", data_files=dataset_path, split="train")
+# Load and Map
+dataset = load_dataset("json", data_files=DATASET_PATH, split="train")
 dataset = dataset.map(formatting_prompts_func, batched=True)
 
 # 6. Trainer Setup
@@ -58,13 +62,13 @@ trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
     train_dataset=dataset,
-    dataset_text_field="text",
-    max_seq_length=max_seq_length,
-    args=TrainingArguments(
+    args=SFTConfig(
+        dataset_text_field="text",
+        max_seq_length=MAX_SEQ_LENGTH,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=8,
         warmup_steps=10,
-        max_steps=60,
+        max_steps=150,
         learning_rate=1e-4,
         fp16=True,
         logging_steps=1,
@@ -72,7 +76,7 @@ trainer = SFTTrainer(
         weight_decay=0.01,
         lr_scheduler_type="cosine",
         seed=3407,
-        output_dir=output_dir,
+        output_dir=OUTPUT_DIR,
         report_to="none",
         gradient_checkpointing=True,
     ),
@@ -82,6 +86,6 @@ trainer = SFTTrainer(
 trainer.train()
 
 # 8. Save
-model.save_pretrained(output_dir)
-tokenizer.save_pretrained(output_dir)
-print(f"✅ Training Complete! Qwen3-8B model saved to {output_dir}")
+model.save_pretrained(OUTPUT_DIR)
+tokenizer.save_pretrained(OUTPUT_DIR)
+print(f"✅ Training Complete! Model saved to {OUTPUT_DIR}")
