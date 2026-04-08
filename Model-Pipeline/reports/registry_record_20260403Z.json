@@ -1,0 +1,18 @@
+{
+  "run_id": "20260403Z",
+  "model_name": "fitsense-qwen3-4b",
+  "gcs_uri": "gs://fitsense-adapter-store/models/fitsense-qwen3-4b/20260403Z/fitsense-qwen3-4b_20260403Z.tar.gz",
+  "pushed_at": "2026-04-08T05:20:26.317787Z",
+  "base_model": "Qwen/Qwen3-4B",
+  "adapter_type": "LoRA",
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "max_steps": 60,
+  "learning_rate": 0.0001,
+  "metrics": {
+    "json_validity_rate": 0.55,
+    "rougeL_mean": 0.22399370517913936,
+    "bertscore_f1_mean": 0.8081867098808289
+  },
+  "bias_summary": {}
+}

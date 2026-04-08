@@ -1,13 +1,24 @@
 {
   "run_id": "20260401Z",
   "model_name": "fitsense-qwen3-4b",
-  "gcs_uri": "gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/20260401Z/fitsense-qwen3-4b_20260401Z.tar.gz",
-  "vertex_resource_name": "gs://fitsenseai-model-registry/models/fitsense-qwen3-4b/20260401Z/fitsense-qwen3-4b_20260401Z.tar.gz",
-  "pushed_at": "2026-04-01T21:22:45.267913Z",
-  "base_model": "unsloth/Qwen3-4B-bnb-4bit",
+  "gcs_uri": "gs://fitsense-adapter-store/models/fitsense-qwen3-4b/20260401Z/fitsense-qwen3-4b_20260401Z.tar.gz",
+  "pushed_at": "2026-04-08T05:17:17.771070Z",
+  "base_model": "Qwen/Qwen3-4B",
   "adapter_type": "LoRA",
   "lora_r": 16,
   "lora_alpha": 32,
-  "max_steps": 150,
-  "learning_rate": 0.0001
+  "max_steps": 60,
+  "learning_rate": 0.0001,
+  "metrics": {
+    "json_validity_rate": "N/A",
+    "rougeL_mean": "N/A",
+    "bertscore_f1_mean": "N/A"
+  },
+  "bias_summary": {
+    "goal_type": [],
+    "condition_flag": [],
+    "activity_level": [],
+    "age_band": [],
+    "sex": []
+  }
 }
