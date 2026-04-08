@@ -178,7 +178,7 @@ jobs:
 
           print(f"JSON validity   : {json_rate:.2%}")
 
-          if json_rate < 0.45:
+          if json_rate < 0.50:
               print(f"❌ Validity {json_rate:.2%} is below threshold of 45%")
               sys.exit(1)
           else:
