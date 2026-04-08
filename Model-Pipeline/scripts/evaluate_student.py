@@ -6,7 +6,7 @@ import random
 import gc
 from pathlib import Path
 from datetime import datetime
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 from rouge_score import rouge_scorer
 from bert_score import score as bert_score
@@ -17,6 +17,7 @@ log = logging.getLogger(__name__)
 
 BASE_MODEL   = "unsloth/Qwen3-4B-bnb-4bit"
 ADAPTER_PATH = "Model-Pipeline/adapters/qwen3-4b-fitsense"
+GCS_BUCKET   = "fitsense-adapter-store"  # updated from fitsenseai-model-registry
 TEST_FILE    = "Model-Pipeline/data/formatted/20260308T234052Z/test_formatted.jsonl"
 REPORTS_DIR  = Path("Model-Pipeline/reports")
 RUN_ID       = "20260403Z"
@@ -27,15 +28,23 @@ wandb.init(
     config={"model": "Qwen3-4B-Student", "run_id": RUN_ID}
 )
 
-log.info("Loading Qwen3-4B model and adapter...")
+log.info("Loading Qwen3-4B model and adapter (CPU mode)...")
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_PATH)
+
+# ── CPU-safe model loading ────────────────────────────────────────────────────
+# No BitsAndBytesConfig — that requires CUDA. Instead we load in float32
+# and let device_map="cpu" handle placement. The 4B model fits in ~16GB RAM
+# at full precision, or use torch_dtype=torch.float16 to halve memory usage.
 model = AutoModelForCausalLM.from_pretrained(
     BASE_MODEL,
-    quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16),
-    device_map="auto"
+    torch_dtype=torch.float16,   # ~8GB RAM vs ~16GB for float32
+    device_map="cpu",
+    low_cpu_mem_usage=True,      # streams weights into RAM layer by layer
 )
 model = PeftModel.from_pretrained(model, ADAPTER_PATH)
 model.eval()
+
+DEVICE = "cpu"
 
 
 def call_model(user_message):
@@ -44,9 +53,15 @@ def call_model(user_message):
         f"<|im_start|>user\n{user_message} /no_think<|im_end|>\n"
         f"<|im_start|>assistant\n<think>\n</think>\n"
     )
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to("cuda")
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
+    # No .to("cuda") — inputs stay on CPU
     with torch.no_grad():
-        outputs = model.generate(**inputs, max_new_tokens=2048, do_sample=False)
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=512,   # reduced from 2048 — CPU inference is slow,
+                                  # 512 is enough to capture a valid JSON plan
+            do_sample=False,
+        )
     generated_ids = outputs[0][inputs["input_ids"].shape[1]:]
     decoded = tokenizer.decode(generated_ids, skip_special_tokens=True)
     if "</think>" in decoded:
@@ -55,7 +70,6 @@ def call_model(user_message):
 
 
 def extract_user_message(rec):
-    """Extract user message from record."""
     if rec.get("user_message"):
         return rec["user_message"].strip()
     try:
@@ -69,7 +83,6 @@ def extract_user_message(rec):
 
 
 def extract_assistant_response(rec):
-    """Extract assistant response."""
     if rec.get("assistant"):
         resp = rec["assistant"]
         if isinstance(resp, str):
@@ -109,8 +122,8 @@ def main():
     for i, rec in enumerate(sample):
         log.info(f"Evaluating {i+1}/{len(sample)}...")
 
-        user_message   = extract_user_message(rec)
-        assistant_ref  = extract_assistant_response(rec)
+        user_message  = extract_user_message(rec)
+        assistant_ref = extract_assistant_response(rec)
 
         if not user_message or not assistant_ref:
             log.warning(f"Record {i} missing content. Skipping.")
@@ -134,17 +147,19 @@ def main():
         log.error("No samples were successfully parsed. Check your dataset keys.")
         return
 
-    log.info("Freeing GPU memory for BERTScore...")
-    global model, tokenizer
-    del model
-    del tokenizer
-    gc.collect()
-    torch.cuda.empty_cache()
-
+    # No GPU memory to free on CPU — skip the del model / cuda empty_cache block
     log.info("Computing Metrics...")
     r_scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
     rouge_l  = [r_scorer.score(r, p)["rougeL"].fmeasure for p, r in zip(preds, refs)]
-    P, R, F1 = bert_score(preds, refs, model_type="roberta-base", num_layers=9, verbose=False, device="cuda")
+
+    # BERTScore: force CPU since there's no CUDA
+    P, R, F1 = bert_score(
+        preds, refs,
+        model_type="roberta-base",
+        num_layers=9,
+        verbose=False,
+        device="cpu",            # ← was "cuda"
+    )
 
     avg_metrics = {
         "json_validity_rate": sum(json_valid_results) / len(json_valid_results),
@@ -153,8 +168,8 @@ def main():
     }
 
     log.info(f"Metrics: {avg_metrics}")
-
     wandb.log(avg_metrics)
+
     table = wandb.Table(columns=["sample_id", "prediction", "reference", "rougeL", "bertscore_f1", "json_valid"])
     for i in range(len(preds)):
         table.add_data(i+1, preds[i][:500], refs[i][:500], round(rouge_l[i], 4), round(F1[i].item(), 4), json_valid_results[i])
@@ -172,11 +187,12 @@ def main():
             "bertscore_f1": round(F1[i].item(), 4),
             "json_valid":   bool(json_valid_results[i]),
         })
+
     report_file = REPORTS_DIR / f"student_eval_{RUN_ID}.json"
     with open(report_file, "w") as f:
         json.dump({"run_id": RUN_ID, "metrics": avg_metrics, "per_record": per_record}, f, indent=2)
 
-    log.info(f"Evaluation Complete. Report saved to {report_file}")
+    log.info(f"Evaluation complete. Report saved to {report_file}")
     wandb.finish()
 
 if __name__ == "__main__":
