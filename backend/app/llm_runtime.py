@@ -436,6 +436,13 @@ class StudentLLMRuntime:
 
     def info(self) -> RuntimeInfo:
         self.refresh_configuration()
+        if self._can_use_cloud():
+            info = self._status_info()
+            info.available = True
+            info.provider = "cloud-run"
+            info.reason = None
+            info.detail = f"Cloud Run inference via {self.cloud_predict_url}"
+            return info
         info = self._status_info()
         if self._load_error:
             info.last_load_error = self._load_error

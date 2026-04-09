@@ -224,6 +224,7 @@ def get_current_plan_endpoint(
     }
 
 
+@app.post("/plans/{plan_id}:modify", response_model=schemas.PlanJobEnqueueResponse)
 @app.post("/plans/{plan_id}/modify", response_model=schemas.PlanJobEnqueueResponse)
 def modify_plan_endpoint(
     plan_id: str,
