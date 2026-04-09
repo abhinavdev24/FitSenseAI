@@ -575,6 +575,9 @@ class StudentLLMRuntime:
         if not self._can_use_cloud():
             return None
         import requests, time
+        # Truncate long user messages to keep input tokens reasonable
+        if len(user_message) > 1500:
+            user_message = user_message[:1500] + "\n[profile truncated for inference]"
         payload = {"instances": [{"task": task, "system_prompt": system_prompt, "user_message": user_message, "max_new_tokens": max_new_tokens}]}
         self._debug(f"Starting Cloud Run call task={task} target={self.cloud_predict_url} chars={len(user_message)}")
         start = time.perf_counter()
