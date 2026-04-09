@@ -61,9 +61,7 @@ Thumbs.db
 *.pkl
 *.pickle
 *.joblib
-data/
 datasets/
-*.csv
 *.parquet
 runs/
 logs/
@@ -87,16 +85,28 @@ CLAUDE.md
 # Unsloth & Model Cache
 unsloth_compiled_cache/
 huggingface_tokenizers_cache/
-__pycache__/
 
-# Large Model Weights (Adapters)
-Model-Pipeline/adapters/
+# Large Model Weights
 *.safetensors
 *.bin
 *.pt
 *.pth
+*.tar.gz
 
-# Temporary / Local Files
-data.zip
-.env
+# Adapters (stored in GCS, not git)
+Model-Pipeline/adapters/
+
+# Staging
+Model-Pipeline/staging/
+
+# Wandb logs
 wandb/
+
+# Python cache
+*.pyc
+
+# Zip files
+*.zip
+
+# Data files (use DVC)
+data.zip

@@ -21,9 +21,6 @@ OUTPUT_BASE       = Path("Model-Pipeline/data/formatted")
 SPLITS            = ["train", "val", "test"]
 MAX_TOKENS_FLAG   = 2048
 
-# System prompt with explicit schema so the model knows exactly what to output.
-# The schema skeleton removes ambiguity that was causing the model to invent
-# keys like "workout_plan", "phases", "training_plan" etc.
 SYSTEM_PROMPT = (
     "You are FitSense AI, an expert fitness coach and periodization specialist. "
     "You provide personalised, safety-aware workout plans and coaching guidance. "
@@ -88,9 +85,9 @@ def estimate_tokens(text: str) -> int:
 # ── Core processing ───────────────────────────────────────────────────────────
 
 def process_split(input_path: Path, output_path: Path, split: str) -> dict:
-    records_in   = 0
-    records_out  = 0
-    flagged_long = 0
+    records_in    = 0
+    records_out   = 0
+    flagged_long  = 0
     token_lengths = []
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -171,7 +168,7 @@ def get_latest_run_id() -> str:
 
 
 def main():
-    run_id = os.environ.get("DISTILLATION_RUN_ID") or get_latest_run_id()
+    run_id           = os.environ.get("DISTILLATION_RUN_ID") or get_latest_run_id()
     distillation_dir = DISTILLATION_BASE / run_id
     output_dir       = OUTPUT_BASE / run_id
 
