@@ -627,7 +627,7 @@ class StudentLLMRuntime:
 
     def generate_plan_json(self, *, user_message: str) -> dict[str, Any] | None:
         self._debug("generate_plan_json started.")
-        or_text = self._call_openrouter(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
+        or_text = self._call_openrouter(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
         if or_text:
             candidate = self._extract_first_json_object(or_text)
             if candidate:
@@ -636,7 +636,7 @@ class StudentLLMRuntime:
                 except Exception:
                     pass
 
-        cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
+        cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
         if cloud_result is not None:
             plan_json = cloud_result.get("plan_json")
             if isinstance(plan_json, dict):
@@ -656,10 +656,17 @@ class StudentLLMRuntime:
                             return obj
                     except Exception:
                         continue
-                self._debug("No plan_json object found in text response.")
+                self._debug("No plan_json object found in text response — not retrying cloud.")
+                self._load_error = "Cloud returned text but JSON was truncated or missing plan_name."
+                return None
+
+        if self._can_use_cloud():
+            # Already tried cloud and failed — skip second cloud call in generate_text
+            if not self._ensure_loaded():
+                return None
 
         self._debug("Falling back to local generate_text for plan.")
-        text = self.generate_text(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
+        text = self.generate_text(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
         if not text:
             return None
 
