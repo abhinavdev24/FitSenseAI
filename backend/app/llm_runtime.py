@@ -65,12 +65,15 @@ class StudentLLMRuntime:
         self.artifact_uri: str | None = None
         self.runtime_mode: str = "adapter"
         self.cache_dir = self.model_root / "adapters" / ".downloaded"
+        self.cloudrun_service_url: str | None = None
+        self.cloud_predict_url: str | None = None
         self.refresh_configuration(force=True)
 
     def refresh_configuration(self, force: bool = False) -> None:
         old_adapter = str(self.adapter_path) if self.adapter_path else None
         old_base = self.base_model
         old_mode = self.runtime_mode
+        old_cloud = self.cloud_predict_url
         self.registry_record = self._discover_registry_record()
         self.artifact_uri = self._artifact_uri_from_registry()
         self.adapter_path, self.runtime_mode = self._discover_runtime_path()
@@ -80,8 +83,10 @@ class StudentLLMRuntime:
             or self._base_model_from_registry()
             or "unsloth/Qwen3-4B-bnb-4bit"
         )
+        self.cloudrun_service_url = (os.environ.get("FITSENSE_CLOUDRUN_URL") or "").strip() or None
+        self.cloud_predict_url = (self.cloudrun_service_url.rstrip("/") + "/predict") if self.cloudrun_service_url else None
         new_adapter = str(self.adapter_path) if self.adapter_path else None
-        if force or new_adapter != old_adapter or self.base_model != old_base or self.runtime_mode != old_mode:
+        if force or new_adapter != old_adapter or self.base_model != old_base or self.runtime_mode != old_mode or self.cloud_predict_url != old_cloud:
             self._model = None
             self._tokenizer = None
             self._loaded_adapter_path = None
@@ -529,7 +534,73 @@ class StudentLLMRuntime:
         repaired = re.sub(r",(\s*[}\]])", r"\1", repaired)
         return repaired
 
+    def _can_use_cloud(self) -> bool:
+        return bool(self.cloud_predict_url and importlib.util.find_spec("requests"))
+
+    def _debug_enabled(self) -> bool:
+        return (os.environ.get("FITSENSE_DEBUG_VERTEX") or "1").strip().lower() not in {"0", "false", "no", "off"}
+
+    def _debug(self, message: str) -> None:
+        if self._debug_enabled():
+            print(f"[vertex-debug] {message}")
+
+    def _call_openrouter(self, *, system_prompt: str, user_message: str, max_new_tokens: int) -> str | None:
+        api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+        if not api_key:
+            return None
+        import requests
+        try:
+            resp = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"model": os.environ.get("OPENROUTER_MODEL", "qwen/qwen3-8b:free"),
+                      "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
+                      "max_tokens": max_new_tokens, "temperature": 0},
+                timeout=120,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"].strip()
+        except Exception as exc:
+            print(f"⚠️ OpenRouter call failed: {exc}")
+            return None
+
+    def _call_cloud(self, *, task: str, system_prompt: str, user_message: str, max_new_tokens: int) -> dict[str, Any] | None:
+        if not self._can_use_cloud():
+            return None
+        import requests, time
+        payload = {"instances": [{"task": task, "system_prompt": system_prompt, "user_message": user_message, "max_new_tokens": max_new_tokens}]}
+        self._debug(f"Starting Cloud Run call task={task} target={self.cloud_predict_url} chars={len(user_message)}")
+        start = time.perf_counter()
+        try:
+            resp = requests.post(self.cloud_predict_url, headers={"Content-Type": "application/json"}, json=payload, timeout=600)
+            elapsed = time.perf_counter() - start
+            self._debug(f"Cloud HTTP response status={resp.status_code} elapsed={elapsed:.2f}s")
+            resp.raise_for_status()
+            body = resp.json()
+            preds = body.get("predictions") or []
+            self._debug(f"Cloud response prediction_count={len(preds)} top_level_keys={list(body.keys())}")
+            if not preds:
+                return None
+            pred = preds[0]
+            if isinstance(pred, dict):
+                self._debug(f"Prediction keys={sorted(pred.keys())}")
+                return pred
+        except Exception as exc:
+            elapsed = time.perf_counter() - start
+            self._load_error = f"Cloud inference call failed: {exc}"
+            print(f"⚠️ Cloud inference call failed after {elapsed:.2f}s: {exc}")
+        return None
+
     def generate_text(self, *, system_prompt: str, user_message: str, max_new_tokens: int = 768) -> str | None:
+        text = self._call_openrouter(system_prompt=system_prompt, user_message=user_message, max_new_tokens=max_new_tokens)
+        if text:
+            return text
+        cloud_result = self._call_cloud(task="text", system_prompt=system_prompt, user_message=user_message, max_new_tokens=max_new_tokens)
+        if cloud_result is not None:
+            text = cloud_result.get("text") or cloud_result.get("raw_text")
+            if isinstance(text, str) and text.strip():
+                print(f"[llm-output] text:\n{text.strip()}")
+                return text.strip()
         if not self._ensure_loaded():
             return None
         try:
@@ -548,11 +619,40 @@ class StudentLLMRuntime:
             return None
 
     def generate_plan_json(self, *, user_message: str) -> dict[str, Any] | None:
-        text = self.generate_text(
-            system_prompt=SYSTEM_PLAN_PROMPT,
-            user_message=user_message,
-            max_new_tokens=900,
-        )
+        self._debug("generate_plan_json started.")
+        or_text = self._call_openrouter(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
+        if or_text:
+            candidate = self._extract_first_json_object(or_text)
+            if candidate:
+                try:
+                    return json.loads(self._repair_common_json_issues(candidate))
+                except Exception:
+                    pass
+
+        cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
+        if cloud_result is not None:
+            plan_json = cloud_result.get("plan_json")
+            if isinstance(plan_json, dict):
+                self._debug(f"Vertex returned structured plan_json with keys={sorted(plan_json.keys())}")
+                print(f"[llm-output] plan_json:\n{json.dumps(plan_json, indent=2)}")
+                return plan_json
+            maybe_text = cloud_result.get("text") or cloud_result.get("raw_text")
+            if isinstance(maybe_text, str):
+                print(f"[llm-output] raw text:\n{maybe_text}")
+                self._debug(f"Vertex returned text/raw_text length={len(maybe_text)}; attempting JSON extraction.")
+                decoder = json.JSONDecoder()
+                for match in re.finditer(r"\{", maybe_text):
+                    try:
+                        obj, _ = decoder.raw_decode(maybe_text[match.start():])
+                        if isinstance(obj, dict) and "plan_name" in obj:
+                            self._debug("Successfully extracted plan_json from text response.")
+                            return obj
+                    except Exception:
+                        continue
+                self._debug("No plan_json object found in text response.")
+
+        self._debug("Falling back to local generate_text for plan.")
+        text = self.generate_text(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=1800)
         if not text:
             return None
 
@@ -568,16 +668,19 @@ class StudentLLMRuntime:
             data = json.loads(candidate)
             if not isinstance(data, dict):
                 self._load_error = "Student model returned JSON, but it was not an object."
-                print("\n=== JSON CANDIDATE (NON-DICT) ===\n", candidate)
                 return None
             return data
         except Exception as exc:
             self._load_error = f"Student model returned malformed JSON: {exc}"
-            print("\n=== RAW PLAN OUTPUT ===\n", text)
-            print("\n=== JSON CANDIDATE ===\n", candidate)
             return None
 
     def generate_coach_text(self, *, user_message: str) -> str | None:
+        cloud_result = self._call_cloud(task="coach_text", system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=240)
+        if cloud_result is not None:
+            text = cloud_result.get("text") or cloud_result.get("raw_text")
+            if isinstance(text, str) and text.strip():
+                print(f"[llm-output] coach text:\n{text.strip()}")
+                return text.strip()
         text = self.generate_text(system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=240)
         if text is None:
             return None
