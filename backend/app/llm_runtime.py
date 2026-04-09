@@ -639,36 +639,37 @@ class StudentLLMRuntime:
                 except Exception:
                     pass
 
-        cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
-        if cloud_result is not None:
-            plan_json = cloud_result.get("plan_json")
-            if isinstance(plan_json, dict):
-                self._debug(f"Vertex returned structured plan_json with keys={sorted(plan_json.keys())}")
-                print(f"[llm-output] plan_json:\n{json.dumps(plan_json, indent=2)}")
-                return plan_json
-            maybe_text = cloud_result.get("text") or cloud_result.get("raw_text")
-            if isinstance(maybe_text, str):
-                print(f"[llm-output] raw text:\n{maybe_text}")
-                self._debug(f"Vertex returned text/raw_text length={len(maybe_text)}; attempting JSON extraction.")
-                decoder = json.JSONDecoder()
-                for match in re.finditer(r"\{", maybe_text):
-                    try:
-                        obj, _ = decoder.raw_decode(maybe_text[match.start():])
-                        if isinstance(obj, dict) and "plan_name" in obj:
-                            self._debug("Successfully extracted plan_json from text response.")
-                            return obj
-                    except Exception:
-                        continue
-                self._debug("No plan_json object found in text response — not retrying cloud.")
-                self._load_error = "Cloud returned text but JSON was truncated or missing plan_name."
-                return None
-
         if self._can_use_cloud():
-            # Already tried cloud and failed — skip second cloud call in generate_text
-            if not self._ensure_loaded():
-                return None
+            for attempt in range(1, 4):  # up to 3 attempts
+                self._debug(f"Cloud plan_json attempt {attempt}/3")
+                cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
+                if cloud_result is None:
+                    self._debug("Cloud call failed (network/HTTP error) — not retrying.")
+                    break
+                plan_json = cloud_result.get("plan_json")
+                if isinstance(plan_json, dict):
+                    self._debug(f"Cloud returned structured plan_json keys={sorted(plan_json.keys())}")
+                    print(f"[llm-output] plan_json:\n{json.dumps(plan_json, indent=2)}")
+                    return plan_json
+                maybe_text = cloud_result.get("text") or cloud_result.get("raw_text")
+                if isinstance(maybe_text, str):
+                    print(f"[llm-output] raw text (attempt {attempt}):\n{maybe_text}")
+                    self._debug(f"Cloud returned text length={len(maybe_text)}; attempting JSON extraction.")
+                    decoder = json.JSONDecoder()
+                    for match in re.finditer(r"\{", maybe_text):
+                        try:
+                            obj, _ = decoder.raw_decode(maybe_text[match.start():])
+                            if isinstance(obj, dict) and "plan_name" in obj:
+                                self._debug("Extracted plan_json from text response.")
+                                return obj
+                        except Exception:
+                            continue
+                    self._debug(f"Attempt {attempt}: JSON truncated or missing plan_name — retrying.")
+            self._load_error = "Cloud responded but could not produce valid plan JSON after 3 attempts."
+            self._debug("All cloud attempts exhausted — not falling back to rules.")
+            return None
 
-        self._debug("Falling back to local generate_text for plan.")
+        self._debug("No cloud configured — falling back to local generate_text.")
         text = self.generate_text(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
         if not text:
             return None
