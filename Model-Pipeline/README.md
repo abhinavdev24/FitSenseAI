@@ -345,53 +345,71 @@ python Model-Pipeline/scripts/select_model.py \
 
 ### Phase 8: Push to Registry
 
-Packages the adapter + metadata and uploads to GCS.
+Packages the adapter + all training checkpoints and uploads to GCS and HuggingFace Hub.
 
 ```bash
-# Full upload
-python Model-Pipeline/scripts/push_to_registry.py \
-    --adapter-dir Model-Pipeline/outputs/final_adapter \
+# Full upload — adapter + checkpoints + metadata → GCS + HuggingFace
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir      Model-Pipeline/outputs/final_adapter \
+    --checkpoints-dir  Model-Pipeline/outputs \
     --metadata-files \
+        Model-Pipeline/outputs/training_summary.json \
         Model-Pipeline/outputs/hparam_search/best_hparams.json \
         Model-Pipeline/outputs/evaluation/evaluation_results.json \
         Model-Pipeline/outputs/bias_detection/bias_report.json \
-        Model-Pipeline/outputs/training_summary.json \
-    --gcs-bucket gs://fitsense-models \
-    --model-name qwen3-8b-fitsense-qlora
+    --gcs-bucket  fitsense-models \
+    --model-name  qwen3-4b-fitsense-qlora \
+    --hf-repo     abhinav241998/qwen3-4b-fitsense-qlora \
+    --hf-token    $HF_TOKEN \
+    --log-level   INFO
 
-# Dry run (local staging only, no GCS needed)
-python Model-Pipeline/scripts/push_to_registry.py \
+# GCS only (no HuggingFace push)
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir     Model-Pipeline/outputs/final_adapter \
+    --checkpoints-dir Model-Pipeline/outputs \
+    --metadata-files  Model-Pipeline/outputs/training_summary.json \
+    --gcs-bucket      fitsense-models \
+    --model-name      qwen3-4b-fitsense-qlora \
+    --log-level       INFO
+
+# Dry run (local staging only, no uploads)
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
     --adapter-dir Model-Pipeline/outputs/final_adapter \
-    --gcs-bucket gs://fitsense-models \
-    --model-name qwen3-8b-fitsense-qlora \
+    --gcs-bucket  fitsense-models \
+    --model-name  qwen3-4b-fitsense-qlora \
     --dry-run
 
-# Rollback to a previous version
-python Model-Pipeline/scripts/push_to_registry.py \
-    --gcs-bucket gs://fitsense-models \
-    --model-name qwen3-8b-fitsense-qlora \
-    --rollback-to v20260324T120000Z \
-    --adapter-dir Model-Pipeline/outputs/final_adapter
+# Rollback latest.json to a previous version
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir  Model-Pipeline/outputs/final_adapter \
+    --gcs-bucket   fitsense-models \
+    --model-name   qwen3-4b-fitsense-qlora \
+    --rollback-to  v20260324T120000Z
 ```
 
-**GCS layout**:
+**GCS layout** (`gs://fitsense-models/`):
 
-```
+```text
 gs://fitsense-models/
-└── qwen3-8b-fitsense-qlora/
-    ├── latest.json                    # Points to current version
-    ├── versions.json                  # Version history
-    ├── v20260324T120000Z/
-    │   ├── manifest.json
-    │   ├── adapter_config.json
-    │   ├── adapter_model.safetensors
-    │   ├── tokenizer.json
-    │   ├── best_hparams.json
-    │   ├── evaluation_results.json
-    │   └── bias_report.json
-    └── v20260320T090000Z/             # Previous version
-        └── ...
+└── qwen3-4b-fitsense-qlora/
+    ├── latest.json                        # Points to current version
+    ├── versions.json                      # Version history
+    └── v<timestamp>/
+        ├── manifest.json
+        ├── adapter_config.json
+        ├── adapter_model.safetensors
+        ├── tokenizer.json
+        ├── training_summary.json
+        └── checkpoints/
+            ├── checkpoint-10/
+            ├── checkpoint-20/
+            └── ...
 ```
+
+**HuggingFace Hub**: [abhinav241998/qwen3-4b-fitsense-qlora](https://huggingface.co/abhinav241998/qwen3-4b-fitsense-qlora)
+
+- Base model: `unsloth/Qwen3-4B`
+- Adapter pushed as a PEFT LoRA repo with version tag matching GCS
 
 ---
 
@@ -541,11 +559,15 @@ python Model-Pipeline/scripts/sensitivity.py \
     --trials-file Model-Pipeline/outputs/hparam_search/all_trials.json
 
 # 7. Push to registry (after manual review)
-python Model-Pipeline/scripts/push_to_registry.py \
-    --adapter-dir Model-Pipeline/outputs/final_adapter \
-    --gcs-bucket gs://fitsense-models \
-    --model-name qwen3-8b-fitsense-qlora \
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir     Model-Pipeline/outputs/final_adapter \
+    --checkpoints-dir Model-Pipeline/outputs \
+    --gcs-bucket      fitsense-models \
+    --model-name      qwen3-4b-fitsense-qlora \
+    --hf-repo         abhinav241998/qwen3-4b-fitsense-qlora \
+    --hf-token        $HF_TOKEN \
     --metadata-files \
+        Model-Pipeline/outputs/training_summary.json \
         Model-Pipeline/outputs/hparam_search/best_hparams.json \
         Model-Pipeline/outputs/evaluation/evaluation_results.json \
         Model-Pipeline/outputs/bias_detection/bias_report.json

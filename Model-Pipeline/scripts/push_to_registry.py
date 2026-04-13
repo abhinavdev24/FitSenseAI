@@ -1,17 +1,42 @@
-"""Push a LoRA adapter to Google Cloud Storage and register it.
+"""Push LoRA adapters and training checkpoints to Google Cloud Storage and HuggingFace Hub.
 
 This script packages a selected LoRA adapter with metadata and pushes it to
-Google Cloud Storage (GCS) and registers it in GCP Artifact Registry. Supports
-versioning, tagging, and rollback.
+Google Cloud Storage (GCS) and optionally to HuggingFace Hub. Also supports
+uploading all training checkpoints to GCS. Supports versioning, tagging, and rollback.
 """
 
 import argparse
 import json
 import logging
+import os
+import shutil
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import yaml
+
+
+def load_registry_config(config_path: str) -> dict[str, Any]:
+    """Load registry push configuration from a YAML file.
+
+    Args:
+        config_path: Path to the YAML config file.
+
+    Returns:
+        Dictionary of configuration values, or empty dict if path is None.
+
+    Raises:
+        FileNotFoundError: If the config file does not exist.
+        yaml.YAMLError: If the file cannot be parsed.
+    """
+    path = Path(config_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Registry config file not found: {config_path}")
+    with path.open("r") as fh:
+        cfg: dict[str, Any] = yaml.safe_load(fh) or {}
+    return cfg
 
 
 def get_git_commit() -> str:
@@ -113,18 +138,16 @@ def stage_package(
     Raises:
         OSError: If file copy fails
     """
-    import shutil
-
     adapter_path = Path(adapter_dir)
     staging_path = Path(staging_dir)
     staging_path.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Staging package to {staging_path}")
 
-    # Copy adapter files
+    # Copy adapter files into final_adapter/ subdirectory
     for src_file in collect_adapter_files(adapter_path):
         rel_path = src_file.relative_to(adapter_path)
-        dest_file = staging_path / rel_path
+        dest_file = staging_path / "final_adapter" / rel_path
         dest_file.parent.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -378,6 +401,234 @@ def update_versions_list(
         raise
 
 
+def discover_checkpoints(checkpoints_dir: str, logger: logging.Logger) -> list[Path]:
+    """Discover all checkpoint subdirectories (e.g. checkpoint-100, checkpoint-200).
+
+    Args:
+        checkpoints_dir: Path to directory containing checkpoint-* subdirs
+        logger: Logger instance
+
+    Returns:
+        Sorted list of checkpoint directory paths
+    """
+    base = Path(checkpoints_dir)
+    if not base.exists():
+        raise FileNotFoundError(f"Checkpoints directory not found: {base}")
+
+    checkpoints = sorted(
+        [p for p in base.iterdir() if p.is_dir() and p.name.startswith("checkpoint-")],
+        key=lambda p: int(p.name.split("-")[-1]) if p.name.split("-")[-1].isdigit() else 0,
+    )
+    logger.info(f"Discovered {len(checkpoints)} checkpoints in {base}: {[p.name for p in checkpoints]}")
+    return checkpoints
+
+
+def upload_checkpoints_to_gcs(
+    checkpoints_dir: str,
+    bucket_name: str,
+    model_name: str,
+    version: str,
+    logger: logging.Logger,
+) -> None:
+    """Upload all checkpoint subdirectories to GCS under {model_name}/{version}/checkpoints/.
+
+    Args:
+        checkpoints_dir: Local path containing checkpoint-* subdirs
+        bucket_name: GCS bucket name (e.g., fitsense-model)
+        model_name: Model identifier
+        version: Version tag
+        logger: Logger instance
+
+    Raises:
+        ImportError: If google-cloud-storage is not installed
+        FileNotFoundError: If checkpoints directory is missing
+        Exception: If any upload fails
+    """
+    try:
+        from google.cloud import storage
+    except ImportError as exc:
+        raise ImportError(
+            "google-cloud-storage is required for upload. "
+            "Install with: pip install google-cloud-storage"
+        ) from exc
+
+    checkpoints = discover_checkpoints(checkpoints_dir, logger)
+    if not checkpoints:
+        logger.warning(f"No checkpoint-* directories found in {checkpoints_dir}; skipping checkpoint upload")
+        return
+
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    for ckpt_dir in checkpoints:
+        ckpt_name = ckpt_dir.name
+        gcs_prefix = f"{model_name}/{version}/checkpoints/{ckpt_name}"
+        logger.info(f"Uploading {ckpt_name} -> gs://{bucket_name}/{gcs_prefix}/")
+
+        for local_path in ckpt_dir.rglob("*"):
+            if not local_path.is_file():
+                continue
+            rel = local_path.relative_to(ckpt_dir)
+            blob_path = f"{gcs_prefix}/{rel}"
+            blob = bucket.blob(blob_path)
+            try:
+                blob.upload_from_filename(str(local_path))
+                logger.debug(f"Uploaded {blob_path}")
+            except Exception as e:
+                logger.error(f"Failed to upload checkpoint file {blob_path}: {e}")
+                raise
+
+        logger.info(f"Checkpoint {ckpt_name} uploaded successfully")
+
+    logger.info(
+        f"All {len(checkpoints)} checkpoints uploaded to "
+        f"gs://{bucket_name}/{model_name}/{version}/checkpoints/"
+    )
+
+
+def upload_hparam_search_to_gcs(
+    hparam_search_dir: str,
+    bucket_name: str,
+    model_name: str,
+    version: str,
+    logger: logging.Logger,
+) -> None:
+    """Upload the hparam_search directory to GCS under {model_name}/{version}/hparam_search/.
+
+    Args:
+        hparam_search_dir: Local path containing hparam search results
+        bucket_name: GCS bucket name
+        model_name: Model identifier
+        version: Version tag
+        logger: Logger instance
+
+    Raises:
+        ImportError: If google-cloud-storage is not installed
+        FileNotFoundError: If hparam_search directory is missing
+        Exception: If any upload fails
+    """
+    try:
+        from google.cloud import storage
+    except ImportError as exc:
+        raise ImportError(
+            "google-cloud-storage is required for upload. "
+            "Install with: pip install google-cloud-storage"
+        ) from exc
+
+    base = Path(hparam_search_dir)
+    if not base.exists():
+        raise FileNotFoundError(f"Hparam search directory not found: {base}")
+
+    gcs_prefix = f"{model_name}/{version}/hparam_search"
+    logger.info(f"Uploading hparam_search -> gs://{bucket_name}/{gcs_prefix}/")
+
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    files = [p for p in base.rglob("*") if p.is_file()]
+    for local_path in files:
+        rel = local_path.relative_to(base)
+        blob_path = f"{gcs_prefix}/{rel}"
+        blob = bucket.blob(blob_path)
+        try:
+            blob.upload_from_filename(str(local_path))
+            logger.debug(f"Uploaded {blob_path}")
+        except Exception as e:
+            logger.error(f"Failed to upload hparam search file {blob_path}: {e}")
+            raise
+
+    logger.info(
+        f"Hparam search ({len(files)} files) uploaded to gs://{bucket_name}/{gcs_prefix}/"
+    )
+
+
+def push_to_huggingface(
+    adapter_dir: str,
+    repo_id: str,
+    version: str,
+    token: str | None,
+    logger: logging.Logger,
+    commit_message: str | None = None,
+) -> str:
+    """Push a LoRA adapter directory to HuggingFace Hub.
+
+    Args:
+        adapter_dir: Local path to the LoRA adapter directory
+        repo_id: HuggingFace repo in the form 'username/repo-name'
+        version: Version tag used as the git tag on the Hub
+        token: HuggingFace API token (falls back to HF_TOKEN env var)
+        logger: Logger instance
+        commit_message: Optional commit message; defaults to 'Upload {version}'
+
+    Returns:
+        URL of the model on HuggingFace Hub
+
+    Raises:
+        ImportError: If huggingface_hub is not installed
+        ValueError: If repo_id is malformed or token is missing
+        Exception: If upload fails
+    """
+    try:
+        from huggingface_hub import HfApi, create_repo
+    except ImportError as exc:
+        raise ImportError(
+            "huggingface_hub is required for HF push. "
+            "Install with: pip install huggingface_hub"
+        ) from exc
+
+    resolved_token = token or os.environ.get("HF_TOKEN")
+    if not resolved_token:
+        raise ValueError(
+            "HuggingFace token is required. Pass --hf-token or set the HF_TOKEN environment variable."
+        )
+
+    if "/" not in repo_id:
+        raise ValueError(f"repo_id must be 'username/repo-name', got: {repo_id}")
+
+    adapter_path = Path(adapter_dir)
+    if not adapter_path.exists():
+        raise FileNotFoundError(f"Adapter directory not found: {adapter_path}")
+
+    logger.info(f"Pushing adapter to HuggingFace Hub: {repo_id}")
+
+    api = HfApi(token=resolved_token)
+
+    # Create the repo if it doesn't exist
+    try:
+        create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, token=resolved_token)
+        logger.info(f"Repository ensured: https://huggingface.co/{repo_id}")
+    except Exception as e:
+        logger.error(f"Failed to create/verify HF repo {repo_id}: {e}")
+        raise
+
+    message = commit_message or f"Upload adapter {version}"
+
+    # Upload the entire adapter directory
+    try:
+        api.upload_folder(
+            folder_path=str(adapter_path),
+            repo_id=repo_id,
+            repo_type="model",
+            commit_message=message,
+        )
+        logger.info(f"Adapter uploaded to https://huggingface.co/{repo_id}")
+    except Exception as e:
+        logger.error(f"Failed to upload adapter to HF Hub: {e}")
+        raise
+
+    # Create a version tag on the Hub
+    try:
+        api.create_tag(repo_id=repo_id, tag=version, repo_type="model", token=resolved_token)
+        logger.info(f"Created HuggingFace tag: {version}")
+    except Exception as e:
+        # Tags may already exist; log but don't fail
+        logger.warning(f"Could not create HF tag {version}: {e}")
+
+    repo_url = f"https://huggingface.co/{repo_id}"
+    logger.info(f"HuggingFace push complete: {repo_url}")
+    return repo_url
+
+
 def rollback(
     bucket_name: str,
     model_name: str,
@@ -431,12 +682,35 @@ def rollback(
 def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Push a LoRA adapter to GCS and register it."
+        description="Push LoRA adapters and checkpoints to GCS (fitsense-models) and HuggingFace Hub."
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="Model-Pipeline/config/registry_config.yaml",
+        help="Path to registry_config.yaml (default: Model-Pipeline/config/registry_config.yaml)",
     )
     parser.add_argument(
         "--adapter-dir",
-        required=True,
-        help="Path to the LoRA adapter directory",
+        default=None,
+        help="Path to the LoRA adapter directory (overrides config)",
+    )
+    parser.add_argument(
+        "--checkpoints-dir",
+        default=None,
+        help=(
+            "Path to directory containing checkpoint-* subdirs "
+            "(e.g., Model-Pipeline/outputs/checkpoints). "
+            "Overrides config. All discovered checkpoints are uploaded to GCS."
+        ),
+    )
+    parser.add_argument(
+        "--hparam-search-dir",
+        default=None,
+        help=(
+            "Path to hparam_search directory (e.g., Model-Pipeline/outputs/hparam_search). "
+            "Overrides config. Uploaded to GCS under {model_name}/{version}/hparam_search/."
+        ),
     )
     parser.add_argument(
         "--metadata-files",
@@ -446,13 +720,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--gcs-bucket",
-        required=True,
-        help="GCS bucket name (e.g., fitsense-models)",
+        default=None,
+        help="GCS bucket name (overrides config; default: fitsense-models)",
     )
     parser.add_argument(
         "--model-name",
-        required=True,
-        help="Model identifier (e.g., qwen3-8b-fitsense-qlora)",
+        default=None,
+        help="Model identifier (overrides config; e.g., qwen3-4b-fitsense-qlora)",
     )
     parser.add_argument(
         "--version",
@@ -470,9 +744,23 @@ def main() -> None:
         help="Rollback latest.json to a previous version (e.g., v20260323T100000Z)",
     )
     parser.add_argument(
+        "--hf-repo",
+        default=None,
+        help=(
+            "HuggingFace Hub repository to push the adapter to "
+            "(e.g., myuser/qwen3-8b-fitsense-lora). "
+            "Skipped if not provided."
+        ),
+    )
+    parser.add_argument(
+        "--hf-token",
+        default=None,
+        help="HuggingFace API token. Falls back to HF_TOKEN environment variable.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Stage locally but do not upload to GCS",
+        help="Stage locally but do not upload to GCS or HuggingFace",
     )
     parser.add_argument(
         "--log-level",
@@ -493,30 +781,62 @@ def main() -> None:
     try:
         logger.info("Starting registry push process")
 
+        # Load registry config and apply CLI overrides (CLI takes precedence)
+        cfg: dict[str, Any] = {}
+        if args.config:
+            try:
+                cfg = load_registry_config(args.config)
+                logger.info(f"Loaded registry config from: {args.config}")
+            except FileNotFoundError:
+                logger.warning(f"Registry config not found: {args.config}; proceeding with CLI args only")
+
+        def _resolve(cli_val, cfg_key: str, fallback=None):
+            """Return CLI value if set, else config value, else fallback."""
+            return cli_val if cli_val is not None else cfg.get(cfg_key, fallback)
+
+        gcs_bucket = _resolve(args.gcs_bucket, "gcs_bucket", "fitsense-models")
+        model_name = _resolve(args.model_name, "model_name")
+        adapter_dir = _resolve(args.adapter_dir, "adapter_dir")
+        checkpoints_dir = _resolve(args.checkpoints_dir, "checkpoints_dir")
+        hparam_search_dir = _resolve(args.hparam_search_dir, "hparam_search_dir")
+        metadata_files = args.metadata_files or cfg.get("metadata_files", [])
+        output_dir = _resolve(args.output_dir, "output_dir", "Model-Pipeline/outputs/registry")
+        hf_repo = _resolve(args.hf_repo, "hf_repo")
+        hf_token = args.hf_token
+        version = args.version
+        rollback_to = args.rollback_to
+        dry_run = args.dry_run
+
+        if not model_name:
+            raise ValueError("model_name is required (set in registry_config.yaml or via --model-name)")
+        if not adapter_dir and not rollback_to:
+            raise ValueError("adapter_dir is required (set in registry_config.yaml or via --adapter-dir)")
+
         # Handle rollback
-        if args.rollback_to:
-            logger.info(f"Rollback mode: reverting to {args.rollback_to}")
-            rollback(args.gcs_bucket, args.model_name, args.rollback_to, logger)
+        if rollback_to:
+            logger.info(f"Rollback mode: reverting to {rollback_to}")
+            rollback(gcs_bucket, model_name, rollback_to, logger)
             logger.info("Rollback completed successfully")
             return
 
         # Validate inputs
         logger.info("Validating inputs")
-        files_to_package = validate_inputs(args.adapter_dir, args.metadata_files, logger)
+        files_to_package = validate_inputs(adapter_dir, metadata_files, logger)
         logger.info(f"Validation passed: {len(files_to_package)} files to package")
 
         # Generate version if not provided
-        version = args.version or f"v{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+        version = version or f"v{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
         logger.info(f"Using version: {version}")
 
-        # Stage package
-        staging_subdir = (
-            Path(args.output_dir) / args.model_name / version
-        )
+        # Stage package — remove stale local copy first if it exists
+        staging_subdir = Path(output_dir) / model_name / version
+        if staging_subdir.exists():
+            logger.info(f"Removing existing local staging directory: {staging_subdir}")
+            shutil.rmtree(staging_subdir)
         logger.info(f"Staging to {staging_subdir}")
         staged_path = stage_package(
-            args.adapter_dir,
-            args.metadata_files,
+            adapter_dir,
+            metadata_files,
             str(staging_subdir),
             logger,
         )
@@ -524,36 +844,78 @@ def main() -> None:
         # Write manifest
         manifest = write_manifest(
             staged_path,
-            args.model_name,
+            model_name,
             version,
-            args.metadata_files,
+            metadata_files,
             logger,
         )
         logger.info(f"Manifest: {json.dumps(manifest, indent=2)}")
 
-        # Upload to GCS (unless dry-run)
-        if args.dry_run:
-            logger.info("Dry-run mode: skipping GCS upload")
+        if dry_run:
+            logger.info("Dry-run mode: skipping GCS and HuggingFace uploads")
         else:
-            logger.info("Uploading to GCS")
-            upload_to_gcs(
-                staged_path,
-                args.gcs_bucket,
-                args.model_name,
-                version,
-                logger,
-            )
+            # --- GCS: upload adapter ---
+            logger.info("Uploading adapter to GCS")
+            upload_to_gcs(staged_path, gcs_bucket, model_name, version, logger)
 
+            # --- GCS: upload checkpoints ---
+            if checkpoints_dir:
+                logger.info(f"Uploading checkpoints from {checkpoints_dir} to GCS")
+                upload_checkpoints_to_gcs(
+                    checkpoints_dir,
+                    gcs_bucket,
+                    model_name,
+                    version,
+                    logger,
+                )
+            else:
+                logger.info("No checkpoints_dir configured; skipping checkpoint upload")
+
+            # --- GCS: upload hparam_search ---
+            if hparam_search_dir:
+                logger.info(f"Uploading hparam_search from {hparam_search_dir} to GCS")
+                upload_hparam_search_to_gcs(
+                    hparam_search_dir,
+                    gcs_bucket,
+                    model_name,
+                    version,
+                    logger,
+                )
+            else:
+                logger.info("No hparam_search_dir configured; skipping hparam search upload")
+
+            # --- GCS: update registry pointers ---
             logger.info("Updating latest.json pointer")
-            update_latest_pointer(args.gcs_bucket, args.model_name, version, logger)
+            update_latest_pointer(gcs_bucket, model_name, version, logger)
 
             logger.info("Updating versions.json")
-            update_versions_list(args.gcs_bucket, args.model_name, version, logger)
+            update_versions_list(gcs_bucket, model_name, version, logger)
+
+            logger.info(
+                f"GCS push complete: gs://{gcs_bucket}/{model_name}/{version}/"
+            )
+
+            # --- HuggingFace Hub: push adapter ---
+            if hf_repo:
+                logger.info(f"Pushing adapter to HuggingFace Hub: {hf_repo}")
+                hf_url = push_to_huggingface(
+                    adapter_dir,
+                    hf_repo,
+                    version,
+                    hf_token,
+                    logger,
+                )
+                logger.info(f"HuggingFace push complete: {hf_url}")
+            else:
+                logger.info("No hf_repo configured; skipping HuggingFace push")
+
+        # Clean up local staging directory (remove full output_dir tree)
+        output_dir_path = Path(output_dir)
+        if output_dir_path.exists():
+            shutil.rmtree(output_dir_path)
+            logger.info(f"Removed local staging directory: {output_dir_path}")
 
         logger.info("Registry push completed successfully")
-        logger.info(
-            f"Model available at: gs://{args.gcs_bucket}/{args.model_name}/{version}/"
-        )
 
     except (FileNotFoundError, ValueError, OSError, ImportError) as e:
         logger.error(f"Error during registry push: {e}")

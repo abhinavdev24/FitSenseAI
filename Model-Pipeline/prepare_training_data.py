@@ -1,15 +1,9 @@
 """
 Prepare teacher LLM responses for Qwen3 SFT with thinking distillation.
 
-Reads the raw responses.jsonl from the teacher pipeline and produces
-train.jsonl / val.jsonl in the Hugging Face "messages" format that
-SFTTrainer + Qwen3 chat template expects.
-
-Three source record types are handled:
-  1. Groq  — reasoning is inline as <think>…</think> in response_text
-  2. OpenRouter (with reasoning) — reasoning in raw_response.choices[0].message.reasoning,
-     content is the final JSON answer
-  3. OpenRouter (no reasoning) — content only, no thinking trace
+Reads the re-reasoned responses.jsonl (all OpenRouter, all have reasoning)
+and produces train.jsonl / val.jsonl in the Hugging Face "messages" format
+that SFTTrainer + Qwen3 chat template expects.
 
 Output format per line (JSONL):
   {"messages": [
@@ -18,17 +12,11 @@ Output format per line (JSONL):
       {"role": "assistant", "content": "<think>\\n…\\n</think>\\n{json}"}
   ]}
 
-Records without reasoning (type 3) are kept — the assistant content is
-just the JSON with no <think> block, so the model also learns the
-"non-thinking" path.
-
 Usage:
     conda activate mlopsenv
-    python Model-Pipeline/scripts/prepare_training_data.py \
-        --input  Data-Pipeline/data/raw/teacher-llm-responses/20260308T234052Z/responses.jsonl \
-        --output Model-Pipeline/data/training \
-        --val-ratio 0.1 \
-        --seed 42
+    python Model-Pipeline/prepare_training_data.py \\
+        --input  Data-Pipeline/data/raw/teacher-llm-responses/20260324T162857Z/responses.jsonl \\
+        --output Model-Pipeline/data/training
 """
 
 from __future__ import annotations
@@ -36,7 +24,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import random
 import re
 from pathlib import Path
@@ -50,54 +37,6 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Extraction helpers
-# ---------------------------------------------------------------------------
-
-def _extract_groq(record: dict[str, Any]) -> tuple[str | None, str | None]:
-    """Return (reasoning, answer) from a Groq record.
-
-    Groq embeds <think>…</think> at the start of response_text followed by
-    the JSON answer.  We split on the closing tag.
-    """
-    text: str = record.get("response_text", "")
-    match = re.match(r"<think>(.*?)</think>\s*(.*)", text, re.DOTALL)
-    if match:
-        return match.group(1).strip(), match.group(2).strip()
-    # Fallback: no think block found — treat whole text as answer
-    return None, text.strip()
-
-
-def _extract_openrouter(record: dict[str, Any]) -> tuple[str | None, str | None]:
-    """Return (reasoning, answer) from an OpenRouter record.
-
-    Reasoning lives in raw_response.choices[0].message.reasoning (may be None).
-    The answer is in response_text (== raw_response.choices[0].message.content).
-    """
-    raw = record.get("raw_response", {})
-    choices = raw.get("choices", [])
-    reasoning = None
-    if choices:
-        msg = choices[0].get("message", {})
-        reasoning = msg.get("reasoning") or None
-    if reasoning:
-        reasoning = reasoning.strip()
-
-    answer = record.get("response_text", "").strip()
-    return reasoning, answer
-
-
-# ---------------------------------------------------------------------------
-# Build the assistant content
-# ---------------------------------------------------------------------------
-
-def _build_assistant_content(reasoning: str | None, answer: str) -> str:
-    """Wrap reasoning in <think> tags and append the answer."""
-    if reasoning:
-        return f"<think>\n{reasoning}\n</think>\n{answer}"
-    return answer
-
-
-# ---------------------------------------------------------------------------
 # Validate a single record
 # ---------------------------------------------------------------------------
 
@@ -108,19 +47,21 @@ def _validate_record(record: dict[str, Any]) -> list[str]:
     if record.get("status") != "success":
         issues.append(f"status={record.get('status')}")
 
-    payload = record.get("request_payload", {})
-    messages = payload.get("messages", [])
+    messages = (record.get("request_payload") or {}).get("messages", [])
     if len(messages) < 2:
         issues.append(f"request has only {len(messages)} message(s)")
 
-    response_text = record.get("response_text", "")
-    if not response_text.strip():
+    if not (record.get("response_text") or "").strip():
         issues.append("empty response_text")
 
-    # The response should contain valid JSON (the workout plan)
-    response_json = record.get("response_json")
-    if response_json is None:
+    if record.get("response_json") is None:
         issues.append("response_json is null")
+
+    raw = record.get("raw_response") or {}
+    choices = raw.get("choices") or [{}]
+    reasoning = (choices[0].get("message") or {}).get("reasoning")
+    if not reasoning:
+        issues.append("missing reasoning")
 
     return issues
 
@@ -136,46 +77,29 @@ def convert_record(record: dict[str, Any]) -> dict[str, Any] | None:
     """
     issues = _validate_record(record)
     if issues:
-        logger.warning(
-            "Skipping %s: %s",
-            record.get("response_id", "?"),
-            "; ".join(issues),
-        )
+        logger.warning("Skipping %s: %s", record.get("response_id", "?"), "; ".join(issues))
         return None
 
-    provider = record.get("provider", "")
-    if provider == "groq":
-        reasoning, answer = _extract_groq(record)
-    else:
-        reasoning, answer = _extract_openrouter(record)
+    raw = record["raw_response"]
+    reasoning: str = raw["choices"][0]["message"]["reasoning"].strip()
+    answer: str = record["response_text"].strip()
+    # Strip any residual <think> block from answer (shouldn't exist, but be safe)
+    answer = re.sub(r"<think>.*?</think>\s*", "", answer, flags=re.DOTALL).strip()
 
-    if not answer:
-        logger.warning(
-            "Skipping %s: empty answer after extraction", record.get("response_id")
-        )
-        return None
+    assistant_content = f"<think>\n{reasoning}\n</think>\n{answer}"
 
-    assistant_content = _build_assistant_content(reasoning, answer)
-
-    # Pull original system + user messages from the request payload
     payload_messages = record["request_payload"]["messages"]
-    system_msg = payload_messages[0]  # {"role": "system", "content": "…"}
-    user_msg = payload_messages[1]    # {"role": "user",   "content": "…"}
-
     return {
         "messages": [
-            {"role": "system", "content": system_msg["content"]},
-            {"role": "user", "content": user_msg["content"]},
+            {"role": "system",    "content": payload_messages[0]["content"]},
+            {"role": "user",      "content": payload_messages[1]["content"]},
             {"role": "assistant", "content": assistant_content},
         ],
-        # Metadata for traceability (not used by SFTTrainer)
         "metadata": {
             "response_id": record.get("response_id"),
-            "query_id": record.get("query_id"),
+            "query_id":    record.get("query_id"),
             "prompt_type": record.get("prompt_type"),
-            "provider": provider,
-            "model_name": record.get("model_name"),
-            "has_reasoning": reasoning is not None,
+            "model_name":  record.get("model_name"),
         },
     }
 
@@ -213,11 +137,7 @@ def main() -> None:
     # ---- Load & convert ----
     samples: list[dict[str, Any]] = []
     skipped = 0
-    stats = {
-        "groq_with_thinking": 0,
-        "openrouter_with_reasoning": 0,
-        "openrouter_no_reasoning": 0,
-    }
+    line_num = 0
 
     with open(input_path) as f:
         for line_num, line in enumerate(f, 1):
@@ -225,21 +145,10 @@ def main() -> None:
             sample = convert_record(record)
             if sample is None:
                 skipped += 1
-                continue
-
-            # Track stats
-            meta = sample["metadata"]
-            if meta["provider"] == "groq" and meta["has_reasoning"]:
-                stats["groq_with_thinking"] += 1
-            elif meta["provider"] == "openrouter" and meta["has_reasoning"]:
-                stats["openrouter_with_reasoning"] += 1
             else:
-                stats["openrouter_no_reasoning"] += 1
-
-            samples.append(sample)
+                samples.append(sample)
 
     logger.info("Loaded %d records, converted %d, skipped %d", line_num, len(samples), skipped)
-    logger.info("Breakdown: %s", json.dumps(stats, indent=2))
 
     # ---- Train / val split ----
     random.seed(args.seed)
@@ -257,33 +166,24 @@ def main() -> None:
     for path, data in [(train_path, train_samples), (val_path, val_samples)]:
         with open(path, "w") as f:
             for sample in data:
-                # Write only the messages field (what SFTTrainer needs)
-                # plus metadata for traceability
                 json.dump(sample, f, ensure_ascii=False)
                 f.write("\n")
 
-    # ---- Summary stats ----
+    # ---- Summary ----
     def _token_estimate(samples: list[dict]) -> int:
-        """Rough char-based token estimate (÷4)."""
-        total_chars = sum(
-            len(m["content"])
-            for s in samples
-            for m in s["messages"]
-        )
-        return total_chars // 4
+        return sum(len(m["content"]) for s in samples for m in s["messages"]) // 4
 
     summary = {
-        "input_file": str(input_path),
-        "total_raw_records": line_num,
-        "converted": len(samples),
-        "skipped": skipped,
-        "train_count": len(train_samples),
-        "val_count": len(val_samples),
+        "input_file":          str(input_path),
+        "total_raw_records":   line_num,
+        "converted":           len(samples),
+        "skipped":             skipped,
+        "train_count":         len(train_samples),
+        "val_count":           len(val_samples),
         "train_approx_tokens": _token_estimate(train_samples),
-        "val_approx_tokens": _token_estimate(val_samples),
-        "breakdown": stats,
-        "val_ratio": args.val_ratio,
-        "seed": args.seed,
+        "val_approx_tokens":   _token_estimate(val_samples),
+        "val_ratio":           args.val_ratio,
+        "seed":                args.seed,
     }
 
     summary_path = output_dir / "prepare_summary.json"

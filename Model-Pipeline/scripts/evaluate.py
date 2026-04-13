@@ -62,6 +62,7 @@ def load_model_for_eval(
     """
     try:
         from unsloth import FastLanguageModel  # type: ignore[import]
+        from unsloth.chat_templates import get_chat_template  # type: ignore[import]
     except ImportError as exc:
         raise ImportError(
             "unsloth is required for model loading. "
@@ -75,14 +76,16 @@ def load_model_for_eval(
             max_seq_length=config["max_seq_length"],
             load_in_4bit=True,
             dtype=None,
+            fast_inference=False,
         )
     except Exception as exc:
         raise RuntimeError(
             f"Failed to load model from '{adapter_dir}': {exc}"
         ) from exc
 
+    tokenizer = get_chat_template(tokenizer, chat_template="qwen-3")
     FastLanguageModel.for_inference(model)
-    logger.info("Model loaded and inference mode enabled")
+    logger.info("Model loaded, Qwen-3 chat template applied, inference mode enabled")
     return model, tokenizer
 
 
@@ -139,7 +142,7 @@ def generate_single(
     model,
     tokenizer,
     messages: list[dict[str, str]],
-    max_new_tokens: int = 4096,
+    max_new_tokens: int = 15000,
 ) -> tuple[str, float]:
     """Generate a single response for a list of messages.
 
@@ -170,6 +173,7 @@ def generate_single(
             prompt_messages,
             tokenize=True,
             add_generation_prompt=True,
+            enable_thinking=True,
             return_tensors="pt",
         )
     except Exception as exc:
@@ -188,6 +192,7 @@ def generate_single(
                 temperature=0.6,
                 top_p=0.95,
                 do_sample=True,
+                pad_token_id=tokenizer.eos_token_id,
             )
         latency_ms = (time.monotonic() - t0) * 1000.0
     except Exception as exc:
@@ -241,6 +246,7 @@ def compute_val_loss(
                 messages,
                 tokenize=True,
                 add_generation_prompt=False,
+                enable_thinking=True,
                 return_tensors="pt",
             ).to(device)
         except Exception as exc:

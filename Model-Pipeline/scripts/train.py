@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import unsloth  # must be imported before trl/transformers so Unsloth patches are active  # noqa: F401, I001
 import wandb
 import yaml
 from trl import SFTConfig, SFTTrainer
@@ -36,6 +37,7 @@ from load_data import load_and_validate
 # ---------------------------------------------------------------------------
 # Logging helpers
 # ---------------------------------------------------------------------------
+
 
 def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     """Create a logger that writes to stdout with a standard format."""
@@ -58,6 +60,7 @@ def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
 # ---------------------------------------------------------------------------
 # Config helpers
 # ---------------------------------------------------------------------------
+
 
 def load_config(config_path: str) -> dict[str, Any]:
     """Load and return training config from a YAML file.
@@ -102,9 +105,95 @@ def apply_cli_overrides(
     return config
 
 
+def apply_hparams_overrides(
+    config: dict[str, Any],
+    hparams_path: str,
+    logger: logging.Logger,
+) -> dict[str, Any]:
+    """Override training hyperparameters from a best_hparams.json file.
+
+    Reads the ``best_params`` block produced by hparam_search.py and merges
+    the tunable keys into the config, replacing the YAML defaults.
+
+    Recognised keys: lora_r, lora_alpha, lora_dropout, learning_rate,
+    num_epochs, batch_size, warmup_ratio.
+
+    Args:
+        config: Base config dict (already loaded from YAML).
+        hparams_path: Path to best_hparams.json.
+        logger: Logger instance.
+
+    Returns:
+        Updated config dict.
+
+    Raises:
+        FileNotFoundError: If hparams_path does not exist.
+        KeyError: If best_hparams.json has no ``best_params`` key.
+    """
+    path = Path(hparams_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Hparams file not found: {hparams_path}")
+
+    with path.open("r") as fh:
+        hparams_record: dict[str, Any] = json.load(fh)
+
+    best_params: dict[str, Any] = hparams_record["best_params"]
+
+    _TUNABLE_KEYS = {
+        "lora_r",
+        "lora_alpha",
+        "lora_dropout",
+        "learning_rate",
+        "num_epochs",
+        "batch_size",
+        "warmup_ratio",
+    }
+
+    applied: list[str] = []
+    for key in _TUNABLE_KEYS:
+        if key in best_params:
+            old = config.get(key, "<unset>")
+            config[key] = best_params[key]
+            applied.append(f"{key}: {old} → {best_params[key]}")
+
+    logger.info(
+        "Applied %d hparam overrides from %s (trial %s, eval_loss=%.6f):",
+        len(applied),
+        path.name,
+        hparams_record.get("best_trial_number", "?"),
+        hparams_record.get("best_eval_loss", float("nan")),
+    )
+    for line in applied:
+        logger.info("  %s", line)
+
+    return config
+
+
 # ---------------------------------------------------------------------------
 # Git helpers
 # ---------------------------------------------------------------------------
+
+
+def find_latest_checkpoint(output_dir: Path) -> Path | None:
+    """Return the most recent checkpoint-N subdirectory, or None if absent.
+
+    Args:
+        output_dir: Training output directory to search.
+
+    Returns:
+        Path to the highest-numbered checkpoint dir, or None.
+    """
+    checkpoints = []
+    if output_dir.exists():
+        for d in output_dir.iterdir():
+            if d.is_dir() and d.name.startswith("checkpoint-"):
+                try:
+                    step = int(d.name.removeprefix("checkpoint-"))
+                    checkpoints.append((step, d))
+                except ValueError:
+                    pass
+    return max(checkpoints, key=lambda x: x[0])[1] if checkpoints else None
+
 
 def get_git_commit() -> str | None:
     """Return the current HEAD commit SHA, or None if unavailable."""
@@ -124,6 +213,7 @@ def get_git_commit() -> str | None:
 # Model helpers
 # ---------------------------------------------------------------------------
 
+
 def load_model_and_tokenizer(config: dict[str, Any], logger: logging.Logger):
     """Load the base model and tokenizer via Unsloth FastLanguageModel.
 
@@ -142,6 +232,7 @@ def load_model_and_tokenizer(config: dict[str, Any], logger: logging.Logger):
     """
     try:
         from unsloth import FastLanguageModel  # type: ignore[import]
+        from unsloth.chat_templates import get_chat_template  # type: ignore[import]
     except ImportError as exc:
         raise ImportError(
             "unsloth is required for model loading. "
@@ -155,13 +246,15 @@ def load_model_and_tokenizer(config: dict[str, Any], logger: logging.Logger):
             max_seq_length=config["max_seq_length"],
             load_in_4bit=True,
             dtype=None,  # auto-detect
+            fast_inference=False,
         )
     except Exception as exc:
         raise RuntimeError(
             f"Failed to load model '{config['model_name']}': {exc}"
         ) from exc
 
-    logger.info("Model loaded successfully")
+    tokenizer = get_chat_template(tokenizer, chat_template="qwen-3")
+    logger.info("Model loaded and Qwen-3 chat template applied")
     return model, tokenizer
 
 
@@ -219,6 +312,7 @@ def inject_lora_adapter(model, config: dict[str, Any], logger: logging.Logger):
 # Training
 # ---------------------------------------------------------------------------
 
+
 def build_sft_config(
     config: dict[str, Any],
     output_dir: Path,
@@ -243,18 +337,27 @@ def build_sft_config(
         lr_scheduler_type=config.get("lr_scheduler_type", "cosine"),
         warmup_ratio=config.get("warmup_ratio", 0.05),
         max_grad_norm=config.get("max_grad_norm", 1.0),
-        bf16=config.get("bf16", True),
+        bf16=config.get("bf16", False),
+        fp16=config.get("fp16", False),
         logging_steps=config["logging_steps"],
-        eval_strategy="steps",
-        eval_steps=config["eval_steps"],
         save_strategy="steps",
         save_steps=config["save_steps"],
         save_total_limit=config["save_total_limit"],
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        max_seq_length=config["max_seq_length"],
-        packing=True,
-        dataset_text_field="messages",
+        max_length=config["max_seq_length"],
+        packing=False,
+        dataset_text_field="text",
+        fp16_full_eval=config.get("fp16", False),
+        bf16_full_eval=config.get("bf16", False),
+        eval_strategy=config.get("eval_strategy", "steps"),
+        eval_steps=(
+            config.get("eval_steps")
+            if config.get("eval_strategy", "steps") != "no"
+            else None
+        ),
+        load_best_model_at_end=config.get("eval_strategy", "steps") != "no",
+        metric_for_best_model=(
+            "eval_loss" if config.get("eval_strategy", "steps") != "no" else None
+        ),
         report_to=config.get("report_to", "wandb"),
         run_name=run_name,
     )
@@ -266,6 +369,7 @@ def run_training(
     datasets,
     sft_config: SFTConfig,
     logger: logging.Logger,
+    resume_from_checkpoint: Path | None = None,
 ) -> SFTTrainer:
     """Initialise and run the SFTTrainer.
 
@@ -275,6 +379,7 @@ def run_training(
         datasets: DatasetDict with 'train' and 'validation' splits.
         sft_config: TRL SFTConfig.
         logger: Logger instance.
+        resume_from_checkpoint: If set, resume training from this checkpoint dir.
 
     Returns:
         Trainer instance after training completes.
@@ -282,18 +387,39 @@ def run_training(
     Raises:
         RuntimeError: If training fails.
     """
+
+    # Apply Qwen-3 chat template to every example (matches notebook Cell 14)
+    def _format_sample(examples):
+        texts = [
+            tokenizer.apply_chat_template(
+                convo,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+            for convo in examples["messages"]
+        ]
+        return {"text": texts}
+
+    logger.info("Formatting train/val datasets with Qwen-3 chat template")
+    train_formatted = datasets["train"].map(_format_sample, batched=True)
+    val_formatted = datasets["validation"].map(_format_sample, batched=True)
+
     logger.info("Initialising SFTTrainer")
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
-        train_dataset=datasets["train"],
-        eval_dataset=datasets["validation"],
+        processing_class=tokenizer,
+        train_dataset=train_formatted,
+        eval_dataset=val_formatted,
         args=sft_config,
     )
 
     logger.info("Starting training")
     try:
-        trainer.train()
+        trainer.train(
+            resume_from_checkpoint=(
+                str(resume_from_checkpoint) if resume_from_checkpoint else None
+            )
+        )
     except Exception as exc:
         raise RuntimeError(f"Training failed: {exc}") from exc
 
@@ -304,6 +430,7 @@ def run_training(
 # ---------------------------------------------------------------------------
 # Post-training
 # ---------------------------------------------------------------------------
+
 
 def save_adapter_and_tokenizer(
     model,
@@ -394,7 +521,9 @@ def _format_duration(seconds: float) -> str:
     return f"{h:02d}h {m:02d}m {s:02d}s"
 
 
-def log_wandb_summary(summary: dict[str, Any], output_dir: Path, logger: logging.Logger) -> None:
+def log_wandb_summary(
+    summary: dict[str, Any], output_dir: Path, logger: logging.Logger
+) -> None:
     """Log the training summary and final adapter as a W&B artifact.
 
     Args:
@@ -433,6 +562,7 @@ def log_wandb_summary(summary: dict[str, Any], output_dir: Path, logger: logging
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
@@ -457,6 +587,14 @@ def parse_args() -> argparse.Namespace:
         help="Override output_dir from config",
     )
     parser.add_argument(
+        "--hparams-file",
+        type=str,
+        default=None,
+        help="Path to best_hparams.json from hparam_search.py — overrides "
+        "lora_r, lora_alpha, lora_dropout, learning_rate, num_epochs, "
+        "batch_size, warmup_ratio in the config",
+    )
+    parser.add_argument(
         "--log-level",
         type=str,
         default="INFO",
@@ -470,6 +608,7 @@ def parse_args() -> argparse.Namespace:
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     """Main training entrypoint."""
     args = parse_args()
@@ -479,6 +618,8 @@ def main() -> None:
     logger.info("Loading config from: %s", args.config)
     config = load_config(args.config)
     config = apply_cli_overrides(config, args.model_name, args.output_dir)
+    if args.hparams_file is not None:
+        config = apply_hparams_overrides(config, args.hparams_file, logger)
 
     model_name_short = config["model_name"].split("/")[-1].lower()
     run_name = f"fitsense-{model_name_short}-qlora"
@@ -489,13 +630,27 @@ def main() -> None:
     logger.info("Output dir: %s", output_dir)
     logger.info("Run name:   %s", run_name)
 
-    # 2. Initialise W&B
-    logger.info("Initialising W&B run")
-    wandb.init(
-        project=config.get("wandb_project", "fitsense-sft"),
-        name=run_name,
-        config=config,
-    )
+    # 2. Initialise W&B — resume existing run if a run ID file is present
+    run_id_path = output_dir / "wandb_run_id.txt"
+    if run_id_path.exists():
+        saved_run_id = run_id_path.read_text().strip()
+        logger.info("Resuming W&B run: %s", saved_run_id)
+        wandb.init(
+            id=saved_run_id,
+            project=config.get("wandb_project", "fitsense-sft"),
+            name=run_name,
+            config=config,
+            resume="must",
+        )
+    else:
+        logger.info("Initialising new W&B run")
+        wandb.init(
+            project=config.get("wandb_project", "fitsense-sft"),
+            name=run_name,
+            config=config,
+        )
+        run_id_path.write_text(wandb.run.id)
+        logger.info("W&B run ID saved to: %s", run_id_path)
 
     # 3. Load and validate training data
     train_path = config["train_path"]
@@ -509,12 +664,19 @@ def main() -> None:
     # 5. Inject LoRA adapter
     model = inject_lora_adapter(model, config, logger)
 
-    # 6. Build SFTConfig
-    sft_config = build_sft_config(config, output_dir, run_name)
+    # 6. Build SFTConfig — checkpoints go into outputs/checkpoints/
+    checkpoints_dir = output_dir / "checkpoints"
+    checkpoints_dir.mkdir(parents=True, exist_ok=True)
+    sft_config = build_sft_config(config, checkpoints_dir, run_name)
 
-    # 7. Train
+    # 7. Train — resume from latest checkpoint if one exists
+    latest_ckpt = find_latest_checkpoint(checkpoints_dir)
+    if latest_ckpt:
+        logger.info("Resuming from checkpoint: %s", latest_ckpt)
+    else:
+        logger.info("No checkpoint found — starting fresh")
     start_time = time.monotonic()
-    trainer = run_training(model, tokenizer, datasets, sft_config, logger)
+    trainer = run_training(model, tokenizer, datasets, sft_config, logger, resume_from_checkpoint=latest_ckpt)
     elapsed = time.monotonic() - start_time
     logger.info("Total training wall time: %s", _format_duration(elapsed))
 

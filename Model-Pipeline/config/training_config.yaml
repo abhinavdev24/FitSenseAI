@@ -4,8 +4,8 @@
 # ---------------------------------------------------------------------------
 # Model
 # ---------------------------------------------------------------------------
-model_name: "Qwen/Qwen3-8B"
-max_seq_length: 8192
+model_name: "unsloth/Qwen3-4B"
+max_seq_length: 16500
 
 # ---------------------------------------------------------------------------
 # Data
@@ -16,9 +16,9 @@ val_path: "Model-Pipeline/data/training/val.jsonl"
 # ---------------------------------------------------------------------------
 # LoRA
 # ---------------------------------------------------------------------------
-lora_r: 64
-lora_alpha: 128
-lora_dropout: 0.05
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0
 target_modules:
   - q_proj
   - k_proj
@@ -31,22 +31,24 @@ target_modules:
 # ---------------------------------------------------------------------------
 # Training
 # ---------------------------------------------------------------------------
-batch_size: 2
+batch_size: 1
 gradient_accumulation_steps: 8
 num_epochs: 3
-learning_rate: 2e-4
+learning_rate: 0.000346015
 lr_scheduler_type: "cosine"
 warmup_ratio: 0.05
 bf16: true
+fp16: false
 max_grad_norm: 1.0
 
 # ---------------------------------------------------------------------------
 # Evaluation & saving
 # ---------------------------------------------------------------------------
-logging_steps: 10
-eval_steps: 50
-save_steps: 50
-save_total_limit: 3
+eval_strategy: "no"
+logging_steps: 1
+eval_steps: 10
+save_steps: 10
+save_total_limit: 30
 
 # ---------------------------------------------------------------------------
 # Experiment tracking

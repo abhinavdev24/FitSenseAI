@@ -74,7 +74,7 @@ logs/
 
 # Jupyter
 .ipynb_checkpoints/
-*.ipynb
+
 
 # MLflow, DVC
 mlruns/
@@ -83,3 +83,8 @@ mlruns/
 
 .claude
 CLAUDE.md
+
+unsloth_compiled_cache
+wandb
+Model-Pipeline/outputs
+.mcp.json
