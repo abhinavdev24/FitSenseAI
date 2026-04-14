@@ -263,6 +263,8 @@ def upload_to_gcs(
         bucket = client.bucket(bucket_name)
 
         # Upload all files from staging directory
+        uploaded = 0
+        skipped = 0
         for local_path in staging_dir.rglob("*"):
             if not local_path.is_file():
                 continue
@@ -271,14 +273,23 @@ def upload_to_gcs(
             blob_path = f"{model_name}/{version}/{rel_path}"
             blob = bucket.blob(blob_path)
 
+            if blob.exists():
+                logger.debug(f"Skipping {blob_path} (already exists)")
+                skipped += 1
+                continue
+
             try:
                 blob.upload_from_filename(str(local_path))
                 logger.debug(f"Uploaded {blob_path}")
+                uploaded += 1
             except Exception as e:
                 logger.error(f"Failed to upload {blob_path}: {e}")
                 raise
 
-        logger.info(f"All files uploaded successfully to {bucket_name}/{model_name}/{version}/")
+        logger.info(
+            f"Upload complete: {uploaded} uploaded, {skipped} skipped "
+            f"(already exist) to {bucket_name}/{model_name}/{version}/"
+        )
 
     except Exception as e:
         logger.error(f"Upload to GCS failed: {e}")
@@ -465,20 +476,29 @@ def upload_checkpoints_to_gcs(
         gcs_prefix = f"{model_name}/{version}/checkpoints/{ckpt_name}"
         logger.info(f"Uploading {ckpt_name} -> gs://{bucket_name}/{gcs_prefix}/")
 
+        uploaded = 0
+        skipped = 0
         for local_path in ckpt_dir.rglob("*"):
             if not local_path.is_file():
                 continue
             rel = local_path.relative_to(ckpt_dir)
             blob_path = f"{gcs_prefix}/{rel}"
             blob = bucket.blob(blob_path)
+
+            if blob.exists():
+                logger.debug(f"Skipping {blob_path} (already exists)")
+                skipped += 1
+                continue
+
             try:
                 blob.upload_from_filename(str(local_path))
                 logger.debug(f"Uploaded {blob_path}")
+                uploaded += 1
             except Exception as e:
                 logger.error(f"Failed to upload checkpoint file {blob_path}: {e}")
                 raise
 
-        logger.info(f"Checkpoint {ckpt_name} uploaded successfully")
+        logger.info(f"Checkpoint {ckpt_name}: {uploaded} uploaded, {skipped} skipped (already exist)")
 
     logger.info(
         f"All {len(checkpoints)} checkpoints uploaded to "
@@ -526,38 +546,116 @@ def upload_hparam_search_to_gcs(
     bucket = client.bucket(bucket_name)
 
     files = [p for p in base.rglob("*") if p.is_file()]
+    uploaded = 0
+    skipped = 0
     for local_path in files:
         rel = local_path.relative_to(base)
         blob_path = f"{gcs_prefix}/{rel}"
         blob = bucket.blob(blob_path)
+
+        if blob.exists():
+            logger.debug(f"Skipping {blob_path} (already exists)")
+            skipped += 1
+            continue
+
         try:
             blob.upload_from_filename(str(local_path))
             logger.debug(f"Uploaded {blob_path}")
+            uploaded += 1
         except Exception as e:
             logger.error(f"Failed to upload hparam search file {blob_path}: {e}")
             raise
 
     logger.info(
-        f"Hparam search ({len(files)} files) uploaded to gs://{bucket_name}/{gcs_prefix}/"
+        f"Hparam search: {uploaded} uploaded, {skipped} skipped (already exist) "
+        f"to gs://{bucket_name}/{gcs_prefix}/"
+    )
+
+
+def upload_merged_model_to_gcs(
+    merged_model_dir: str,
+    bucket_name: str,
+    model_name: str,
+    version: str,
+    logger: logging.Logger,
+) -> None:
+    """Upload the final_merged directory to GCS under {model_name}/{version}/final_merged/.
+
+    Args:
+        merged_model_dir: Local path containing merged model (bf16/, awq/ subdirs)
+        bucket_name: GCS bucket name
+        model_name: Model identifier
+        version: Version tag
+        logger: Logger instance
+
+    Raises:
+        ImportError: If google-cloud-storage is not installed
+        FileNotFoundError: If merged_model_dir is missing
+        Exception: If any upload fails
+    """
+    try:
+        from google.cloud import storage
+    except ImportError as exc:
+        raise ImportError(
+            "google-cloud-storage is required for upload. "
+            "Install with: pip install google-cloud-storage"
+        ) from exc
+
+    base = Path(merged_model_dir)
+    if not base.exists():
+        raise FileNotFoundError(f"Merged model directory not found: {base}")
+
+    gcs_prefix = f"{model_name}/{version}/final_merged"
+    logger.info(f"Uploading final_merged -> gs://{bucket_name}/{gcs_prefix}/")
+
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+
+    files = [p for p in base.rglob("*") if p.is_file()]
+    uploaded = 0
+    skipped = 0
+    for local_path in files:
+        rel = local_path.relative_to(base)
+        blob_path = f"{gcs_prefix}/{rel}"
+        blob = bucket.blob(blob_path)
+
+        if blob.exists():
+            logger.debug(f"Skipping {blob_path} (already exists)")
+            skipped += 1
+            continue
+
+        try:
+            blob.upload_from_filename(str(local_path))
+            logger.debug(f"Uploaded {blob_path}")
+            uploaded += 1
+        except Exception as e:
+            logger.error(f"Failed to upload merged model file {blob_path}: {e}")
+            raise
+
+    logger.info(
+        f"Merged model: {uploaded} uploaded, {skipped} skipped (already exist) "
+        f"to gs://{bucket_name}/{gcs_prefix}/"
     )
 
 
 def push_to_huggingface(
-    adapter_dir: str,
+    local_dir: str,
     repo_id: str,
     version: str,
     token: str | None,
     logger: logging.Logger,
+    path_in_repo: str = "",
     commit_message: str | None = None,
 ) -> str:
-    """Push a LoRA adapter directory to HuggingFace Hub.
+    """Push a local directory to HuggingFace Hub, skipping if files already exist.
 
     Args:
-        adapter_dir: Local path to the LoRA adapter directory
+        local_dir: Local path to the directory to upload
         repo_id: HuggingFace repo in the form 'username/repo-name'
         version: Version tag used as the git tag on the Hub
         token: HuggingFace API token (falls back to HF_TOKEN env var)
         logger: Logger instance
+        path_in_repo: Subdirectory in the HF repo to upload into (empty = repo root)
         commit_message: Optional commit message; defaults to 'Upload {version}'
 
     Returns:
@@ -585,11 +683,12 @@ def push_to_huggingface(
     if "/" not in repo_id:
         raise ValueError(f"repo_id must be 'username/repo-name', got: {repo_id}")
 
-    adapter_path = Path(adapter_dir)
-    if not adapter_path.exists():
-        raise FileNotFoundError(f"Adapter directory not found: {adapter_path}")
+    local_path = Path(local_dir)
+    if not local_path.exists():
+        raise FileNotFoundError(f"Directory not found: {local_path}")
 
-    logger.info(f"Pushing adapter to HuggingFace Hub: {repo_id}")
+    target_desc = f"{repo_id}/{path_in_repo}" if path_in_repo else repo_id
+    logger.info(f"Pushing {local_path} to HuggingFace Hub: {target_desc}")
 
     api = HfApi(token=resolved_token)
 
@@ -601,19 +700,48 @@ def push_to_huggingface(
         logger.error(f"Failed to create/verify HF repo {repo_id}: {e}")
         raise
 
-    message = commit_message or f"Upload adapter {version}"
+    # Check which files already exist on the Hub
+    try:
+        existing_files = set(api.list_repo_files(repo_id=repo_id, repo_type="model"))
+    except Exception:
+        existing_files = set()
 
-    # Upload the entire adapter directory
+    # Compute remote paths for local files
+    local_files = [p for p in local_path.rglob("*") if p.is_file()]
+    new_files = []
+    skipped = 0
+    for lf in local_files:
+        rel = str(lf.relative_to(local_path))
+        remote_path = f"{path_in_repo}/{rel}" if path_in_repo else rel
+        if remote_path in existing_files:
+            logger.debug(f"Skipping (already on Hub): {remote_path}")
+            skipped += 1
+        else:
+            new_files.append(lf)
+
+    if not new_files:
+        logger.info(
+            f"All {skipped} files already exist on HuggingFace Hub at {target_desc}; skipping upload"
+        )
+        repo_url = f"https://huggingface.co/{repo_id}"
+        return repo_url
+
+    logger.info(f"{len(new_files)} new files to upload, {skipped} already on Hub")
+
+    message = commit_message or f"Upload {path_in_repo or 'adapter'} {version}"
+
+    # Upload the folder (HF deduplicates identical content via git)
     try:
         api.upload_folder(
-            folder_path=str(adapter_path),
+            folder_path=str(local_path),
+            path_in_repo=path_in_repo or None,
             repo_id=repo_id,
             repo_type="model",
             commit_message=message,
         )
-        logger.info(f"Adapter uploaded to https://huggingface.co/{repo_id}")
+        logger.info(f"Uploaded to https://huggingface.co/{repo_id}")
     except Exception as e:
-        logger.error(f"Failed to upload adapter to HF Hub: {e}")
+        logger.error(f"Failed to upload to HF Hub: {e}")
         raise
 
     # Create a version tag on the Hub
@@ -713,6 +841,14 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--merged-model-dir",
+        default=None,
+        help=(
+            "Path to final_merged directory (e.g., Model-Pipeline/outputs/final_merged). "
+            "Overrides config. Uploaded to GCS under {model_name}/{version}/final_merged/."
+        ),
+    )
+    parser.add_argument(
         "--metadata-files",
         nargs="*",
         default=[],
@@ -757,6 +893,17 @@ def main() -> None:
         default=None,
         help="HuggingFace API token. Falls back to HF_TOKEN environment variable.",
     )
+    target_group = parser.add_mutually_exclusive_group()
+    target_group.add_argument(
+        "--gcs-only",
+        action="store_true",
+        help="Only push to Google Cloud Storage (skip HuggingFace)",
+    )
+    target_group.add_argument(
+        "--hf-only",
+        action="store_true",
+        help="Only push to HuggingFace Hub (skip GCS)",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -799,13 +946,18 @@ def main() -> None:
         adapter_dir = _resolve(args.adapter_dir, "adapter_dir")
         checkpoints_dir = _resolve(args.checkpoints_dir, "checkpoints_dir")
         hparam_search_dir = _resolve(args.hparam_search_dir, "hparam_search_dir")
+        merged_model_dir = _resolve(args.merged_model_dir, "merged_model_dir")
         metadata_files = args.metadata_files or cfg.get("metadata_files", [])
         output_dir = _resolve(args.output_dir, "output_dir", "Model-Pipeline/outputs/registry")
         hf_repo = _resolve(args.hf_repo, "hf_repo")
         hf_token = args.hf_token
-        version = args.version
+        version = _resolve(args.version, "version")
         rollback_to = args.rollback_to
         dry_run = args.dry_run
+        gcs_only = args.gcs_only
+        hf_only = args.hf_only
+        push_gcs = not hf_only
+        push_hf = not gcs_only
 
         if not model_name:
             raise ValueError("model_name is required (set in registry_config.yaml or via --model-name)")
@@ -854,49 +1006,67 @@ def main() -> None:
         if dry_run:
             logger.info("Dry-run mode: skipping GCS and HuggingFace uploads")
         else:
-            # --- GCS: upload adapter ---
-            logger.info("Uploading adapter to GCS")
-            upload_to_gcs(staged_path, gcs_bucket, model_name, version, logger)
+            # --- GCS uploads ---
+            if push_gcs:
+                # --- GCS: upload adapter ---
+                logger.info("Uploading adapter to GCS")
+                upload_to_gcs(staged_path, gcs_bucket, model_name, version, logger)
 
-            # --- GCS: upload checkpoints ---
-            if checkpoints_dir:
-                logger.info(f"Uploading checkpoints from {checkpoints_dir} to GCS")
-                upload_checkpoints_to_gcs(
-                    checkpoints_dir,
-                    gcs_bucket,
-                    model_name,
-                    version,
-                    logger,
+                # --- GCS: upload checkpoints ---
+                if checkpoints_dir:
+                    logger.info(f"Uploading checkpoints from {checkpoints_dir} to GCS")
+                    upload_checkpoints_to_gcs(
+                        checkpoints_dir,
+                        gcs_bucket,
+                        model_name,
+                        version,
+                        logger,
+                    )
+                else:
+                    logger.info("No checkpoints_dir configured; skipping checkpoint upload")
+
+                # --- GCS: upload hparam_search ---
+                if hparam_search_dir:
+                    logger.info(f"Uploading hparam_search from {hparam_search_dir} to GCS")
+                    upload_hparam_search_to_gcs(
+                        hparam_search_dir,
+                        gcs_bucket,
+                        model_name,
+                        version,
+                        logger,
+                    )
+                else:
+                    logger.info("No hparam_search_dir configured; skipping hparam search upload")
+
+                # --- GCS: upload final_merged model ---
+                if merged_model_dir:
+                    logger.info(f"Uploading final_merged from {merged_model_dir} to GCS")
+                    upload_merged_model_to_gcs(
+                        merged_model_dir,
+                        gcs_bucket,
+                        model_name,
+                        version,
+                        logger,
+                    )
+                else:
+                    logger.info("No merged_model_dir configured; skipping merged model upload")
+
+                # --- GCS: update registry pointers ---
+                logger.info("Updating latest.json pointer")
+                update_latest_pointer(gcs_bucket, model_name, version, logger)
+
+                logger.info("Updating versions.json")
+                update_versions_list(gcs_bucket, model_name, version, logger)
+
+                logger.info(
+                    f"GCS push complete: gs://{gcs_bucket}/{model_name}/{version}/"
                 )
             else:
-                logger.info("No checkpoints_dir configured; skipping checkpoint upload")
+                logger.info("Skipping GCS uploads (--hf-only mode)")
 
-            # --- GCS: upload hparam_search ---
-            if hparam_search_dir:
-                logger.info(f"Uploading hparam_search from {hparam_search_dir} to GCS")
-                upload_hparam_search_to_gcs(
-                    hparam_search_dir,
-                    gcs_bucket,
-                    model_name,
-                    version,
-                    logger,
-                )
-            else:
-                logger.info("No hparam_search_dir configured; skipping hparam search upload")
-
-            # --- GCS: update registry pointers ---
-            logger.info("Updating latest.json pointer")
-            update_latest_pointer(gcs_bucket, model_name, version, logger)
-
-            logger.info("Updating versions.json")
-            update_versions_list(gcs_bucket, model_name, version, logger)
-
-            logger.info(
-                f"GCS push complete: gs://{gcs_bucket}/{model_name}/{version}/"
-            )
-
-            # --- HuggingFace Hub: push adapter ---
-            if hf_repo:
+            # --- HuggingFace Hub ---
+            if push_hf and hf_repo:
+                # Push adapter
                 logger.info(f"Pushing adapter to HuggingFace Hub: {hf_repo}")
                 hf_url = push_to_huggingface(
                     adapter_dir,
@@ -904,10 +1074,36 @@ def main() -> None:
                     version,
                     hf_token,
                     logger,
+                    commit_message=f"Upload adapter {version}",
                 )
-                logger.info(f"HuggingFace push complete: {hf_url}")
-            else:
+                logger.info(f"HuggingFace adapter push complete: {hf_url}")
+
+                # Push merged model subdirectories (bf16, awq) if available
+                if merged_model_dir:
+                    merged_base = Path(merged_model_dir)
+                    for subdir_name in ("bf16", "awq"):
+                        subdir = merged_base / subdir_name
+                        if subdir.exists() and subdir.is_dir():
+                            logger.info(f"Pushing {subdir_name} merged model to HuggingFace Hub")
+                            push_to_huggingface(
+                                str(subdir),
+                                hf_repo,
+                                version,
+                                hf_token,
+                                logger,
+                                path_in_repo=f"final_merged/{subdir_name}",
+                                commit_message=f"Upload {subdir_name} merged model {version}",
+                            )
+                        else:
+                            logger.info(
+                                f"Merged model subdir not found: {subdir}; skipping HF push for {subdir_name}"
+                            )
+                else:
+                    logger.info("No merged_model_dir configured; skipping merged model HF push")
+            elif push_hf and not hf_repo:
                 logger.info("No hf_repo configured; skipping HuggingFace push")
+            else:
+                logger.info("Skipping HuggingFace uploads (--gcs-only mode)")
 
         # Clean up local staging directory (remove full output_dir tree)
         output_dir_path = Path(output_dir)

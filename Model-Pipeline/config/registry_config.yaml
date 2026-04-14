@@ -7,6 +7,7 @@
 # ---------------------------------------------------------------------------
 gcs_bucket: "fitsense-models"
 model_name: "qwen3-4b-fitsense-qlora"
+version: "v20260411T231753Z"
 
 # ---------------------------------------------------------------------------
 # Local artifact paths
@@ -14,6 +15,7 @@ model_name: "qwen3-4b-fitsense-qlora"
 adapter_dir: "Model-Pipeline/outputs/final_adapter"
 checkpoints_dir: "Model-Pipeline/outputs/checkpoints"
 hparam_search_dir: "Model-Pipeline/outputs/hparam_search"
+merged_model_dir: "Model-Pipeline/outputs/final_merged"
 
 # Extra metadata files staged alongside the adapter
 metadata_files:
@@ -28,4 +30,4 @@ output_dir: "Model-Pipeline/outputs/registry"
 # ---------------------------------------------------------------------------
 # HuggingFace Hub (optional — uncomment when ready to push)
 # ---------------------------------------------------------------------------
-# hf_repo: "abhinav241998/qwen3-4b-fitsense-qlora"
+hf_repo: "abhinav241998/qwen3-4b-fitsense-qlora"
