@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+.env
+.env.local
+.venv
+venv
+data/
+tests/
+scripts/
+student_raw_output.txt
+run_with_student.sh
+requirements-llm.txt
+.git
+.gitignore
+*.md
