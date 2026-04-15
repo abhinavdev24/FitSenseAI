@@ -1,0 +1,68 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+    <!-- Dumbbell: cool silver/white -->
+    <linearGradient id="dbGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="50%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="sparkleGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Outer Hexagon -->
+  <polygon
+    points="100,12 176,56 176,144 100,188 24,144 24,56"
+    fill="none"
+    stroke="url(#hexGrad)"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner Decorative Hexagon -->
+  <polygon
+    points="100,32 158,66 158,134 100,168 42,134 42,66"
+    fill="none"
+    stroke="rgba(59,130,246,0.25)"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+
+  <!-- Dumbbell — tilted 30°, silver/white -->
+  <g transform="rotate(-30, 100, 100)" filter="url(#glow)">
+    <!-- Left plate (outer) -->
+    <rect x="38" y="82" width="8" height="36" rx="3" fill="url(#dbGrad)" />
+    <!-- Left plate (inner) -->
+    <rect x="50" y="72" width="10" height="56" rx="3" fill="url(#dbGrad)" />
+    <!-- Bar -->
+    <rect x="60" y="94" width="80" height="12" rx="6" fill="url(#dbGrad)" />
+    <!-- Right plate (inner) -->
+    <rect x="140" y="72" width="10" height="56" rx="3" fill="url(#dbGrad)" />
+    <!-- Right plate (outer) -->
+    <rect x="154" y="82" width="8" height="36" rx="3" fill="url(#dbGrad)" />
+  </g>
+
+  <!-- ✨ AI Sparkles — radiating from dumbbell ends -->
+  <!-- Large sparkle: upper-right (near top end of tilted dumbbell) -->
+  <g transform="translate(148, 58)" filter="url(#sparkleGlow)">
+    <path d="M0,-18 L3.5,-3.5 L18,0 L3.5,3.5 L0,18 L-3.5,3.5 L-18,0 L-3.5,-3.5 Z" fill="#60A5FA" />
+  </g>
+  <!-- Medium sparkle: lower-left (near bottom end of tilted dumbbell) -->
+  <g transform="translate(55, 140)" filter="url(#sparkleGlow)">
+    <path d="M0,-13 L2.5,-2.5 L13,0 L2.5,2.5 L0,13 L-2.5,2.5 L-13,0 L-2.5,-2.5 Z" fill="#93BBFD" />
+  </g>
+  <!-- Small sparkle: above center-right -->
+  <g transform="translate(135, 105)" filter="url(#sparkleGlow)">
+    <path d="M0,-10 L2,-2 L10,0 L2,2 L0,10 L-2,2 L-10,0 L-2,-2 Z" fill="#BFDBFE" opacity="0.9" />
+  </g>
+</svg>
