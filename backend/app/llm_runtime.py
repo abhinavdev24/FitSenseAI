@@ -14,6 +14,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import requests
+
 SYSTEM_PLAN_CREATION_PROMPT_FALLBACK = (
     "You are FitSense AI, an expert fitness coach and periodization specialist. "
     "Return ONLY valid JSON with this exact structure: "
@@ -618,10 +620,13 @@ class StudentLLMRuntime:
                 json={"model": os.environ.get("OPENAI_MODEL", "qwen/qwen3-8b:free"),
                       "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
                       "max_tokens": effective_max_tokens, "temperature": 0},
-                timeout=120,
+                timeout=300,
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            content = resp.json()["choices"][0]["message"].get("content")
+            if content:
+                return content.strip()
+            return None
         except Exception as exc:
             print(f"⚠️ OpenAI-compatible API call failed: {exc}")
             return None
@@ -685,36 +690,40 @@ class StudentLLMRuntime:
             print(f"⚠️ Student LLM generation failed: {exc}")
             return None
 
-    def generate_plan_json(self, *, user_message: str, is_modification: bool = False) -> dict[str, Any] | None:
+    def generate_plan_json(self, *, user_message: str, is_modification: bool = False) -> tuple[dict[str, Any] | None, str | None]:
         self._debug("generate_plan_json started.")
         system_prompt = (
             self.system_plan_updation_prompt
             if is_modification
             else self.system_plan_creation_prompt
         )
-        or_text = self._call_openai_compatible(system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
+        raw_text: str | None = None
+        or_text = self._call_openai_compatible(system_prompt=system_prompt, user_message=user_message, max_new_tokens=13000)
         if or_text:
+            raw_text = or_text
             candidate = self._extract_first_json_object(or_text)
             if candidate:
                 try:
-                    return json.loads(self._repair_common_json_issues(candidate))
+                    return json.loads(self._repair_common_json_issues(candidate)), raw_text
                 except Exception:
                     pass
 
         if self._can_use_cloud():
             for attempt in range(1, 4):  # up to 3 attempts
                 self._debug(f"Cloud plan_json attempt {attempt}/3")
-                cloud_result = self._call_cloud(task="plan_json", system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
+                cloud_result = self._call_cloud(task="plan_json", system_prompt=system_prompt, user_message=user_message, max_new_tokens=13000)
                 if cloud_result is None:
                     self._debug("Cloud call failed (network/HTTP error) — not retrying.")
                     break
                 plan_json = cloud_result.get("plan_json")
                 if isinstance(plan_json, dict):
                     self._debug(f"Cloud returned structured plan_json keys={sorted(plan_json.keys())}")
+                    cloud_raw = json.dumps(plan_json)
                     print(f"[llm-output] plan_json:\n{json.dumps(plan_json, indent=2)}")
-                    return plan_json
+                    return plan_json, cloud_raw
                 maybe_text = cloud_result.get("text") or cloud_result.get("raw_text")
                 if isinstance(maybe_text, str):
+                    raw_text = maybe_text
                     print(f"[llm-output] raw text (attempt {attempt}):\n{maybe_text}")
                     self._debug(f"Cloud returned text length={len(maybe_text)}; attempting JSON extraction.")
                     decoder = json.JSONDecoder()
@@ -723,24 +732,25 @@ class StudentLLMRuntime:
                             obj, _ = decoder.raw_decode(maybe_text[match.start():])
                             if isinstance(obj, dict) and "plan_name" in obj:
                                 self._debug("Extracted plan_json from text response.")
-                                return obj
+                                return obj, raw_text
                         except Exception:
                             continue
                     self._debug(f"Attempt {attempt}: JSON truncated or missing plan_name — retrying.")
             self._load_error = "Cloud responded but could not produce valid plan JSON after 3 attempts."
             self._debug("All cloud attempts exhausted — not falling back to rules.")
-            return None
+            return None, raw_text
 
         self._debug("No cloud configured — falling back to local generate_text.")
-        text = self.generate_text(system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
+        text = self.generate_text(system_prompt=system_prompt, user_message=user_message, max_new_tokens=13000)
         if not text:
-            return None
+            return None, raw_text
+        raw_text = text
 
         candidate = self._extract_first_json_object(text)
         if not candidate:
             self._load_error = "Student model returned text but not a valid JSON object."
             print("\n=== RAW PLAN OUTPUT ===\n", text)
-            return None
+            return None, raw_text
 
         candidate = self._repair_common_json_issues(candidate)
 
@@ -748,20 +758,20 @@ class StudentLLMRuntime:
             data = json.loads(candidate)
             if not isinstance(data, dict):
                 self._load_error = "Student model returned JSON, but it was not an object."
-                return None
-            return data
+                return None, raw_text
+            return data, raw_text
         except Exception as exc:
             self._load_error = f"Student model returned malformed JSON: {exc}"
-            return None
+            return None, raw_text
 
     def generate_coach_text(self, *, user_message: str) -> str | None:
-        cloud_result = self._call_cloud(task="coach_text", system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=240)
+        cloud_result = self._call_cloud(task="coach_text", system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=13000)
         if cloud_result is not None:
             text = cloud_result.get("text") or cloud_result.get("raw_text")
             if isinstance(text, str) and text.strip():
                 print(f"[llm-output] coach text:\n{text.strip()}")
                 return text.strip()
-        text = self.generate_text(system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=240)
+        text = self.generate_text(system_prompt=SYSTEM_COACH_PROMPT, user_message=user_message, max_new_tokens=13000)
         if text is None:
             return None
         cleaned = text.strip()

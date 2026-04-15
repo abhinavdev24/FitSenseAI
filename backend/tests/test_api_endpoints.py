@@ -12,9 +12,10 @@ from app.main import app
 from app.database import Base, engine, SessionLocal
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_client():
     """Create a test client with in-memory database."""
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     client = TestClient(app)
     yield client
@@ -119,10 +120,12 @@ class TestPlansEndpoint:
         assert response.status_code == 401
 
     def test_plans_endpoint_requires_onboarding(self, authenticated_client):
-        """Should require onboarding before generating plans."""
+        """Should enqueue a plan request for an authenticated user."""
         response = authenticated_client.post("/plans", json={})
-        # Should fail because user hasn't completed onboarding
-        assert response.status_code in [400, 422, 500]
+        assert response.status_code == 200
+        data = response.json()
+        assert "job_id" in data
+        assert "status" in data
 
     @patch("app.llm_runtime.requests.post")
     def test_plans_endpoint_with_onboarding(self, mock_post: MagicMock, test_client):

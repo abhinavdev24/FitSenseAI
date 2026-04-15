@@ -2,6 +2,7 @@ fastapi==0.115.12
 python-dotenv==1.0.1
 uvicorn[standard]==0.34.0
 sqlalchemy==2.0.39
+PyMySQL==1.1.1
 pydantic==2.10.6
 passlib[argon2]==1.7.4
 argon2-cffi==23.1.0

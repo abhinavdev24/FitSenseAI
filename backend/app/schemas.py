@@ -101,6 +101,21 @@ class CoachRequest(BaseModel):
     context_mode: str | None = None
 
 
+class CalorieTargetRequest(BaseModel):
+    maintenance_calories: int = Field(gt=0, lt=10000)
+    method: str | None = None
+    effective_from: date
+    effective_to: date | None = None
+    notes: str | None = None
+
+
+class SleepTargetRequest(BaseModel):
+    target_sleep_hours: float = Field(gt=0, lt=24)
+    effective_from: date
+    effective_to: date | None = None
+    notes: str | None = None
+
+
 class AdaptationRequest(BaseModel):
     days_window: int = Field(default=14, ge=7, le=60)
 

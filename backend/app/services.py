@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from typing import Iterable
 
 from passlib.context import CryptContext
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
 from . import models
@@ -470,7 +470,7 @@ def _student_user_message(
 
 def _ensure_exercise(db: Session, exercise_name: str) -> models.Exercise:
     name = (exercise_name or "").strip() or "Bodyweight Movement"
-    ex = db.scalar(select(models.Exercise).where(models.Exercise.name == name))
+    ex = db.scalar(select(models.Exercise).where(func.lower(models.Exercise.name) == name.lower()))
     if ex:
         return ex
     inferred_category = (
@@ -714,7 +714,7 @@ def try_student_plan_generation(
         instruction=instruction,
         active_plan=active_plan,
     )
-    plan_json = runtime.generate_plan_json(
+    plan_json, raw_llm_response = runtime.generate_plan_json(
         user_message=user_message,
         is_modification=bool(instruction),
     )
@@ -729,16 +729,19 @@ def try_student_plan_generation(
         print(
             f"[student-plan] generation returned no valid JSON; falling back reason={fallback_reason}"
         )
+        failure_debug = _runtime_debug_payload(
+            endpoint="plan",
+            selected_backend="rules",
+            fallback_reason=fallback_reason,
+            runtime_info=refreshed,
+            notes="Student model was attempted first, but its output could not be used.",
+        )
+        failure_debug["llm_query"] = user_message
+        failure_debug["llm_response"] = raw_llm_response
         return (
             None,
             None,
-            _runtime_debug_payload(
-                endpoint="plan",
-                selected_backend="rules",
-                fallback_reason=fallback_reason,
-                runtime_info=refreshed,
-                notes="Student model was attempted first, but its output could not be used.",
-            ),
+            failure_debug,
         )
 
     explanation = plan_json.get("explanation") or (
@@ -748,15 +751,18 @@ def try_student_plan_generation(
     )
 
     plan = _persist_llm_plan(db, user, plan_json, explanation=explanation)
+    success_debug = _runtime_debug_payload(
+        endpoint="plan",
+        selected_backend="student_model",
+        runtime_info=runtime.info(),
+        notes="Student adapter was available and produced a valid response.",
+    )
+    success_debug["llm_query"] = user_message
+    success_debug["llm_response"] = raw_llm_response
     return (
         plan,
         explanation,
-        _runtime_debug_payload(
-            endpoint="plan",
-            selected_backend="student_model",
-            runtime_info=runtime.info(),
-            notes="Student adapter was available and produced a valid response.",
-        ),
+        success_debug,
     )
 
 
@@ -788,6 +794,7 @@ def try_student_coach_reply(
         user_message=json.dumps(payload, ensure_ascii=False)
     )
 
+    llm_query_text = json.dumps(payload, ensure_ascii=False)
     if not reply:
         refreshed = runtime.info()
         fallback_reason = (
@@ -798,20 +805,24 @@ def try_student_coach_reply(
         print(
             f"[student-coach] generation returned no text; falling back reason={fallback_reason}"
         )
-        return None, _runtime_debug_payload(
+        failure_coach_debug = _runtime_debug_payload(
             endpoint="coach",
             selected_backend="rules",
             fallback_reason=fallback_reason,
             runtime_info=refreshed,
             notes="Student model was attempted first, but its output could not be used.",
         )
+        failure_coach_debug["llm_query"] = llm_query_text
+        return None, failure_coach_debug
 
-    return reply, _runtime_debug_payload(
+    success_coach_debug = _runtime_debug_payload(
         endpoint="coach",
         selected_backend="student_model",
         runtime_info=runtime.info(),
         notes="Student adapter was available and produced a valid reply.",
     )
+    success_coach_debug["llm_query"] = llm_query_text
+    return reply, success_coach_debug
 
 
 def generate_plan(
@@ -908,6 +919,10 @@ def generate_plan(
         selected_backend="rules",
         fallback_reason="Unknown fallback reason.",
     )
+    if "llm_query" not in debug:
+        debug["llm_query"] = None
+    if "llm_response" not in debug:
+        debug["llm_response"] = None
     return plan, explanation, debug
 
 
@@ -1430,9 +1445,9 @@ def process_plan_job(session_factory, job_id: str) -> None:
             active_plan = get_current_plan(db, user.user_id)
             if active_plan is None:
                 raise ValueError("No active plan available to modify.")
-            plan, _, debug = modify_plan(db, user, active_plan, job.instruction or "")
+            plan, llm_response_text, debug = modify_plan(db, user, active_plan, job.instruction or "")
         else:
-            plan, _, debug = generate_plan(db, user, request_like)
+            plan, llm_response_text, debug = generate_plan(db, user, request_like)
 
         final_backend = (
             debug.get("selected_backend") if isinstance(debug, dict) else None
@@ -1446,6 +1461,19 @@ def process_plan_job(session_factory, job_id: str) -> None:
 
         _mark_job(db, job, status="running", progress=progress)
         time.sleep(0.2)
+
+        runtime_info = get_runtime().info()
+        interaction = models.AIInteraction(
+            user_id=job.user_id,
+            context_type=f"plan-{job.job_type}",
+            context_id=plan.plan_id,
+            query_text=debug.get("llm_query") if isinstance(debug, dict) else job.request_payload,
+            response_text=debug.get("llm_response") if isinstance(debug, dict) else llm_response_text,
+            model_name=runtime_info.base_model if hasattr(runtime_info, "base_model") else "unknown",
+        )
+        db.add(interaction)
+        db.commit()
+
         _mark_job(
             db,
             job,
@@ -1454,11 +1482,23 @@ def process_plan_job(session_factory, job_id: str) -> None:
             result_plan_id=plan.plan_id,
         )
     except Exception as exc:
-        job = db.get(models.PlanGenerationJob, job_id)
-        if job is not None:
-            _mark_job(
-                db, job, status="failed", progress="Pipeline failed.", error=str(exc)
-            )
+        try:
+            job = db.get(models.PlanGenerationJob, job_id)
+            if job is not None:
+                failed_interaction = models.AIInteraction(
+                    user_id=job.user_id,
+                    context_type="failed",
+                    query_text=job.request_payload,
+                    response_text=str(exc),
+                    model_name="unknown",
+                )
+                db.add(failed_interaction)
+                _mark_job(db, job, status="failed", progress="Pipeline failed.", error=str(exc))
+        except Exception:
+            db.rollback()
+            job = db.get(models.PlanGenerationJob, job_id)
+            if job is not None:
+                _mark_job(db, job, status="failed", progress="Pipeline failed.", error=str(exc))
     finally:
         db.close()
 

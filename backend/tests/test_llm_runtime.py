@@ -229,11 +229,12 @@ class TestGeneratePlanJSON:
         }
         with patch.dict(os.environ, env, clear=True):
             runtime.refresh_configuration(force=True)
-            result = runtime.generate_plan_json(user_message="Generate a plan")
+            result, raw_text = runtime.generate_plan_json(user_message="Generate a plan")
 
             assert result is not None
             assert result["plan_name"] == "Test Plan"
             assert len(result["days"]) == 1
+            assert raw_text is not None
 
 
 class TestGenerateCoachText:

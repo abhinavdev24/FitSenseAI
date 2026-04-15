@@ -441,6 +441,88 @@ def dashboard(
     )
 
 
+@app.post("/targets/calories")
+def create_calorie_target(
+    payload: schemas.CalorieTargetRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    row = models.CalorieTarget(
+        user_id=user.user_id,
+        maintenance_calories=payload.maintenance_calories,
+        method=payload.method,
+        effective_from=payload.effective_from,
+        effective_to=payload.effective_to,
+        notes=payload.notes,
+    )
+    db.add(row)
+    db.commit()
+    return {"calorie_target_id": row.calorie_target_id}
+
+
+@app.get("/targets/calories")
+def get_calorie_targets(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    targets = db.scalars(
+        select(models.CalorieTarget)
+        .where(models.CalorieTarget.user_id == user.user_id)
+        .order_by(models.CalorieTarget.effective_from.desc())
+    ).all()
+    return [
+        {
+            "calorie_target_id": t.calorie_target_id,
+            "maintenance_calories": t.maintenance_calories,
+            "method": t.method,
+            "effective_from": str(t.effective_from),
+            "effective_to": str(t.effective_to) if t.effective_to else None,
+            "notes": t.notes,
+        }
+        for t in targets
+    ]
+
+
+@app.post("/targets/sleep")
+def create_sleep_target(
+    payload: schemas.SleepTargetRequest,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    row = models.SleepTarget(
+        user_id=user.user_id,
+        target_sleep_hours=payload.target_sleep_hours,
+        effective_from=payload.effective_from,
+        effective_to=payload.effective_to,
+        notes=payload.notes,
+    )
+    db.add(row)
+    db.commit()
+    return {"sleep_target_id": row.sleep_target_id}
+
+
+@app.get("/targets/sleep")
+def get_sleep_targets(
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[models.User, Depends(get_current_user)],
+):
+    targets = db.scalars(
+        select(models.SleepTarget)
+        .where(models.SleepTarget.user_id == user.user_id)
+        .order_by(models.SleepTarget.effective_from.desc())
+    ).all()
+    return [
+        {
+            "sleep_target_id": t.sleep_target_id,
+            "target_sleep_hours": t.target_sleep_hours,
+            "effective_from": str(t.effective_from),
+            "effective_to": str(t.effective_to) if t.effective_to else None,
+            "notes": t.notes,
+        }
+        for t in targets
+    ]
+
+
 @app.post("/coach")
 def coach(
     payload: schemas.CoachRequest,
@@ -468,8 +550,8 @@ def coach(
     runtime_info = get_runtime().info()
     interaction = models.AIInteraction(
         user_id=user.user_id,
-        context_type=context_type,
-        query_text=payload.message,
+        context_type="coach",
+        query_text=execution_debug.get("llm_query") if isinstance(execution_debug, dict) and execution_debug.get("llm_query") else payload.message,
         response_text=reply,
         model_name=(
             runtime_info.base_model
@@ -513,8 +595,8 @@ def coach_stream(
     runtime_info = get_runtime().info()
     interaction = models.AIInteraction(
         user_id=user.user_id,
-        context_type=context_type,
-        query_text=message,
+        context_type="coach-stream",
+        query_text=execution_debug.get("llm_query") if isinstance(execution_debug, dict) and execution_debug.get("llm_query") else message,
         response_text=reply,
         model_name=(
             runtime_info.base_model

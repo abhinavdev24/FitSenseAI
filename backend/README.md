@@ -1,108 +1,151 @@
 # FitSenseAI Backend
 
-Local FastAPI backend for the FitSenseAI Flutter app.
+FastAPI backend for the FitSenseAI fitness coaching application.
 
-## What is included
+## Endpoints
 
-- auth (`/auth/signup`, `/auth/login`)
-- onboarding/profile persistence (`/profile/onboarding`)
-- plan generation and modification (`/plans`, `/plans/current`, `/plans/{plan_id}:modify`)
-- workout logging (`/workouts`, `/workouts/{id}/exercises`, `/workouts/{id}/sets`)
-- daily logs (`/daily/sleep`, `/daily/calories`, `/daily/weight`)
-- dashboard aggregation (`/dashboard`)
-- coaching (`/coach`, `/coach/stream`)
-- next-week adaptation (`/adaptation:next_week`)
+### Auth & Profile
+- `POST /auth/signup` — create account
+- `POST /auth/login` — login, returns bearer token
+- `GET /me` — current user profile
+- `POST /profile/onboarding` — save onboarding data (age, sex, goals, equipment, medical info)
 
-## Run locally
+### Plans
+- `POST /plans` — generate a new workout plan (async background job)
+- `GET /plans/current` — get the active plan with all days/exercises/sets
+- `POST /plans/{plan_id}:modify` — modify the active plan with a natural language instruction
+- `GET /plans/jobs/{job_id}` — poll plan generation job status
+- `GET /plans/jobs/latest` — latest pending job
+- `POST /pipeline/trigger` — alias for plan generation
+
+### Workouts
+- `POST /workouts` — start a new workout session
+- `POST /workouts/{id}/exercises` — log an exercise in a workout
+- `POST /workouts/{id}/sets` — log a set
+- `GET /workouts/recent` — recent workout summaries
+
+### Daily Logs
+- `POST /daily/sleep` — log sleep hours
+- `POST /daily/calories` — log calorie intake
+- `POST /daily/weight` — log body weight
+
+### Targets
+- `POST /targets/calories` — set a calorie target
+- `GET /targets/calories` — list calorie targets
+- `POST /targets/sleep` — set a sleep target
+- `GET /targets/sleep` — list sleep targets
+
+### Coaching
+- `POST /coach` — ask the AI coach a question
+- `GET /coach/stream` — SSE streaming version of coach
+- `POST /adaptation:next_week` — get next-week training adaptation suggestions
+
+### Other
+- `GET /catalog/exercises` — list all exercises in the database
+- `GET /model/runtime` — student LLM runtime status
+- `GET /dashboard` — aggregated profile, plan, workouts, and logs
+
+## Setup
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+cp .env.example .env.local   # edit with your values
 pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open API docs at `http://127.0.0.1:8000/docs`.
+API docs at `http://127.0.0.1:8000/docs`.
 
-## Reset local DB
+## Database
 
+Set `DATABASE_ENGINE` in `.env.local`. Supported: `mysql`, `sqlite`.
+
+**MySQL (Cloud SQL):**
+```env
+DATABASE_ENGINE=mysql
+DATABASE_USER=fitsensebackend
+DATABASE_PASSWORD=your_password_here
+DATABASE_NAME=fitsense
+DATABASE_HOST=35.224.89.210
+DATABASE_PORT=3306
+```
+
+**SQLite (local dev):**
+```env
+DATABASE_ENGINE=sqlite
+DATABASE_PATH=/absolute/path/to/fitsense.db
+```
+
+Tables are created automatically on startup via `Base.metadata.create_all`.
+
+Reset the database:
 ```bash
 python scripts/reset_db.py
 ```
 
+## LLM Inference
 
-## Student LLM auto-integration
+The backend uses an OpenAI-compatible chat completions API for plan generation and coaching. Configure in `.env.local`:
 
-This backend is patched to auto-discover a trained student adapter under `Model-Pipeline/adapters/`.
-If a trained adapter exists and the optional inference dependencies are installed, the backend will automatically try to use the student model for:
+```env
+OPENAI_API_KEY=your_api_key
+OPENAI_API_URL=https://your-provider/v1/chat/completions
+OPENAI_MODEL=your-model-id
+MAX_OUTPUT_TOKENS=13000
+```
 
-- `/plans` plan generation
-- `/plans/{plan_id}:modify` plan updates
-- `/coach` and `/coach/stream`
+Any provider exposing a `/v1/chat/completions` endpoint works (Groq, Together AI, Ollama, LM Studio, etc).
 
-If no trained adapter is present, or optional model dependencies are missing, the backend falls back to the existing rule-based logic so the app still runs.
+If no API is configured, the backend falls back to rule-based plan generation and coaching.
 
-### Optional model-serving dependencies
+### Inference priority
 
+1. **OpenAI-compatible API** — if `OPENAI_API_KEY` and `OPENAI_API_URL` are set
+2. **Cloud Run** — if `FITSENSE_CLOUDRUN_URL` is set (deployed vLLM service)
+3. **Local model** — if a trained LoRA adapter is discovered and inference dependencies are installed
+4. **Rule-based fallback** — always available
+
+### Student model auto-discovery
+
+The backend scans `Model-Pipeline/adapters/` for trained LoRA adapters. If found (and optional deps installed), it uses the student model directly.
+
+Accepted layouts:
+- **LoRA adapter**: `adapter_config.json` + `adapter_model.safetensors`
+- **Full merged model**: `config.json` + model weights
+- **Artifact package**: set `FITSENSE_STUDENT_ARTIFACT` to a local `.zip`/`.tar.gz` or directory
+
+Optional env vars:
+- `FITSENSE_STUDENT_ADAPTER_PATH` — explicit adapter directory
+- `FITSENSE_STUDENT_BASE_MODEL` — override base model name
+- `FITSENSE_STUDENT_REGISTRY_RECORD` — explicit registry record JSON
+
+Install optional model-serving dependencies:
 ```bash
 pip install -r requirements-llm.txt
 ```
 
-### Optional environment variables
-
-- `FITSENSE_STUDENT_ADAPTER_PATH` — explicit local adapter directory
-- `FITSENSE_STUDENT_BASE_MODEL` — override the base HF model name
-- `FITSENSE_STUDENT_REGISTRY_RECORD` — explicit registry record JSON path
-
 ### Runtime check
 
-After login, call:
-
-```text
+```
 GET /model/runtime
 ```
 
-This returns whether the student LLM is available, which base model is configured, and which adapter path was discovered.
+Returns whether the student LLM is available, the base model, adapter path, and provider details.
 
+## AI Interaction Logging
 
-## Local training -> backend auto-pickup
+All LLM calls are logged to the `ai_interactions` table with:
+- `context_type`: route that triggered the call (`coach`, `coach-stream`, `plan-generate`, `plan-modify`, or `failed`)
+- `query_text`: full user prompt sent to the LLM
+- `response_text`: full raw LLM response
+- `model_name`: model used for inference
 
-Train the student model separately on your machine:
+Failed LLM calls are logged with `context_type="failed"` and the error in `response_text`.
 
-```bash
-python3 -m pip install -r ../Model-Pipeline/requirements-local-train.txt
-python3 ../Model-Pipeline/scripts/trainmodel.py
-```
+## Debugging
 
-That writes the adapter under `Model-Pipeline/adapters/qwen3-8b-fitsense/<run_id>/` and a manifest file at
-`Model-Pipeline/reports/latest_student_adapter.json`.
-
-The backend runtime re-scans for that manifest and adapter automatically, so after training finishes you can restart the backend and it will use the newest adapter without editing code.
-
-
-## Debugging behavior added
-
-The backend now exposes clearer fallback information:
-
-- `GET /model/runtime` shows whether a student adapter is truly runnable, not just whether a registry file exists.
-- `POST /coach` includes `execution_debug` with the selected backend and fallback reason.
-- `GET /coach/stream` sends one initial SSE event containing `debug` before token deltas.
-- Background plan jobs now mention in their progress text whether the student model was used or why rules were used instead.
-
-
-## Accepted student model layouts
-
-The backend now accepts any of these:
-
-1. LoRA adapter directory
-   - `adapter_config.json`
-   - `adapter_model.safetensors` or `adapter_model.bin`
-
-2. Full merged model directory
-   - `config.json`
-   - model weights such as `*.safetensors` or `pytorch_model*.bin`
-
-3. Artifact package
-   - Set `FITSENSE_STUDENT_ARTIFACT` to a local directory, `.zip`, `.tar`, or `.tar.gz`
-   - Or keep a registry `gcs_uri` and run with `gsutil` installed so the backend can download it automatically
+- `GET /model/runtime` — shows whether the student adapter is runnable
+- `POST /coach` response includes `execution_debug` with selected backend and fallback reason
+- `GET /coach/stream` sends an initial SSE event with `debug` before token deltas
+- Plan jobs include progress text indicating whether the student model or rules were used
+- Set `FITSENSE_DEBUG_VERTEX=1` in `.env.local` for verbose inference logging
