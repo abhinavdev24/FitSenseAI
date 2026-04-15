@@ -14,13 +14,19 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-SYSTEM_PLAN_PROMPT = (
+SYSTEM_PLAN_CREATION_PROMPT_FALLBACK = (
     "You are FitSense AI, an expert fitness coach and periodization specialist. "
     "Return ONLY valid JSON with this exact structure: "
     '{"plan_name":"...","days":[{"name":"...","day_order":1,"notes":null,'
     '"exercises":[{"exercise_name":"...","position":1,"notes":null,'
     '"sets":[{"set_number":1,"target_reps":10,"target_rir":2,"rest_seconds":60}]}]}]}'
     ". No markdown fences. No prose before or after the JSON. Always respect injuries, conditions, equipment, and experience level."
+)
+
+SYSTEM_PLAN_UPDATION_PROMPT_FALLBACK = (
+    "You are FitSense AI, an expert fitness coach and periodization specialist. "
+    "The user provides profile, current plan, workout history, and an update request. "
+    "Return ONLY the full updated plan as one valid JSON object with the required workout-plan schema."
 )
 
 SYSTEM_COACH_PROMPT = (
@@ -54,6 +60,7 @@ class StudentLLMRuntime:
     def __init__(self) -> None:
         self.repo_root = Path(__file__).resolve().parents[2]
         self.model_root = self.repo_root / "Model-Pipeline"
+        self.prompts_root = self.repo_root / "Data-Pipeline" / "prompts"
         self._model = None
         self._tokenizer = None
         self._load_error: str | None = None
@@ -65,6 +72,15 @@ class StudentLLMRuntime:
         self.artifact_uri: str | None = None
         self.runtime_mode: str = "adapter"
         self.cache_dir = self.model_root / "adapters" / ".downloaded"
+        self.system_plan_creation_prompt = self._load_prompt_file(
+            self.prompts_root / "plan_creation.md",
+            SYSTEM_PLAN_CREATION_PROMPT_FALLBACK,
+        )
+        self.system_plan_updation_prompt = self._load_prompt_file(
+            self.prompts_root / "plan_updation.md",
+            SYSTEM_PLAN_UPDATION_PROMPT_FALLBACK,
+        )
+        self.openai_api_url: str | None = None
         self.cloudrun_service_url: str | None = None
         self.cloud_predict_url: str | None = None
         self.refresh_configuration(force=True)
@@ -73,6 +89,7 @@ class StudentLLMRuntime:
         old_adapter = str(self.adapter_path) if self.adapter_path else None
         old_base = self.base_model
         old_mode = self.runtime_mode
+        old_openai = self.openai_api_url
         old_cloud = self.cloud_predict_url
         self.registry_record = self._discover_registry_record()
         self.artifact_uri = self._artifact_uri_from_registry()
@@ -84,13 +101,22 @@ class StudentLLMRuntime:
             or "unsloth/Qwen3-4B-bnb-4bit"
         )
         self.cloudrun_service_url = (os.environ.get("FITSENSE_CLOUDRUN_URL") or "").strip() or None
+        self.openai_api_url = (os.environ.get("OPENAI_API_URL") or "").strip() or None
         self.cloud_predict_url = (self.cloudrun_service_url.rstrip("/") + "/predict") if self.cloudrun_service_url else None
         new_adapter = str(self.adapter_path) if self.adapter_path else None
-        if force or new_adapter != old_adapter or self.base_model != old_base or self.runtime_mode != old_mode or self.cloud_predict_url != old_cloud:
+        if force or new_adapter != old_adapter or self.base_model != old_base or self.runtime_mode != old_mode or self.openai_api_url != old_openai or self.cloud_predict_url != old_cloud:
             self._model = None
             self._tokenizer = None
             self._loaded_adapter_path = None
             self._load_error = None
+
+    def _load_prompt_file(self, path: Path, fallback: str) -> str:
+        try:
+            content = path.read_text(encoding="utf-8").strip()
+            return content or fallback
+        except Exception as exc:
+            print(f"⚠️ Could not load prompt file at {path}: {exc}")
+            return fallback
 
     def _read_registry_data(self) -> dict[str, Any] | None:
         if not self.registry_record or not self.registry_record.exists():
@@ -436,6 +462,13 @@ class StudentLLMRuntime:
 
     def info(self) -> RuntimeInfo:
         self.refresh_configuration()
+        if self._can_use_openai_compatible():
+            info = self._status_info()
+            info.available = True
+            info.provider = "openai-compatible"
+            info.reason = None
+            info.detail = f"OpenAI-compatible inference via {self.openai_api_url}"
+            return info
         if self._can_use_cloud():
             info = self._status_info()
             info.available = True
@@ -544,6 +577,26 @@ class StudentLLMRuntime:
     def _can_use_cloud(self) -> bool:
         return bool(self.cloud_predict_url and importlib.util.find_spec("requests"))
 
+    def _can_use_openai_compatible(self) -> bool:
+        api_key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+        return bool(api_key and self.openai_api_url and importlib.util.find_spec("requests"))
+
+    def _max_output_tokens_from_env(self) -> int | None:
+        raw = (os.environ.get("MAX_OUTPUT_TOKENS") or "").strip()
+        if not raw:
+            return None
+        try:
+            parsed = int(raw)
+        except ValueError:
+            return None
+        return parsed if parsed > 0 else None
+
+    def _effective_max_output_tokens(self, requested_tokens: int) -> int:
+        env_cap = self._max_output_tokens_from_env()
+        if env_cap is None:
+            return requested_tokens
+        return max(1, min(requested_tokens, env_cap))
+
     def _debug_enabled(self) -> bool:
         return (os.environ.get("FITSENSE_DEBUG_VERTEX") or "1").strip().lower() not in {"0", "false", "no", "off"}
 
@@ -551,34 +604,37 @@ class StudentLLMRuntime:
         if self._debug_enabled():
             print(f"[vertex-debug] {message}")
 
-    def _call_openrouter(self, *, system_prompt: str, user_message: str, max_new_tokens: int) -> str | None:
-        api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
-        if not api_key:
+    def _call_openai_compatible(self, *, system_prompt: str, user_message: str, max_new_tokens: int) -> str | None:
+        api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+        api_url = self.openai_api_url
+        if not api_key or not api_url:
             return None
+        effective_max_tokens = self._effective_max_output_tokens(max_new_tokens)
         import requests
         try:
             resp = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
+                api_url,
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": os.environ.get("OPENROUTER_MODEL", "qwen/qwen3-8b:free"),
+                json={"model": os.environ.get("OPENAI_MODEL", "qwen/qwen3-8b:free"),
                       "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],
-                      "max_tokens": max_new_tokens, "temperature": 0},
+                      "max_tokens": effective_max_tokens, "temperature": 0},
                 timeout=120,
             )
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
         except Exception as exc:
-            print(f"⚠️ OpenRouter call failed: {exc}")
+            print(f"⚠️ OpenAI-compatible API call failed: {exc}")
             return None
 
     def _call_cloud(self, *, task: str, system_prompt: str, user_message: str, max_new_tokens: int) -> dict[str, Any] | None:
         if not self._can_use_cloud():
             return None
+        effective_max_tokens = self._effective_max_output_tokens(max_new_tokens)
         import requests, time
         # Truncate long user messages to keep input tokens reasonable
         if len(user_message) > 1500:
             user_message = user_message[:1500] + "\n[profile truncated for inference]"
-        payload = {"instances": [{"task": task, "system_prompt": system_prompt, "user_message": user_message, "max_new_tokens": max_new_tokens}]}
+        payload = {"instances": [{"task": task, "system_prompt": system_prompt, "user_message": user_message, "max_new_tokens": effective_max_tokens}]}
         self._debug(f"Starting Cloud Run call task={task} target={self.cloud_predict_url} chars={len(user_message)}")
         start = time.perf_counter()
         try:
@@ -602,10 +658,11 @@ class StudentLLMRuntime:
         return None
 
     def generate_text(self, *, system_prompt: str, user_message: str, max_new_tokens: int = 768) -> str | None:
-        text = self._call_openrouter(system_prompt=system_prompt, user_message=user_message, max_new_tokens=max_new_tokens)
+        effective_max_tokens = self._effective_max_output_tokens(max_new_tokens)
+        text = self._call_openai_compatible(system_prompt=system_prompt, user_message=user_message, max_new_tokens=effective_max_tokens)
         if text:
             return text
-        cloud_result = self._call_cloud(task="text", system_prompt=system_prompt, user_message=user_message, max_new_tokens=max_new_tokens)
+        cloud_result = self._call_cloud(task="text", system_prompt=system_prompt, user_message=user_message, max_new_tokens=effective_max_tokens)
         if cloud_result is not None:
             text = cloud_result.get("text") or cloud_result.get("raw_text")
             if isinstance(text, str) and text.strip():
@@ -619,7 +676,7 @@ class StudentLLMRuntime:
             inputs = self._tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
             inputs = {k: v.to(self._model.device) for k, v in inputs.items()}
             with torch.no_grad():
-                outputs = self._model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+                outputs = self._model.generate(**inputs, max_new_tokens=effective_max_tokens, do_sample=False)
             gen_ids = outputs[0][inputs["input_ids"].shape[1]:]
             decoded = self._tokenizer.decode(gen_ids, skip_special_tokens=True)
             return self._decode(decoded)
@@ -628,9 +685,14 @@ class StudentLLMRuntime:
             print(f"⚠️ Student LLM generation failed: {exc}")
             return None
 
-    def generate_plan_json(self, *, user_message: str) -> dict[str, Any] | None:
+    def generate_plan_json(self, *, user_message: str, is_modification: bool = False) -> dict[str, Any] | None:
         self._debug("generate_plan_json started.")
-        or_text = self._call_openrouter(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
+        system_prompt = (
+            self.system_plan_updation_prompt
+            if is_modification
+            else self.system_plan_creation_prompt
+        )
+        or_text = self._call_openai_compatible(system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
         if or_text:
             candidate = self._extract_first_json_object(or_text)
             if candidate:
@@ -642,7 +704,7 @@ class StudentLLMRuntime:
         if self._can_use_cloud():
             for attempt in range(1, 4):  # up to 3 attempts
                 self._debug(f"Cloud plan_json attempt {attempt}/3")
-                cloud_result = self._call_cloud(task="plan_json", system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
+                cloud_result = self._call_cloud(task="plan_json", system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
                 if cloud_result is None:
                     self._debug("Cloud call failed (network/HTTP error) — not retrying.")
                     break
@@ -670,7 +732,7 @@ class StudentLLMRuntime:
             return None
 
         self._debug("No cloud configured — falling back to local generate_text.")
-        text = self.generate_text(system_prompt=SYSTEM_PLAN_PROMPT, user_message=user_message, max_new_tokens=2500)
+        text = self.generate_text(system_prompt=system_prompt, user_message=user_message, max_new_tokens=2500)
         if not text:
             return None
 

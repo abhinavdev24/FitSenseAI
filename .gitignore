@@ -91,3 +91,8 @@ Model-Pipeline/staging/
 *.safetensors
 *.bin
 *.pt
+wandb
+plans
+Model-Pipeline/outputs
+.mcp.json
+CLAUDE.md
