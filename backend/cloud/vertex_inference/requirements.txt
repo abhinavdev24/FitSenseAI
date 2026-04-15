@@ -1,0 +1,10 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+transformers>=4.45
+peft>=0.12
+torch>=2.3
+accelerate>=0.34
+sentencepiece>=0.2
+bitsandbytes>=0.43; platform_system != "Darwin"
+google-cloud-storage>=2.18
+google-auth>=2.35
