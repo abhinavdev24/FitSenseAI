@@ -61,9 +61,7 @@ Thumbs.db
 *.pkl
 *.pickle
 *.joblib
-data/
 datasets/
-*.csv
 *.parquet
 runs/
 logs/
@@ -82,16 +80,48 @@ mlruns/
 .airflow
 
 .claude
-CLAUDE.md# Local student model artifacts
-backend/qwen3-4b-v2/
-backend/*.tar.gz
-Model-Pipeline/adapters/
-Model-Pipeline/staging/
+CLAUDE.md
+
+# Unsloth & Model Cache
+unsloth_compiled_cache/
+huggingface_tokenizers_cache/
+
+# Large Model Weights
 *.safetensors
 *.bin
 *.pt
+*.pth
+*.tar.gz
+
+# Adapters (stored in GCS, not git)
+Model-Pipeline/adapters/
+
+# Staging
+Model-Pipeline/staging/
+
+# Wandb logs
+wandb/
+
+# Python cache
+*.pyc
+
+# Zip files
+*.zip
+
+# Data files (use DVC)
+data.zip
+
 wandb
 plans
 Model-Pipeline/outputs
 .mcp.json
 CLAUDE.md
+
+CLAUDE.md# Local student model artifacts
+backend/qwen3-4b-v2/
+backend/*.tar.gz
+Model-Pipeline/adapters/
+Model-Pipeline/staging/
+data/
+datasets/
+*.csv

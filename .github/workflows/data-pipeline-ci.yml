@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - Data-Pipeline/**
+      - Model-Pipeline/**
       - .github/workflows/data-pipeline-ci.yml
   pull_request:
     paths:
       - Data-Pipeline/**
+      - Model-Pipeline/**
       - .github/workflows/data-pipeline-ci.yml
   workflow_dispatch:
     inputs:
@@ -20,6 +22,7 @@ permissions:
   contents: read
 
 jobs:
+  # ── Job 1: Data Pipeline Tests ─────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -42,9 +45,9 @@ jobs:
 
       - name: Run Data-Pipeline tests
         working-directory: Data-Pipeline
-        run: |
-          pytest tests -v
+        run: pytest tests -v
 
+  # ── Job 2: Data Pipeline Scripts ───────────────────────────────────────────
   run-scripts-and-generate-artifacts:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -79,7 +82,7 @@ jobs:
             exit 1
           fi
 
-      - name: Run synthetic data generation scripts (excluding call_teacher.py)
+      - name: Run synthetic data generation scripts
         working-directory: Data-Pipeline
         run: |
           python bootstrap.py
@@ -114,3 +117,86 @@ jobs:
             Data-Pipeline/data/raw/synthetic_queries/**
             Data-Pipeline/data/raw/teacher-llm-responses/ci-smoke/**
             Data-Pipeline/logs/**
+
+  # ── Job 3: Model Pipeline Validation ───────────────────────────────────────
+  model-pipeline-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: run-scripts-and-generate-artifacts
+    if: github.event_name == 'workflow_dispatch' || (github.ref == 'refs/heads/main')
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Model-Pipeline dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install rouge-score bert-score transformers peft wandb
+
+      # Pre-create reports dir to avoid script failures
+      - name: Prepare Workspace
+        run: mkdir -p Model-Pipeline/reports
+
+      - name: Run schema validation
+        run: python Model-Pipeline/scripts/check_schema.py
+
+      - name: Run bias slicing analysis
+        run: python Model-Pipeline/scripts/bias_slicing.py
+
+      # ── Dynamic Quality gate — uses glob to find the latest report ─────────
+      - name: Check quality thresholds
+        run: |
+          python - <<'EOF'
+          import json, sys, glob
+          from pathlib import Path
+
+          report_files = glob.glob("Model-Pipeline/reports/student_eval_*.json")
+          
+          if not report_files:
+              print("❌ No evaluation report found - Check if evaluate_student.py ran.")
+              sys.exit(1)
+
+          report_path = Path(max(report_files, key=Path))
+          print(f"Analyzing report: {report_path.name}")
+
+          with open(report_path) as f:
+              report = json.load(f)
+
+          metrics = report.get("metrics", {})
+          json_rate = metrics.get("json_validity_rate", 0)
+
+          print(f"JSON validity   : {json_rate:.2%}")
+
+          if json_rate < 0.50:
+              print(f"❌ Validity {json_rate:.2%} is below threshold of 45%")
+              sys.exit(1)
+          else:
+              print(f"✅ Validity {json_rate:.2%} passes threshold")
+          EOF
+
+      - name: Upload model pipeline reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-pipeline-reports-${{ github.sha }}
+          retention-days: 30
+          path: |
+            Model-Pipeline/reports/bias_report_*.json
+            Model-Pipeline/reports/student_eval_*.json
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Model pipeline validation failed."
+          echo "Check schema validity or bias report for details."
