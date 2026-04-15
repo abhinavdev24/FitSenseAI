@@ -3,6 +3,23 @@ services:
     build: .
     ports:
       - 8000
-    env_file:
-      - .env.local
+    environment:
+      # Database
+      - DATABASE_ENGINE=mysql
+      - DATABASE_USER=your_db_user
+      - DATABASE_PASSWORD=your_db_password
+      - DATABASE_NAME=your_db_name
+      - DATABASE_HOST=your_db_host
+      - DATABASE_PORT=3306
+      # LLM Inference
+      - OPENAI_API_KEY=your_api_key
+      - OPENAI_API_URL=https://your-provider/v1/chat/completions
+      - OPENAI_MODEL=your-model-id
+      - MAX_OUTPUT_TOKENS=13000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
