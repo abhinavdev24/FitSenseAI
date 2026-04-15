@@ -4,7 +4,6 @@ import json
 import math
 import re
 import time
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from typing import Iterable
 
@@ -15,7 +14,7 @@ from sqlalchemy.orm import Session, joinedload
 from . import models
 from .llm_runtime import get_runtime
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 GOAL_SEED = {
@@ -33,26 +32,126 @@ CONDITION_SEED = {
 }
 
 EXERCISE_SEED = [
-    {"name": "Goblet Squat", "primary_muscle": "quads", "category": "lower", "equipment_csv": "dumbbells"},
-    {"name": "Leg Press", "primary_muscle": "quads", "category": "lower", "equipment_csv": "machines"},
-    {"name": "Romanian Deadlift", "primary_muscle": "hamstrings", "category": "lower", "equipment_csv": "barbell,dumbbells"},
-    {"name": "Hip Thrust", "primary_muscle": "glutes", "category": "lower", "equipment_csv": "barbell,bodyweight"},
-    {"name": "Bench Press", "primary_muscle": "chest", "category": "push", "equipment_csv": "barbell"},
-    {"name": "Push-Up", "primary_muscle": "chest", "category": "push", "equipment_csv": "bodyweight"},
-    {"name": "Incline Dumbbell Press", "primary_muscle": "chest", "category": "push", "equipment_csv": "dumbbells"},
-    {"name": "Seated Dumbbell Shoulder Press", "primary_muscle": "shoulders", "category": "push", "equipment_csv": "dumbbells"},
-    {"name": "Lateral Raise", "primary_muscle": "shoulders", "category": "push", "equipment_csv": "dumbbells"},
-    {"name": "Cable Triceps Pushdown", "primary_muscle": "triceps", "category": "push", "equipment_csv": "cables,machines"},
-    {"name": "Lat Pulldown", "primary_muscle": "lats", "category": "pull", "equipment_csv": "cables,machines"},
-    {"name": "Chest-Supported Row", "primary_muscle": "upper back", "category": "pull", "equipment_csv": "dumbbells,machines"},
-    {"name": "Seated Cable Row", "primary_muscle": "upper back", "category": "pull", "equipment_csv": "cables"},
-    {"name": "Dumbbell Curl", "primary_muscle": "biceps", "category": "pull", "equipment_csv": "dumbbells"},
-    {"name": "Plank", "primary_muscle": "core", "category": "core", "equipment_csv": "bodyweight"},
-    {"name": "Walking Lunge", "primary_muscle": "quads", "category": "lower", "equipment_csv": "bodyweight,dumbbells"},
-    {"name": "Step-Up", "primary_muscle": "quads", "category": "lower", "equipment_csv": "bodyweight,dumbbells"},
-    {"name": "Glute Bridge", "primary_muscle": "glutes", "category": "lower", "equipment_csv": "bodyweight"},
-    {"name": "Landmine Press", "primary_muscle": "shoulders", "category": "push", "equipment_csv": "barbell"},
-    {"name": "Face Pull", "primary_muscle": "rear delts", "category": "pull", "equipment_csv": "cables"},
+    {
+        "name": "Goblet Squat",
+        "primary_muscle": "quads",
+        "category": "lower",
+        "equipment_csv": "dumbbells",
+    },
+    {
+        "name": "Leg Press",
+        "primary_muscle": "quads",
+        "category": "lower",
+        "equipment_csv": "machines",
+    },
+    {
+        "name": "Romanian Deadlift",
+        "primary_muscle": "hamstrings",
+        "category": "lower",
+        "equipment_csv": "barbell,dumbbells",
+    },
+    {
+        "name": "Hip Thrust",
+        "primary_muscle": "glutes",
+        "category": "lower",
+        "equipment_csv": "barbell,bodyweight",
+    },
+    {
+        "name": "Bench Press",
+        "primary_muscle": "chest",
+        "category": "push",
+        "equipment_csv": "barbell",
+    },
+    {
+        "name": "Push-Up",
+        "primary_muscle": "chest",
+        "category": "push",
+        "equipment_csv": "bodyweight",
+    },
+    {
+        "name": "Incline Dumbbell Press",
+        "primary_muscle": "chest",
+        "category": "push",
+        "equipment_csv": "dumbbells",
+    },
+    {
+        "name": "Seated Dumbbell Shoulder Press",
+        "primary_muscle": "shoulders",
+        "category": "push",
+        "equipment_csv": "dumbbells",
+    },
+    {
+        "name": "Lateral Raise",
+        "primary_muscle": "shoulders",
+        "category": "push",
+        "equipment_csv": "dumbbells",
+    },
+    {
+        "name": "Cable Triceps Pushdown",
+        "primary_muscle": "triceps",
+        "category": "push",
+        "equipment_csv": "cables,machines",
+    },
+    {
+        "name": "Lat Pulldown",
+        "primary_muscle": "lats",
+        "category": "pull",
+        "equipment_csv": "cables,machines",
+    },
+    {
+        "name": "Chest-Supported Row",
+        "primary_muscle": "upper back",
+        "category": "pull",
+        "equipment_csv": "dumbbells,machines",
+    },
+    {
+        "name": "Seated Cable Row",
+        "primary_muscle": "upper back",
+        "category": "pull",
+        "equipment_csv": "cables",
+    },
+    {
+        "name": "Dumbbell Curl",
+        "primary_muscle": "biceps",
+        "category": "pull",
+        "equipment_csv": "dumbbells",
+    },
+    {
+        "name": "Plank",
+        "primary_muscle": "core",
+        "category": "core",
+        "equipment_csv": "bodyweight",
+    },
+    {
+        "name": "Walking Lunge",
+        "primary_muscle": "quads",
+        "category": "lower",
+        "equipment_csv": "bodyweight,dumbbells",
+    },
+    {
+        "name": "Step-Up",
+        "primary_muscle": "quads",
+        "category": "lower",
+        "equipment_csv": "bodyweight,dumbbells",
+    },
+    {
+        "name": "Glute Bridge",
+        "primary_muscle": "glutes",
+        "category": "lower",
+        "equipment_csv": "bodyweight",
+    },
+    {
+        "name": "Landmine Press",
+        "primary_muscle": "shoulders",
+        "category": "push",
+        "equipment_csv": "barbell",
+    },
+    {
+        "name": "Face Pull",
+        "primary_muscle": "rear delts",
+        "category": "pull",
+        "equipment_csv": "cables",
+    },
 ]
 
 EQUIPMENT_SEED = [
@@ -124,7 +223,9 @@ def _get_or_create_goal(db: Session, goal_name: str) -> models.Goal:
     goal = db.scalar(select(models.Goal).where(models.Goal.name == goal_name))
     if goal:
         return goal
-    goal = models.Goal(name=goal_name, description=GOAL_SEED.get(goal_name, "User-selected goal."))
+    goal = models.Goal(
+        name=goal_name, description=GOAL_SEED.get(goal_name, "User-selected goal.")
+    )
     db.add(goal)
     db.commit()
     db.refresh(goal)
@@ -136,7 +237,9 @@ def _get_or_create_condition(db: Session, name: str) -> models.Condition:
     condition = db.scalar(select(models.Condition).where(models.Condition.name == n))
     if condition:
         return condition
-    condition = models.Condition(name=n, description=CONDITION_SEED.get(n, "User-entered condition."))
+    condition = models.Condition(
+        name=n, description=CONDITION_SEED.get(n, "User-entered condition.")
+    )
     db.add(condition)
     db.commit()
     db.refresh(condition)
@@ -157,7 +260,9 @@ def upsert_onboarding(db: Session, user: models.User, payload) -> None:
         user.preference = models.UserPreference(user_id=user.user_id)
     user.preference.days_per_week = payload.days_per_week
     user.preference.experience_level = payload.experience_level
-    user.preference.equipment_csv = ",".join(sorted(set(payload.equipment or ["bodyweight", "dumbbells"])))
+    user.preference.equipment_csv = ",".join(
+        sorted(set(payload.equipment or ["bodyweight", "dumbbells"]))
+    )
 
     if user.medical_profile is None:
         user.medical_profile = models.UserMedicalProfile(user_id=user.user_id)
@@ -172,7 +277,9 @@ def upsert_onboarding(db: Session, user: models.User, payload) -> None:
     user.conditions.clear()
     for cond in payload.conditions:
         c = _get_or_create_condition(db, cond)
-        user.conditions.append(models.UserCondition(condition_id=c.condition_id, severity="moderate"))
+        user.conditions.append(
+            models.UserCondition(condition_id=c.condition_id, severity="moderate")
+        )
 
     user.medications.clear()
     for med in payload.medications:
@@ -184,23 +291,49 @@ def upsert_onboarding(db: Session, user: models.User, payload) -> None:
         if allergy.strip():
             user.allergies.append(models.UserAllergy(allergen=allergy.strip()))
 
-    db.add(models.WeightLog(user_id=user.user_id, logged_at=datetime.utcnow(), weight_kg=payload.weight_kg))
+    db.add(
+        models.WeightLog(
+            user_id=user.user_id,
+            logged_at=datetime.utcnow(),
+            weight_kg=payload.weight_kg,
+        )
+    )
     if payload.calorie_target:
-        db.add(models.CalorieIntakeLog(user_id=user.user_id, logged_on=date.today(), calories=payload.calorie_target))
+        db.add(
+            models.CalorieIntakeLog(
+                user_id=user.user_id,
+                logged_on=date.today(),
+                calories=payload.calorie_target,
+            )
+        )
     if payload.sleep_target_hours:
-        db.add(models.SleepDurationLog(user_id=user.user_id, logged_on=date.today(), hours=payload.sleep_target_hours))
+        db.add(
+            models.SleepDurationLog(
+                user_id=user.user_id,
+                logged_on=date.today(),
+                hours=payload.sleep_target_hours,
+            )
+        )
     db.commit()
 
 
-def _available_equipment(user: models.User, override: list[str] | None = None) -> set[str]:
+def _available_equipment(
+    user: models.User, override: list[str] | None = None
+) -> set[str]:
     if override:
         return {e.strip().lower() for e in override if e.strip()}
     if user.preference and user.preference.equipment_csv:
-        return {e.strip().lower() for e in user.preference.equipment_csv.split(",") if e.strip()}
+        return {
+            e.strip().lower()
+            for e in user.preference.equipment_csv.split(",")
+            if e.strip()
+        }
     return {"bodyweight", "dumbbells"}
 
 
-def _pick_exercises(db: Session, categories: Iterable[str], equipment: set[str], injuries: str) -> list[models.Exercise]:
+def _pick_exercises(
+    db: Session, categories: Iterable[str], equipment: set[str], injuries: str
+) -> list[models.Exercise]:
     all_exercises = db.scalars(select(models.Exercise)).all()
     picks = []
     injury_text = (injuries or "").lower()
@@ -212,7 +345,11 @@ def _pick_exercises(db: Session, categories: Iterable[str], equipment: set[str],
             if not ex_eq.intersection(equipment) and "bodyweight" not in ex_eq:
                 continue
             name = ex.name.lower()
-            if "knee" in injury_text and ("lunge" in name or "squat" in name) and "goblet" not in name:
+            if (
+                "knee" in injury_text
+                and ("lunge" in name or "squat" in name)
+                and "goblet" not in name
+            ):
                 continue
             if "shoulder" in injury_text and ("overhead" in name or "bench" in name):
                 continue
@@ -281,25 +418,41 @@ def serialize_plan(plan: models.WorkoutPlan) -> dict:
     }
 
 
-def _runtime_debug_payload(*, endpoint: str, selected_backend: str, fallback_reason: str | None = None, runtime_info=None, notes: str | None = None) -> dict:
+def _runtime_debug_payload(
+    *,
+    endpoint: str,
+    selected_backend: str,
+    fallback_reason: str | None = None,
+    runtime_info=None,
+    notes: str | None = None,
+) -> dict:
     info = runtime_info or get_runtime().info()
     return {
         "endpoint": endpoint,
         "selected_backend": selected_backend,
         "fallback_reason": fallback_reason,
         "notes": notes,
-        "runtime": info.to_dict() if hasattr(info, "to_dict") else {
-            "available": getattr(info, "available", None),
-            "provider": getattr(info, "provider", None),
-            "base_model": getattr(info, "base_model", None),
-            "adapter_path": getattr(info, "adapter_path", None),
-            "registry_record": getattr(info, "registry_record", None),
-            "reason": getattr(info, "reason", None),
-        },
+        "runtime": (
+            info.to_dict()
+            if hasattr(info, "to_dict")
+            else {
+                "available": getattr(info, "available", None),
+                "provider": getattr(info, "provider", None),
+                "base_model": getattr(info, "base_model", None),
+                "adapter_path": getattr(info, "adapter_path", None),
+                "registry_record": getattr(info, "registry_record", None),
+                "reason": getattr(info, "reason", None),
+            }
+        ),
     }
 
 
-def _student_user_message(user: models.User, request, instruction: str | None = None, active_plan: models.WorkoutPlan | None = None) -> str:
+def _student_user_message(
+    user: models.User,
+    request,
+    instruction: str | None = None,
+    active_plan: models.WorkoutPlan | None = None,
+) -> str:
     profile = build_profile_summary(user)
     payload = {
         "goal_name": getattr(request, "goal_name", None),
@@ -320,7 +473,9 @@ def _ensure_exercise(db: Session, exercise_name: str) -> models.Exercise:
     ex = db.scalar(select(models.Exercise).where(models.Exercise.name == name))
     if ex:
         return ex
-    inferred_category = "core" if "plank" in name.lower() or "dead bug" in name.lower() else "general"
+    inferred_category = (
+        "core" if "plank" in name.lower() or "dead bug" in name.lower() else "general"
+    )
     ex = models.Exercise(
         name=name,
         primary_muscle=None,
@@ -335,7 +490,9 @@ def _ensure_exercise(db: Session, exercise_name: str) -> models.Exercise:
 def _normalize_llm_plan_json(plan_json: dict) -> dict:
     """Normalize slightly different student-model JSON shapes into the backend schema."""
     normalized = {
-        "plan_name": plan_json.get("plan_name") or plan_json.get("name") or "Student LLM Plan",
+        "plan_name": plan_json.get("plan_name")
+        or plan_json.get("name")
+        or "Student LLM Plan",
         "explanation": plan_json.get("explanation"),
         "days": [],
     }
@@ -357,7 +514,9 @@ def _normalize_llm_plan_json(plan_json: dict) -> dict:
             raw_notes = ex_payload.get("notes")
 
             norm_ex = {
-                "exercise_name": ex_payload.get("exercise_name") or ex_payload.get("name") or "Bodyweight Movement",
+                "exercise_name": ex_payload.get("exercise_name")
+                or ex_payload.get("name")
+                or "Bodyweight Movement",
                 "position": raw_position if isinstance(raw_position, int) else ex_idx,
                 "notes": raw_notes if isinstance(raw_notes, str) else None,
                 "sets": [],
@@ -378,36 +537,54 @@ def _normalize_llm_plan_json(plan_json: dict) -> dict:
                     }
                     for sidx in range(1, max(1, sets_payload) + 1)
                 ]
-            elif not sets_payload and any(k in ex_payload for k in ("reps", "rest_seconds", "target_reps")):
-                sets_payload = [{
-                    "set_number": 1,
-                    "target_reps": int(ex_payload.get("target_reps") or ex_payload.get("reps") or 10),
-                    "target_rir": int(ex_payload.get("target_rir") or 3),
-                    "rest_seconds": int(ex_payload.get("rest_seconds") or 60),
-                }]
+            elif not sets_payload and any(
+                k in ex_payload for k in ("reps", "rest_seconds", "target_reps")
+            ):
+                sets_payload = [
+                    {
+                        "set_number": 1,
+                        "target_reps": int(
+                            ex_payload.get("target_reps")
+                            or ex_payload.get("reps")
+                            or 10
+                        ),
+                        "target_rir": int(ex_payload.get("target_rir") or 3),
+                        "rest_seconds": int(ex_payload.get("rest_seconds") or 60),
+                    }
+                ]
 
             if isinstance(raw_position, str):
                 extra = f"Position cue: {raw_position}"
-                norm_ex["notes"] = f"{norm_ex['notes']}; {extra}" if norm_ex["notes"] else extra
+                norm_ex["notes"] = (
+                    f"{norm_ex['notes']}; {extra}" if norm_ex["notes"] else extra
+                )
 
             for sidx, set_payload in enumerate(sets_payload or [], start=1):
                 set_payload = set_payload or {}
-                norm_ex["sets"].append({
-                    "set_number": int(set_payload.get("set_number") or sidx),
-                    "target_reps": int(set_payload.get("target_reps") or set_payload.get("reps") or 10),
-                    "target_rir": int(set_payload.get("target_rir") or 3),
-                    "rest_seconds": int(set_payload.get("rest_seconds") or 60),
-                    "target_weight": set_payload.get("target_weight"),
-                })
+                norm_ex["sets"].append(
+                    {
+                        "set_number": int(set_payload.get("set_number") or sidx),
+                        "target_reps": int(
+                            set_payload.get("target_reps")
+                            or set_payload.get("reps")
+                            or 10
+                        ),
+                        "target_rir": int(set_payload.get("target_rir") or 3),
+                        "rest_seconds": int(set_payload.get("rest_seconds") or 60),
+                        "target_weight": set_payload.get("target_weight"),
+                    }
+                )
 
             if not norm_ex["sets"]:
-                norm_ex["sets"] = [{
-                    "set_number": 1,
-                    "target_reps": 10,
-                    "target_rir": 3,
-                    "rest_seconds": 60,
-                    "target_weight": None,
-                }]
+                norm_ex["sets"] = [
+                    {
+                        "set_number": 1,
+                        "target_reps": 10,
+                        "target_rir": 3,
+                        "rest_seconds": 60,
+                        "target_weight": None,
+                    }
+                ]
 
             norm_day["exercises"].append(norm_ex)
 
@@ -416,7 +593,9 @@ def _normalize_llm_plan_json(plan_json: dict) -> dict:
     return normalized
 
 
-def _persist_llm_plan(db: Session, user: models.User, plan_json: dict, *, explanation: str | None = None) -> models.WorkoutPlan:
+def _persist_llm_plan(
+    db: Session, user: models.User, plan_json: dict, *, explanation: str | None = None
+) -> models.WorkoutPlan:
     plan_json = _normalize_llm_plan_json(plan_json or {})
     for plan in user.plans:
         plan.is_active = False
@@ -440,7 +619,9 @@ def _persist_llm_plan(db: Session, user: models.User, plan_json: dict, *, explan
         db.add(day)
         db.flush()
 
-        for pos, ex_payload in enumerate((day_payload or {}).get("exercises", []) or [], start=1):
+        for pos, ex_payload in enumerate(
+            (day_payload or {}).get("exercises", []) or [], start=1
+        ):
             ex_model = _ensure_exercise(
                 db,
                 (ex_payload or {}).get("exercise_name") or "Bodyweight Movement",
@@ -479,18 +660,23 @@ def _persist_llm_plan(db: Session, user: models.User, plan_json: dict, *, explan
 
     db.commit()
 
-    refreshed = db.execute(
-        select(models.WorkoutPlan)
-        .where(models.WorkoutPlan.plan_id == plan.plan_id)
-        .options(
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.sets),
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.exercise),
+    refreshed = (
+        db.execute(
+            select(models.WorkoutPlan)
+            .where(models.WorkoutPlan.plan_id == plan.plan_id)
+            .options(
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.sets),
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.exercise),
+            )
         )
-    ).unique().scalars().one()
+        .unique()
+        .scalars()
+        .one()
+    )
 
     return refreshed
 
@@ -504,16 +690,22 @@ def try_student_plan_generation(
 ):
     runtime = get_runtime()
     runtime_info = runtime.info()
-    print(f"[student-plan] available={runtime_info.available} adapter={runtime_info.adapter_path} reason={runtime_info.reason} detail={getattr(runtime_info, 'detail', None)}")
+    print(
+        f"[student-plan] available={runtime_info.available} adapter={runtime_info.adapter_path} reason={runtime_info.reason} detail={getattr(runtime_info, 'detail', None)}"
+    )
 
     if not runtime_info.available:
         fallback_reason = runtime_info.reason or "student runtime unavailable"
-        return None, None, _runtime_debug_payload(
-            endpoint="plan",
-            selected_backend="rules",
-            fallback_reason=fallback_reason,
-            runtime_info=runtime_info,
-            notes=getattr(runtime_info, "detail", None),
+        return (
+            None,
+            None,
+            _runtime_debug_payload(
+                endpoint="plan",
+                selected_backend="rules",
+                fallback_reason=fallback_reason,
+                runtime_info=runtime_info,
+                notes=getattr(runtime_info, "detail", None),
+            ),
         )
 
     user_message = _student_user_message(
@@ -522,37 +714,60 @@ def try_student_plan_generation(
         instruction=instruction,
         active_plan=active_plan,
     )
-    plan_json = runtime.generate_plan_json(user_message=user_message)
+    plan_json = runtime.generate_plan_json(
+        user_message=user_message,
+        is_modification=bool(instruction),
+    )
 
     if not plan_json:
         refreshed = runtime.info()
-        fallback_reason = refreshed.last_load_error or refreshed.reason or "student runtime returned no valid JSON"
-        print(f"[student-plan] generation returned no valid JSON; falling back reason={fallback_reason}")
-        return None, None, _runtime_debug_payload(
-            endpoint="plan",
-            selected_backend="rules",
-            fallback_reason=fallback_reason,
-            runtime_info=refreshed,
-            notes="Student model was attempted first, but its output could not be used.",
+        fallback_reason = (
+            refreshed.last_load_error
+            or refreshed.reason
+            or "student runtime returned no valid JSON"
+        )
+        print(
+            f"[student-plan] generation returned no valid JSON; falling back reason={fallback_reason}"
+        )
+        return (
+            None,
+            None,
+            _runtime_debug_payload(
+                endpoint="plan",
+                selected_backend="rules",
+                fallback_reason=fallback_reason,
+                runtime_info=refreshed,
+                notes="Student model was attempted first, but its output could not be used.",
+            ),
         )
 
     explanation = plan_json.get("explanation") or (
-        "Modified plan produced by student LLM." if instruction else "Generated by student LLM."
+        "Modified plan produced by student LLM."
+        if instruction
+        else "Generated by student LLM."
     )
 
     plan = _persist_llm_plan(db, user, plan_json, explanation=explanation)
-    return plan, explanation, _runtime_debug_payload(
-        endpoint="plan",
-        selected_backend="student_model",
-        runtime_info=runtime.info(),
-        notes="Student adapter was available and produced a valid response.",
+    return (
+        plan,
+        explanation,
+        _runtime_debug_payload(
+            endpoint="plan",
+            selected_backend="student_model",
+            runtime_info=runtime.info(),
+            notes="Student adapter was available and produced a valid response.",
+        ),
     )
 
 
-def try_student_coach_reply(user: models.User, message: str, recent_workouts: list[dict], logs: dict):
+def try_student_coach_reply(
+    user: models.User, message: str, recent_workouts: list[dict], logs: dict
+):
     runtime = get_runtime()
     runtime_info = runtime.info()
-    print(f"[student-coach] available={runtime_info.available} adapter={runtime_info.adapter_path} reason={runtime_info.reason} detail={getattr(runtime_info, 'detail', None)}")
+    print(
+        f"[student-coach] available={runtime_info.available} adapter={runtime_info.adapter_path} reason={runtime_info.reason} detail={getattr(runtime_info, 'detail', None)}"
+    )
 
     if not runtime_info.available:
         return None, _runtime_debug_payload(
@@ -569,12 +784,20 @@ def try_student_coach_reply(user: models.User, message: str, recent_workouts: li
         "recent_workouts": recent_workouts,
         "logs": logs,
     }
-    reply = runtime.generate_coach_text(user_message=json.dumps(payload, ensure_ascii=False))
+    reply = runtime.generate_coach_text(
+        user_message=json.dumps(payload, ensure_ascii=False)
+    )
 
     if not reply:
         refreshed = runtime.info()
-        fallback_reason = refreshed.last_load_error or refreshed.reason or "student runtime returned no text"
-        print(f"[student-coach] generation returned no text; falling back reason={fallback_reason}")
+        fallback_reason = (
+            refreshed.last_load_error
+            or refreshed.reason
+            or "student runtime returned no text"
+        )
+        print(
+            f"[student-coach] generation returned no text; falling back reason={fallback_reason}"
+        )
         return None, _runtime_debug_payload(
             endpoint="coach",
             selected_backend="rules",
@@ -591,16 +814,32 @@ def try_student_coach_reply(user: models.User, message: str, recent_workouts: li
     )
 
 
-def generate_plan(db: Session, user: models.User, request) -> tuple[models.WorkoutPlan, str, dict]:
+def generate_plan(
+    db: Session, user: models.User, request
+) -> tuple[models.WorkoutPlan, str, dict]:
     llm_plan, llm_explanation, debug = try_student_plan_generation(db, user, request)
     if llm_plan is not None:
-        return llm_plan, llm_explanation or llm_plan.explanation or "Generated by student LLM.", debug
-    print(f"[fallback] using rule-based generate_plan reason={debug.get('fallback_reason') if debug else None}")
-    days_per_week = request.days_per_week or (user.preference.days_per_week if user.preference else 4)
-    goal_name = request.goal_name or (user.goals[0].goal.name if user.goals else "general fitness")
-    experience = request.experience_level or (user.preference.experience_level if user.preference else "beginner")
+        return (
+            llm_plan,
+            llm_explanation or llm_plan.explanation or "Generated by student LLM.",
+            debug,
+        )
+    print(
+        f"[fallback] using rule-based generate_plan reason={debug.get('fallback_reason') if debug else None}"
+    )
+    days_per_week = request.days_per_week or (
+        user.preference.days_per_week if user.preference else 4
+    )
+    goal_name = request.goal_name or (
+        user.goals[0].goal.name if user.goals else "general fitness"
+    )
+    experience = request.experience_level or (
+        user.preference.experience_level if user.preference else "beginner"
+    )
     equipment = _available_equipment(user, request.equipment)
-    injuries = (user.medical_profile.injury_details if user.medical_profile else "") or ""
+    injuries = (
+        user.medical_profile.injury_details if user.medical_profile else ""
+    ) or ""
     split = AVAILABLE_SPLITS.get(days_per_week, AVAILABLE_SPLITS[4])
 
     for plan in user.plans:
@@ -622,7 +861,9 @@ def generate_plan(db: Session, user: models.User, request) -> tuple[models.Worko
         db.flush()
         exercises = _pick_exercises(db, DAY_CATEGORIES[day_name], equipment, injuries)
         for pos, ex in enumerate(exercises, start=1):
-            pe = models.PlanExercise(plan_day_id=day.plan_day_id, exercise_id=ex.exercise_id, position=pos)
+            pe = models.PlanExercise(
+                plan_day_id=day.plan_day_id, exercise_id=ex.exercise_id, position=pos
+            )
             db.add(pe)
             db.flush()
             total_exercises += 1
@@ -645,46 +886,71 @@ def generate_plan(db: Session, user: models.User, request) -> tuple[models.Worko
     )
     plan.explanation = explanation
     db.commit()
-    plan = db.execute(
-        select(models.WorkoutPlan)
-        .where(models.WorkoutPlan.plan_id == plan.plan_id)
-        .options(
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.sets),
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.exercise),
+    plan = (
+        db.execute(
+            select(models.WorkoutPlan)
+            .where(models.WorkoutPlan.plan_id == plan.plan_id)
+            .options(
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.sets),
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.exercise),
+            )
         )
-    ).unique().scalars().one()
-    debug = debug or _runtime_debug_payload(endpoint="plan", selected_backend="rules", fallback_reason="Unknown fallback reason.")
+        .unique()
+        .scalars()
+        .one()
+    )
+    debug = debug or _runtime_debug_payload(
+        endpoint="plan",
+        selected_backend="rules",
+        fallback_reason="Unknown fallback reason.",
+    )
     return plan, explanation, debug
 
 
 def get_current_plan(db: Session, user_id: str) -> models.WorkoutPlan | None:
-    return db.execute(
-        select(models.WorkoutPlan)
-        .where(models.WorkoutPlan.user_id == user_id, models.WorkoutPlan.is_active.is_(True))
-        .options(
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.sets),
-            joinedload(models.WorkoutPlan.days)
-            .joinedload(models.PlanDay.exercises)
-            .joinedload(models.PlanExercise.exercise),
+    return (
+        db.execute(
+            select(models.WorkoutPlan)
+            .where(
+                models.WorkoutPlan.user_id == user_id,
+                models.WorkoutPlan.is_active.is_(True),
+            )
+            .options(
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.sets),
+                joinedload(models.WorkoutPlan.days)
+                .joinedload(models.PlanDay.exercises)
+                .joinedload(models.PlanExercise.exercise),
+            )
         )
-    ).unique().scalars().first()
+        .unique()
+        .scalars()
+        .first()
+    )
 
 
-def modify_plan(db: Session, user: models.User, active_plan: models.WorkoutPlan, instruction: str) -> tuple[models.WorkoutPlan, str, dict]:
-    request_like_for_llm = type("Req", (), {
-        "goal_name": None,
-        "days_per_week": None,
-        "equipment": None,
-        "experience_level": None,
-        "constraints": instruction,
-    })()
-    llm_plan, llm_explanation, debug = try_student_plan_generation(db, user, request_like_for_llm, instruction=instruction, active_plan=active_plan)
+def modify_plan(
+    db: Session, user: models.User, active_plan: models.WorkoutPlan, instruction: str
+) -> tuple[models.WorkoutPlan, str, dict]:
+    request_like_for_llm = type(
+        "Req",
+        (),
+        {
+            "goal_name": None,
+            "days_per_week": None,
+            "equipment": None,
+            "experience_level": None,
+            "constraints": instruction,
+        },
+    )()
+    llm_plan, llm_explanation, debug = try_student_plan_generation(
+        db, user, request_like_for_llm, instruction=instruction, active_plan=active_plan
+    )
     if llm_plan is not None:
         explanation = (
             f"Updated your active plan using the student LLM with the request: '{instruction}'. "
@@ -694,20 +960,29 @@ def modify_plan(db: Session, user: models.User, active_plan: models.WorkoutPlan,
         db.commit()
         refreshed = get_current_plan(db, user.user_id)
         return refreshed, explanation, debug
-    print(f"[fallback] using rule-based modify_plan reason={debug.get('fallback_reason') if debug else None}")
+    print(
+        f"[fallback] using rule-based modify_plan reason={debug.get('fallback_reason') if debug else None}"
+    )
     instruction_lower = instruction.lower()
     schedule_match = re.search(r"(\d)\s*-?day", instruction_lower)
     override_days = int(schedule_match.group(1)) if schedule_match else None
-    request_like = type("Req", (), {
-        "goal_name": None,
-        "days_per_week": override_days,
-        "equipment": None,
-        "experience_level": None,
-        "constraints": instruction,
-    })()
+    request_like = type(
+        "Req",
+        (),
+        {
+            "goal_name": None,
+            "days_per_week": override_days,
+            "equipment": None,
+            "experience_level": None,
+            "constraints": instruction,
+        },
+    )()
     new_plan, _, fallback_debug = generate_plan(db, user, request_like)
 
-    if any(k in instruction_lower for k in ["easy", "recover", "dial back", "poor recovery"]):
+    if any(
+        k in instruction_lower
+        for k in ["easy", "recover", "dial back", "poor recovery"]
+    ):
         for day in new_plan.days:
             for pe in day.exercises:
                 pe.sets = pe.sets[:-1] if len(pe.sets) > 2 else pe.sets
@@ -718,18 +993,36 @@ def modify_plan(db: Session, user: models.User, active_plan: models.WorkoutPlan,
         for day in new_plan.days:
             for pe in day.exercises[:2]:
                 last = max((s.set_number for s in pe.sets), default=0)
-                pe.sets.append(models.PlanSet(plan_exercise_id=pe.plan_exercise_id, set_number=last + 1, target_reps=pe.sets[-1].target_reps, target_rir=max(1, pe.sets[-1].target_rir - 1), rest_seconds=pe.sets[-1].rest_seconds, target_weight=None))
+                pe.sets.append(
+                    models.PlanSet(
+                        plan_exercise_id=pe.plan_exercise_id,
+                        set_number=last + 1,
+                        target_reps=pe.sets[-1].target_reps,
+                        target_rir=max(1, pe.sets[-1].target_rir - 1),
+                        rest_seconds=pe.sets[-1].rest_seconds,
+                        target_weight=None,
+                    )
+                )
     if any(k in instruction_lower for k in ["injury", "pain", "swap"]):
         for day in new_plan.days:
             for pe in day.exercises:
-                if pe.exercise.name in {"Bench Press", "Walking Lunge", "Romanian Deadlift", "Seated Dumbbell Shoulder Press"}:
+                if pe.exercise.name in {
+                    "Bench Press",
+                    "Walking Lunge",
+                    "Romanian Deadlift",
+                    "Seated Dumbbell Shoulder Press",
+                }:
                     replacement_name = {
                         "Bench Press": "Incline Dumbbell Press",
                         "Walking Lunge": "Step-Up",
                         "Romanian Deadlift": "Glute Bridge",
                         "Seated Dumbbell Shoulder Press": "Landmine Press",
                     }[pe.exercise.name]
-                    replacement = db.scalar(select(models.Exercise).where(models.Exercise.name == replacement_name))
+                    replacement = db.scalar(
+                        select(models.Exercise).where(
+                            models.Exercise.name == replacement_name
+                        )
+                    )
                     if replacement:
                         pe.exercise_id = replacement.exercise_id
                         pe.exercise = replacement
@@ -750,48 +1043,96 @@ def build_profile_summary(user: models.User) -> dict:
         "email": user.email,
         "goal": user.goals[0].goal.name if user.goals else None,
         "days_per_week": user.preference.days_per_week if user.preference else 4,
-        "experience_level": user.preference.experience_level if user.preference else "beginner",
-        "equipment": user.preference.equipment_csv.split(",") if user.preference and user.preference.equipment_csv else [],
-        "injuries": user.medical_profile.injury_details if user.medical_profile else None,
+        "experience_level": (
+            user.preference.experience_level if user.preference else "beginner"
+        ),
+        "equipment": (
+            user.preference.equipment_csv.split(",")
+            if user.preference and user.preference.equipment_csv
+            else []
+        ),
+        "injuries": (
+            user.medical_profile.injury_details if user.medical_profile else None
+        ),
         "conditions": [uc.condition.name for uc in user.conditions],
     }
 
 
 def recent_workouts_summary(db: Session, user_id: str, limit: int = 5) -> list[dict]:
-    workouts = db.execute(
-        select(models.Workout)
-        .where(models.Workout.user_id == user_id)
-        .order_by(models.Workout.started_at.desc())
-        .limit(limit)
-        .options(joinedload(models.Workout.exercises).joinedload(models.WorkoutExercise.exercise), joinedload(models.Workout.exercises).joinedload(models.WorkoutExercise.sets))
-    ).unique().scalars().all()
+    workouts = (
+        db.execute(
+            select(models.Workout)
+            .where(models.Workout.user_id == user_id)
+            .order_by(models.Workout.started_at.desc())
+            .limit(limit)
+            .options(
+                joinedload(models.Workout.exercises).joinedload(
+                    models.WorkoutExercise.exercise
+                ),
+                joinedload(models.Workout.exercises).joinedload(
+                    models.WorkoutExercise.sets
+                ),
+            )
+        )
+        .unique()
+        .scalars()
+        .all()
+    )
     rows = []
     for workout in workouts:
-        rows.append({
-            "workout_id": workout.workout_id,
-            "started_at": workout.started_at.isoformat() if workout.started_at else None,
-            "exercise_count": len(workout.exercises),
-            "set_count": sum(len(ex.sets) for ex in workout.exercises),
-            "notes": workout.notes,
-            "exercises": [
-                {
-                    "name": ex.exercise.name,
-                    "sets": [{"reps": s.reps, "weight": s.weight, "rir": s.rir} for s in sorted(ex.sets, key=lambda x: x.set_number)],
-                }
-                for ex in sorted(workout.exercises, key=lambda x: x.position)
-            ],
-        })
+        rows.append(
+            {
+                "workout_id": workout.workout_id,
+                "started_at": (
+                    workout.started_at.isoformat() if workout.started_at else None
+                ),
+                "exercise_count": len(workout.exercises),
+                "set_count": sum(len(ex.sets) for ex in workout.exercises),
+                "notes": workout.notes,
+                "exercises": [
+                    {
+                        "name": ex.exercise.name,
+                        "sets": [
+                            {"reps": s.reps, "weight": s.weight, "rir": s.rir}
+                            for s in sorted(ex.sets, key=lambda x: x.set_number)
+                        ],
+                    }
+                    for ex in sorted(workout.exercises, key=lambda x: x.position)
+                ],
+            }
+        )
     return rows
 
 
 def recent_logs_summary(db: Session, user_id: str) -> dict:
-    sleep = db.scalars(select(models.SleepDurationLog).where(models.SleepDurationLog.user_id == user_id).order_by(models.SleepDurationLog.logged_on.desc()).limit(7)).all()
-    calories = db.scalars(select(models.CalorieIntakeLog).where(models.CalorieIntakeLog.user_id == user_id).order_by(models.CalorieIntakeLog.logged_on.desc()).limit(7)).all()
-    weights = db.scalars(select(models.WeightLog).where(models.WeightLog.user_id == user_id).order_by(models.WeightLog.logged_at.desc()).limit(5)).all()
+    sleep = db.scalars(
+        select(models.SleepDurationLog)
+        .where(models.SleepDurationLog.user_id == user_id)
+        .order_by(models.SleepDurationLog.logged_on.desc())
+        .limit(7)
+    ).all()
+    calories = db.scalars(
+        select(models.CalorieIntakeLog)
+        .where(models.CalorieIntakeLog.user_id == user_id)
+        .order_by(models.CalorieIntakeLog.logged_on.desc())
+        .limit(7)
+    ).all()
+    weights = db.scalars(
+        select(models.WeightLog)
+        .where(models.WeightLog.user_id == user_id)
+        .order_by(models.WeightLog.logged_at.desc())
+        .limit(5)
+    ).all()
     avg_sleep = round(sum(x.hours for x in sleep) / len(sleep), 1) if sleep else None
-    avg_calories = round(sum(x.calories for x in calories) / len(calories)) if calories else None
+    avg_calories = (
+        round(sum(x.calories for x in calories) / len(calories)) if calories else None
+    )
     latest_weight = weights[0].weight_kg if weights else None
-    delta_weight = round(weights[0].weight_kg - weights[-1].weight_kg, 1) if len(weights) >= 2 else 0
+    delta_weight = (
+        round(weights[0].weight_kg - weights[-1].weight_kg, 1)
+        if len(weights) >= 2
+        else 0
+    )
     return {
         "avg_sleep_hours": avg_sleep,
         "avg_calories": avg_calories,
@@ -802,11 +1143,15 @@ def recent_logs_summary(db: Session, user_id: str) -> dict:
     }
 
 
-def build_coach_reply(user: models.User, message: str, recent_workouts: list[dict], logs: dict) -> tuple[str, str, dict]:
+def build_coach_reply(
+    user: models.User, message: str, recent_workouts: list[dict], logs: dict
+) -> tuple[str, str, dict]:
     llm_reply, debug = try_student_coach_reply(user, message, recent_workouts, logs)
     if llm_reply:
         return llm_reply, "student-llm", debug
-    print(f"[fallback] using rule-based coach reply reason={debug.get('fallback_reason') if debug else None}")
+    print(
+        f"[fallback] using rule-based coach reply reason={debug.get('fallback_reason') if debug else None}"
+    )
     m = message.lower()
     safety = ""
     if any(word in m for word in ["pain", "injury", "hurt", "sharp"]):
@@ -828,7 +1173,11 @@ def build_coach_reply(user: models.User, message: str, recent_workouts: list[dic
         f"If you want, use the plan modification box to request a specific change like 'swap lunges' or 'make this a 3-day week'."
     )
     rule_context = "safety" if safety else "general"
-    debug = debug or _runtime_debug_payload(endpoint="coach", selected_backend="rules", fallback_reason="Unknown fallback reason.")
+    debug = debug or _runtime_debug_payload(
+        endpoint="coach",
+        selected_backend="rules",
+        fallback_reason="Unknown fallback reason.",
+    )
     debug["rule_context"] = rule_context
     return response.strip(), rule_context, debug
 
@@ -836,34 +1185,74 @@ def build_coach_reply(user: models.User, message: str, recent_workouts: list[dic
 def compute_adaptation(db: Session, user: models.User, days_window: int) -> dict:
     now = datetime.utcnow()
     since = now - timedelta(days=days_window)
-    workouts = db.execute(
-        select(models.Workout)
-        .where(models.Workout.user_id == user.user_id, models.Workout.started_at >= since)
-        .options(joinedload(models.Workout.exercises).joinedload(models.WorkoutExercise.sets))
-    ).unique().scalars().all()
+    workouts = (
+        db.execute(
+            select(models.Workout)
+            .where(
+                models.Workout.user_id == user.user_id,
+                models.Workout.started_at >= since,
+            )
+            .options(
+                joinedload(models.Workout.exercises).joinedload(
+                    models.WorkoutExercise.sets
+                )
+            )
+        )
+        .unique()
+        .scalars()
+        .all()
+    )
     plan = get_current_plan(db, user.user_id)
-    planned_sessions = len(plan.days) * max(1, math.ceil(days_window / 7)) if plan else 0
+    planned_sessions = (
+        len(plan.days) * max(1, math.ceil(days_window / 7)) if plan else 0
+    )
     completed_sessions = len(workouts)
-    adherence = round((completed_sessions / planned_sessions) * 100, 1) if planned_sessions else 0.0
+    adherence = (
+        round((completed_sessions / planned_sessions) * 100, 1)
+        if planned_sessions
+        else 0.0
+    )
 
     total_sets = sum(len(ex.sets) for w in workouts for ex in w.exercises)
-    avg_rir = round(sum(s.rir for w in workouts for ex in w.exercises for s in ex.sets) / max(1, total_sets), 1) if total_sets else None
+    avg_rir = (
+        round(
+            sum(s.rir for w in workouts for ex in w.exercises for s in ex.sets)
+            / max(1, total_sets),
+            1,
+        )
+        if total_sets
+        else None
+    )
     logs = recent_logs_summary(db, user.user_id)
 
     guidance = []
     if adherence < 60:
-        guidance.append("Reduce complexity and aim to hit the first 2–3 sessions each week before adding more volume.")
+        guidance.append(
+            "Reduce complexity and aim to hit the first 2–3 sessions each week before adding more volume."
+        )
     else:
-        guidance.append("Adherence is solid enough to keep progressing on the core lifts.")
+        guidance.append(
+            "Adherence is solid enough to keep progressing on the core lifts."
+        )
     if logs.get("avg_sleep_hours") is not None and logs["avg_sleep_hours"] < 6.5:
-        guidance.append("Sleep is trending low, so keep effort one notch easier next week.")
+        guidance.append(
+            "Sleep is trending low, so keep effort one notch easier next week."
+        )
     if avg_rir is not None and avg_rir > 4:
-        guidance.append("Recent sets look too easy, so you can add a small amount of load or 1 set on the first exercise each day.")
+        guidance.append(
+            "Recent sets look too easy, so you can add a small amount of load or 1 set on the first exercise each day."
+        )
 
     structured_changes = {
-        "increase_volume": bool(avg_rir is not None and avg_rir > 4 and adherence >= 70),
-        "reduce_intensity": bool(logs.get("avg_sleep_hours") is not None and logs["avg_sleep_hours"] < 6.5),
-        "suggested_days_per_week": user.preference.days_per_week if user.preference else 4,
+        "increase_volume": bool(
+            avg_rir is not None and avg_rir > 4 and adherence >= 70
+        ),
+        "reduce_intensity": bool(
+            logs.get("avg_sleep_hours") is not None and logs["avg_sleep_hours"] < 6.5
+        ),
+        "suggested_days_per_week": (
+            user.preference.days_per_week if user.preference else 4
+        ),
     }
     return {
         "days_window": days_window,
@@ -879,7 +1268,15 @@ def compute_adaptation(db: Session, user: models.User, days_window: int) -> dict
 JOB_STATUS_TERMINAL = {"completed", "failed"}
 
 
-def _mark_job(db: Session, job: models.PlanGenerationJob, *, status: str, progress: str | None = None, error: str | None = None, result_plan_id: str | None = None) -> None:
+def _mark_job(
+    db: Session,
+    job: models.PlanGenerationJob,
+    *,
+    status: str,
+    progress: str | None = None,
+    error: str | None = None,
+    result_plan_id: str | None = None,
+) -> None:
     job.status = status
     job.updated_at = datetime.utcnow()
     if progress is not None:
@@ -893,18 +1290,27 @@ def _mark_job(db: Session, job: models.PlanGenerationJob, *, status: str, progre
     db.commit()
 
 
-def enqueue_plan_job(db: Session, user: models.User, request, *, job_type: str = "generate", instruction: str | None = None) -> models.PlanGenerationJob:
+def enqueue_plan_job(
+    db: Session,
+    user: models.User,
+    request,
+    *,
+    job_type: str = "generate",
+    instruction: str | None = None,
+) -> models.PlanGenerationJob:
     job = models.PlanGenerationJob(
         user_id=user.user_id,
         job_type=job_type,
         status="queued",
-        request_payload=json.dumps({
-            "goal_name": getattr(request, "goal_name", None),
-            "days_per_week": getattr(request, "days_per_week", None),
-            "equipment": getattr(request, "equipment", None),
-            "experience_level": getattr(request, "experience_level", None),
-            "constraints": getattr(request, "constraints", None),
-        }),
+        request_payload=json.dumps(
+            {
+                "goal_name": getattr(request, "goal_name", None),
+                "days_per_week": getattr(request, "days_per_week", None),
+                "equipment": getattr(request, "equipment", None),
+                "experience_level": getattr(request, "experience_level", None),
+                "constraints": getattr(request, "constraints", None),
+            }
+        ),
         instruction=instruction,
         progress_message="Request saved. Waiting for pipeline worker.",
     )
@@ -914,11 +1320,20 @@ def enqueue_plan_job(db: Session, user: models.User, request, *, job_type: str =
     return job
 
 
-def get_plan_job(db: Session, job_id: str, user_id: str) -> models.PlanGenerationJob | None:
-    return db.scalar(select(models.PlanGenerationJob).where(models.PlanGenerationJob.job_id == job_id, models.PlanGenerationJob.user_id == user_id))
+def get_plan_job(
+    db: Session, job_id: str, user_id: str
+) -> models.PlanGenerationJob | None:
+    return db.scalar(
+        select(models.PlanGenerationJob).where(
+            models.PlanGenerationJob.job_id == job_id,
+            models.PlanGenerationJob.user_id == user_id,
+        )
+    )
 
 
-def get_latest_pending_plan_job(db: Session, user_id: str) -> models.PlanGenerationJob | None:
+def get_latest_pending_plan_job(
+    db: Session, user_id: str
+) -> models.PlanGenerationJob | None:
     return db.scalar(
         select(models.PlanGenerationJob)
         .where(
@@ -929,22 +1344,32 @@ def get_latest_pending_plan_job(db: Session, user_id: str) -> models.PlanGenerat
     )
 
 
-def serialize_job(db: Session, job: models.PlanGenerationJob, *, latest_plan: models.WorkoutPlan | None = None) -> dict:
+def serialize_job(
+    db: Session,
+    job: models.PlanGenerationJob,
+    *,
+    latest_plan: models.WorkoutPlan | None = None,
+) -> dict:
     latest_plan = latest_plan or get_current_plan(db, job.user_id)
     result_plan = None
     if job.result_plan_id:
-        result_plan_model = db.execute(
-            select(models.WorkoutPlan)
-            .where(models.WorkoutPlan.plan_id == job.result_plan_id)
-            .options(
-                joinedload(models.WorkoutPlan.days)
-                .joinedload(models.PlanDay.exercises)
-                .joinedload(models.PlanExercise.sets),
-                joinedload(models.WorkoutPlan.days)
-                .joinedload(models.PlanDay.exercises)
-                .joinedload(models.PlanExercise.exercise),
+        result_plan_model = (
+            db.execute(
+                select(models.WorkoutPlan)
+                .where(models.WorkoutPlan.plan_id == job.result_plan_id)
+                .options(
+                    joinedload(models.WorkoutPlan.days)
+                    .joinedload(models.PlanDay.exercises)
+                    .joinedload(models.PlanExercise.sets),
+                    joinedload(models.WorkoutPlan.days)
+                    .joinedload(models.PlanDay.exercises)
+                    .joinedload(models.PlanExercise.exercise),
+                )
             )
-        ).unique().scalars().first()
+            .unique()
+            .scalars()
+            .first()
+        )
         if result_plan_model:
             result_plan = serialize_plan(result_plan_model)
     return {
@@ -968,22 +1393,37 @@ def process_plan_job(session_factory, job_id: str) -> None:
         job = db.get(models.PlanGenerationJob, job_id)
         if job is None or job.status in JOB_STATUS_TERMINAL:
             return
-        user = db.execute(
-            select(models.User)
-            .where(models.User.user_id == job.user_id)
-            .options(
-                joinedload(models.User.goals).joinedload(models.UserGoal.goal),
-                joinedload(models.User.preference),
-                joinedload(models.User.medical_profile),
-                joinedload(models.User.plans),
+        user = (
+            db.execute(
+                select(models.User)
+                .where(models.User.user_id == job.user_id)
+                .options(
+                    joinedload(models.User.goals).joinedload(models.UserGoal.goal),
+                    joinedload(models.User.preference),
+                    joinedload(models.User.medical_profile),
+                    joinedload(models.User.plans),
+                )
             )
-        ).unique().scalars().one()
+            .unique()
+            .scalars()
+            .one()
+        )
 
         payload = json.loads(job.request_payload or "{}")
         request_like = type("Req", (), payload)()
-        _mark_job(db, job, status="running", progress="Pipeline started: preprocessing profile and logs.")
+        _mark_job(
+            db,
+            job,
+            status="running",
+            progress="Pipeline started: preprocessing profile and logs.",
+        )
         time.sleep(0.4)
-        _mark_job(db, job, status="running", progress="Pipeline running: generating personalized plan.")
+        _mark_job(
+            db,
+            job,
+            status="running",
+            progress="Pipeline running: generating personalized plan.",
+        )
         time.sleep(0.4)
 
         if job.job_type == "modify":
@@ -994,7 +1434,9 @@ def process_plan_job(session_factory, job_id: str) -> None:
         else:
             plan, _, debug = generate_plan(db, user, request_like)
 
-        final_backend = debug.get("selected_backend") if isinstance(debug, dict) else None
+        final_backend = (
+            debug.get("selected_backend") if isinstance(debug, dict) else None
+        )
         final_reason = debug.get("fallback_reason") if isinstance(debug, dict) else None
         progress = "Pipeline finished generation. Saving final structured result."
         if final_backend == "rules" and final_reason:
@@ -1004,11 +1446,19 @@ def process_plan_job(session_factory, job_id: str) -> None:
 
         _mark_job(db, job, status="running", progress=progress)
         time.sleep(0.2)
-        _mark_job(db, job, status="completed", progress="Plan ready. App can fetch and display the latest result.", result_plan_id=plan.plan_id)
+        _mark_job(
+            db,
+            job,
+            status="completed",
+            progress="Plan ready. App can fetch and display the latest result.",
+            result_plan_id=plan.plan_id,
+        )
     except Exception as exc:
         job = db.get(models.PlanGenerationJob, job_id)
         if job is not None:
-            _mark_job(db, job, status="failed", progress="Pipeline failed.", error=str(exc))
+            _mark_job(
+                db, job, status="failed", progress="Pipeline failed.", error=str(exc)
+            )
     finally:
         db.close()
 
@@ -1016,11 +1466,15 @@ def process_plan_job(session_factory, job_id: str) -> None:
 def _student_runtime_info() -> dict:
     runtime = get_runtime()
     info = runtime.info()
-    return info.to_dict() if hasattr(info, "to_dict") else {
-        "available": info.available,
-        "provider": info.provider,
-        "base_model": info.base_model,
-        "adapter_path": info.adapter_path,
-        "registry_record": info.registry_record,
-        "reason": info.reason,
-    }
+    return (
+        info.to_dict()
+        if hasattr(info, "to_dict")
+        else {
+            "available": info.available,
+            "provider": info.provider,
+            "base_model": info.base_model,
+            "adapter_path": info.adapter_path,
+            "registry_record": info.registry_record,
+            "reason": info.reason,
+        }
+    )

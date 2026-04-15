@@ -2,11 +2,23 @@ from __future__ import annotations
 
 import json
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR / ".env.local")
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query, status
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    HTTPException,
+    Query,
+    status,
+)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
@@ -17,6 +29,8 @@ from . import models, schemas, services
 from .llm_runtime import get_runtime
 
 app = FastAPI(title="FitSenseAI Backend", version="1.1.0")
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,44 +51,68 @@ def on_startup() -> None:
         db.close()
 
 
-def _extract_token(authorization: str | None) -> str:
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
-    return authorization.split(" ", 1)[1].strip()
+def _extract_token(credentials: HTTPAuthorizationCredentials | None) -> str:
+    if (
+        credentials is None
+        or credentials.scheme.lower() != "bearer"
+        or not credentials.credentials.strip()
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token"
+        )
+    return credentials.credentials.strip()
 
 
 def get_current_user(
     db: Annotated[Session, Depends(get_db)],
-    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
+    ] = None,
 ) -> models.User:
-    token = _extract_token(authorization)
+    token = _extract_token(credentials)
     session = db.get(models.SessionToken, token)
     if session is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
     user = db.get(models.User, session.user_id)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid session"
+        )
     return user
 
 
 def _hydrate_user(db: Session, user_id: str) -> models.User:
-    return db.execute(
-        select(models.User)
-        .where(models.User.user_id == user_id)
-        .options(
-            joinedload(models.User.goals).joinedload(models.UserGoal.goal),
-            joinedload(models.User.conditions).joinedload(models.UserCondition.condition),
-            joinedload(models.User.profile),
-            joinedload(models.User.preference),
-            joinedload(models.User.medical_profile),
-            joinedload(models.User.plans),
+    return (
+        db.execute(
+            select(models.User)
+            .where(models.User.user_id == user_id)
+            .options(
+                joinedload(models.User.goals).joinedload(models.UserGoal.goal),
+                joinedload(models.User.conditions).joinedload(
+                    models.UserCondition.condition
+                ),
+                joinedload(models.User.profile),
+                joinedload(models.User.preference),
+                joinedload(models.User.medical_profile),
+                joinedload(models.User.plans),
+            )
         )
-    ).unique().scalars().one()
+        .unique()
+        .scalars()
+        .one()
+    )
 
 
 @app.get("/")
 def root() -> dict:
-    return {"name": "FitSenseAI Backend", "status": "ok", "docs": "/docs", "architecture": "async-plan-jobs-enabled"}
+    return {
+        "name": "FitSenseAI Backend",
+        "status": "ok",
+        "docs": "/docs",
+        "architecture": "async-plan-jobs-enabled",
+    }
 
 
 @app.post("/auth/signup", response_model=schemas.AuthResponse)
@@ -105,12 +143,16 @@ def signup(payload: schemas.SignupRequest, db: Annotated[Session, Depends(get_db
 @app.post("/auth/login", response_model=schemas.AuthResponse)
 def login(payload: schemas.LoginRequest, db: Annotated[Session, Depends(get_db)]):
     user = db.scalar(select(models.User).where(models.User.email == payload.email))
-    if user is None or not services.verify_password(payload.password, user.password_hash):
+    if user is None or not services.verify_password(
+        payload.password, user.password_hash
+    ):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = models.SessionToken(user_id=user.user_id)
     db.add(token)
     db.commit()
-    needs_onboarding = user.profile is None or user.preference is None or len(user.goals) == 0
+    needs_onboarding = (
+        user.profile is None or user.preference is None or len(user.goals) == 0
+    )
     return schemas.AuthResponse(
         token=token.token,
         user_id=user.user_id,
@@ -121,7 +163,10 @@ def login(payload: schemas.LoginRequest, db: Annotated[Session, Depends(get_db)]
 
 
 @app.get("/me")
-def me(user: Annotated[models.User, Depends(get_current_user)], db: Annotated[Session, Depends(get_db)]):
+def me(
+    user: Annotated[models.User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
     hydrated = _hydrate_user(db, user.user_id)
     return services.build_profile_summary(hydrated)
 
@@ -139,12 +184,17 @@ def save_onboarding(
 ):
     services.upsert_onboarding(db, user, payload)
     hydrated = _hydrate_user(db, user.user_id)
-    return {"message": "Profile saved", "profile": services.build_profile_summary(hydrated)}
+    return {
+        "message": "Profile saved",
+        "profile": services.build_profile_summary(hydrated),
+    }
 
 
 @app.get("/catalog/exercises")
 def list_exercises(db: Annotated[Session, Depends(get_db)]):
-    exercises = db.scalars(select(models.Exercise).order_by(models.Exercise.name.asc())).all()
+    exercises = db.scalars(
+        select(models.Exercise).order_by(models.Exercise.name.asc())
+    ).all()
     return [
         {
             "exercise_id": ex.exercise_id,
@@ -225,7 +275,6 @@ def get_current_plan_endpoint(
 
 
 @app.post("/plans/{plan_id}:modify", response_model=schemas.PlanJobEnqueueResponse)
-@app.post("/plans/{plan_id}/modify", response_model=schemas.PlanJobEnqueueResponse)
 def modify_plan_endpoint(
     plan_id: str,
     payload: schemas.PlanModifyRequest,
@@ -237,7 +286,9 @@ def modify_plan_endpoint(
     if active is None or active.plan_id != plan_id:
         raise HTTPException(status_code=404, detail="Active plan not found")
     request_like = schemas.PlanGenerationRequest(constraints=payload.constraints)
-    job = services.enqueue_plan_job(db, user, request_like, job_type="modify", instruction=payload.instruction)
+    job = services.enqueue_plan_job(
+        db, user, request_like, job_type="modify", instruction=payload.instruction
+    )
     background_tasks.add_task(services.process_plan_job, SessionLocal, job.job_id)
     return schemas.PlanJobEnqueueResponse(
         job_id=job.job_id,
@@ -330,7 +381,9 @@ def create_sleep_log(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[models.User, Depends(get_current_user)],
 ):
-    row = models.SleepDurationLog(user_id=user.user_id, logged_on=payload.logged_on, hours=payload.hours)
+    row = models.SleepDurationLog(
+        user_id=user.user_id, logged_on=payload.logged_on, hours=payload.hours
+    )
     db.add(row)
     db.commit()
     return {"sleep_log_id": row.sleep_log_id}
@@ -342,7 +395,9 @@ def create_calorie_log(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[models.User, Depends(get_current_user)],
 ):
-    row = models.CalorieIntakeLog(user_id=user.user_id, logged_on=payload.logged_on, calories=payload.calories)
+    row = models.CalorieIntakeLog(
+        user_id=user.user_id, logged_on=payload.logged_on, calories=payload.calories
+    )
     db.add(row)
     db.commit()
     return {"calorie_log_id": row.calorie_log_id}
@@ -354,7 +409,12 @@ def create_weight_log(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[models.User, Depends(get_current_user)],
 ):
-    row = models.WeightLog(user_id=user.user_id, logged_at=payload.logged_at, weight_kg=payload.weight_kg, body_fat_percentage=payload.body_fat_percentage)
+    row = models.WeightLog(
+        user_id=user.user_id,
+        logged_at=payload.logged_at,
+        weight_kg=payload.weight_kg,
+        body_fat_percentage=payload.body_fat_percentage,
+    )
     db.add(row)
     db.commit()
     return {"weight_log_id": row.weight_log_id}
@@ -371,7 +431,9 @@ def dashboard(
     return schemas.DashboardResponse(
         profile={
             **services.build_profile_summary(hydrated),
-            "active_plan_job": services.serialize_job(db, active_job) if active_job else None,
+            "active_plan_job": (
+                services.serialize_job(db, active_job) if active_job else None
+            ),
         },
         current_plan=services.serialize_plan(plan) if plan else None,
         recent_workouts=services.recent_workouts_summary(db, user.user_id),
@@ -385,25 +447,43 @@ def coach(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[models.User, Depends(get_current_user)],
 ):
-    hydrated = db.execute(
-        select(models.User)
-        .where(models.User.user_id == user.user_id)
-        .options(joinedload(models.User.goals).joinedload(models.UserGoal.goal), joinedload(models.User.medical_profile))
-    ).unique().scalars().one()
+    hydrated = (
+        db.execute(
+            select(models.User)
+            .where(models.User.user_id == user.user_id)
+            .options(
+                joinedload(models.User.goals).joinedload(models.UserGoal.goal),
+                joinedload(models.User.medical_profile),
+            )
+        )
+        .unique()
+        .scalars()
+        .one()
+    )
     recent = services.recent_workouts_summary(db, user.user_id)
     logs = services.recent_logs_summary(db, user.user_id)
-    reply, context_type, execution_debug = services.build_coach_reply(hydrated, payload.message, recent, logs)
+    reply, context_type, execution_debug = services.build_coach_reply(
+        hydrated, payload.message, recent, logs
+    )
     runtime_info = get_runtime().info()
     interaction = models.AIInteraction(
         user_id=user.user_id,
         context_type=context_type,
         query_text=payload.message,
         response_text=reply,
-        model_name=(runtime_info.base_model if context_type == "student-llm" else "local-rule-engine-v1"),
+        model_name=(
+            runtime_info.base_model
+            if context_type == "student-llm"
+            else "local-rule-engine-v1"
+        ),
     )
     db.add(interaction)
     db.commit()
-    return {"reply": reply, "context_type": context_type, "execution_debug": execution_debug}
+    return {
+        "reply": reply,
+        "context_type": context_type,
+        "execution_debug": execution_debug,
+    }
 
 
 @app.get("/coach/stream")
@@ -412,21 +492,35 @@ def coach_stream(
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user),
 ):
-    hydrated = db.execute(
-        select(models.User)
-        .where(models.User.user_id == user.user_id)
-        .options(joinedload(models.User.goals).joinedload(models.UserGoal.goal), joinedload(models.User.medical_profile))
-    ).unique().scalars().one()
+    hydrated = (
+        db.execute(
+            select(models.User)
+            .where(models.User.user_id == user.user_id)
+            .options(
+                joinedload(models.User.goals).joinedload(models.UserGoal.goal),
+                joinedload(models.User.medical_profile),
+            )
+        )
+        .unique()
+        .scalars()
+        .one()
+    )
     recent = services.recent_workouts_summary(db, user.user_id)
     logs = services.recent_logs_summary(db, user.user_id)
-    reply, context_type, execution_debug = services.build_coach_reply(hydrated, message, recent, logs)
+    reply, context_type, execution_debug = services.build_coach_reply(
+        hydrated, message, recent, logs
+    )
     runtime_info = get_runtime().info()
     interaction = models.AIInteraction(
         user_id=user.user_id,
         context_type=context_type,
         query_text=message,
         response_text=reply,
-        model_name=(runtime_info.base_model if context_type == "student-llm" else "local-rule-engine-v1"),
+        model_name=(
+            runtime_info.base_model
+            if context_type == "student-llm"
+            else "local-rule-engine-v1"
+        ),
     )
     db.add(interaction)
     db.commit()
@@ -446,9 +540,14 @@ def adaptation(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[models.User, Depends(get_current_user)],
 ):
-    hydrated = db.execute(
-        select(models.User)
-        .where(models.User.user_id == user.user_id)
-        .options(joinedload(models.User.preference))
-    ).unique().scalars().one()
+    hydrated = (
+        db.execute(
+            select(models.User)
+            .where(models.User.user_id == user.user_id)
+            .options(joinedload(models.User.preference))
+        )
+        .unique()
+        .scalars()
+        .one()
+    )
     return services.compute_adaptation(db, hydrated, payload.days_window)
