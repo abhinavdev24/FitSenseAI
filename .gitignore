@@ -110,3 +110,18 @@ wandb/
 
 # Data files (use DVC)
 data.zip
+
+wandb
+plans
+Model-Pipeline/outputs
+.mcp.json
+CLAUDE.md
+
+CLAUDE.md# Local student model artifacts
+backend/qwen3-4b-v2/
+backend/*.tar.gz
+Model-Pipeline/adapters/
+Model-Pipeline/staging/
+data/
+datasets/
+*.csv
