@@ -5,17 +5,17 @@ services:
       - 8000
     environment:
       # Database
-      - DATABASE_ENGINE=${DATABASE_ENGINE:-mysql}
-      - DATABASE_USER=${DATABASE_USER:-your_db_user}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-your_db_password}
-      - DATABASE_NAME=${DATABASE_NAME:-your_db_name}
-      - DATABASE_HOST=${DATABASE_HOST:-your_db_host}
-      - DATABASE_PORT=${DATABASE_PORT:-3306}
+      - DATABASE_ENGINE=${DATABASE_ENGINE}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
       # LLM Inference
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-your_api_key}
-      - OPENAI_API_URL=${OPENAI_API_URL:-https://your-provider/v1/chat/completions}
-      - OPENAI_MODEL=${OPENAI_MODEL:-your-model-id}
-      - MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS:-13000}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_URL=${OPENAI_API_URL}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
