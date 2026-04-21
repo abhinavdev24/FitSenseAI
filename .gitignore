@@ -125,3 +125,5 @@ Model-Pipeline/staging/
 data/
 datasets/
 *.csv
+landing/.next
+landing/node_modules

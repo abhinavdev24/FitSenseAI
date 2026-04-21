@@ -1,9 +1,0 @@
-{
-  "note": "This project contains registry metadata but not the exported adapter weight directory.",
-  "expected_adapter_dir": "Model-Pipeline/adapters/<run_id>/",
-  "required_files": [
-    "adapter_config.json",
-    "adapter_model.safetensors or adapter_model.bin"
-  ],
-  "registry_record": "Model-Pipeline/reports/registry_record_20260401Z.json"
-}
