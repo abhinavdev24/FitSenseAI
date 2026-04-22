@@ -1,0 +1,2 @@
+# Runtime dependency for monitor_deployment.py
+httpx>=0.27.0
