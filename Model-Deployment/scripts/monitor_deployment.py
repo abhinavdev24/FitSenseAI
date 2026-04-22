@@ -36,7 +36,6 @@ Usage examples:
 
 import argparse
 import json
-import os
 import re
 import sys
 import time
@@ -52,7 +51,6 @@ try:
     _USE_HTTPX = True
 except ImportError:
     import urllib.request as _urllib_req  # type: ignore[import]
-    import urllib.error as _urllib_err    # type: ignore[import]
     _USE_HTTPX = False
 
 # ---------------------------------------------------------------------------
