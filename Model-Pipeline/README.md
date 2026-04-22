@@ -35,6 +35,16 @@ flowchart TD
     H --> I & J & K --> L --> M --> N --> O --> P
 ```
 
+## Training Results
+
+[View run on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/zxo4igua?nw=nwuserabhinav241998)
+
+<img src="diagrams/train_loss.png" alt="Train Loss" width="48%"/> <img src="diagrams/eval_loss.png" alt="Eval Loss" width="48%"/>
+
+<img src="diagrams/learning_rate.png" alt="Learning Rate" width="48%"/> <img src="diagrams/train_grad_norm.png" alt="Gradient Norm" width="48%"/>
+
+---
+
 ## Training Data Format
 
 Each sample in `train.jsonl` / `val.jsonl` is a 3-turn conversation:
@@ -107,7 +117,7 @@ graph LR
 
 ## Directory Structure
 
-```
+```text
 Model-Pipeline/
 ├── scripts/
 │   ├── prepare_training_data.py # Phase 0: Converts raw teacher outputs → train/val JSONL
@@ -135,7 +145,7 @@ Model-Pipeline/
 
 **Generated at runtime** (not committed):
 
-```
+```text
 Model-Pipeline/
 └── outputs/
     ├── final_adapter/              # LoRA weights + tokenizer
@@ -198,7 +208,7 @@ pip install -r Model-Pipeline/requirements.txt
 
 ### Quick Reference
 
-```
+```text
  Phase 0   prepare_training_data.py    ── already done ──▶  train.jsonl + val.jsonl
  Phase 1   load_data.py                ── validate data  ──▶  HF Dataset
  Phase 3   hparam_search.py            ── Optuna search  ──▶  best_hparams.json
@@ -280,6 +290,20 @@ python Model-Pipeline/scripts/hparam_search.py \
 | `warmup_ratio`  | [0.03, 0.05, 0.1] | Categorical |
 
 Uses `TPESampler` (Tree-structured Parzen Estimator) with `MedianPruner` for early stopping of underperforming trials.
+
+**Trial results** (10 Optuna trials, sorted by train loss) — [View on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/2m5v6n0l?nw=nwuserabhinav241998):
+
+| Trial | Train Loss | LoRA r | Learning Rate | Batch Size | Dropout | Warmup | State    |
+| ----- | ---------- | ------ | ------------- | ---------- | ------- | ------ | -------- |
+| 9     | 0.3611     | 8      | 3.460e-4      | 1          | 0.00    | 0.05   | COMPLETE |
+| 8     | 0.3678     | 32     | 1.255e-4      | 1          | 0.10    | 0.10   | COMPLETE |
+| 6     | 0.3757     | 16     | 1.651e-4      | 1          | 0.00    | 0.05   | COMPLETE |
+| 3     | 0.3774     | 16     | 1.632e-4      | 1          | 0.00    | 0.03   | COMPLETE |
+| 2     | 0.4297     | 16     | 1.098e-4      | 1          | 0.00    | 0.03   | COMPLETE |
+| 5     | 0.4375     | 8      | 1.633e-4      | 1          | 0.05    | 0.05   | COMPLETE |
+| 4     | 0.4683     | 8      | 1.379e-4      | 1          | 0.10    | 0.05   | COMPLETE |
+
+Best config: `lora_r=8`, `lr=3.46e-4`, `dropout=0`, `warmup=0.05` (Trial 9, loss 0.3611)
 
 **Output**: `best_hparams.json`, `all_trials.json`
 
@@ -420,7 +444,7 @@ python Model-Pipeline/scripts/select_model.py \
 
 **Scoring weights**:
 
-```
+```text
  Tool Call Accuracy ████████████████████████████████  0.30
  JSON Parse Rate    ████████████████████             0.20
  Schema Compliance  ███████████████                  0.15
@@ -591,10 +615,10 @@ flowchart TD
 
 **Required GitHub Secrets**:
 
-| Secret | Purpose |
-| ------ | ------- |
-| `WANDB_API_KEY` | Experiment tracking |
-| `GCP_SA_KEY` | GCP service account JSON |
+| Secret              | Purpose                           |
+| ------------------- | --------------------------------- |
+| `WANDB_API_KEY`     | Experiment tracking               |
+| `GCP_SA_KEY`        | GCP service account JSON          |
 | `SLACK_WEBHOOK_URL` | Pipeline notifications (optional) |
 
 ---
@@ -704,24 +728,24 @@ All training parameters live in `config/training_config.yaml`:
 
 ```yaml
 # Model
-model_name: "unsloth/qwen3-4b-unsloth-bnb-4bit"  # Base model from HuggingFace
-max_seq_length: 16500                              # Max tokens per sequence
+model_name: "unsloth/qwen3-4b-unsloth-bnb-4bit" # Base model from HuggingFace
+max_seq_length: 16500 # Max tokens per sequence
 
 # LoRA
-lora_r: 8              # Adapter rank
-lora_alpha: 16         # Scaling factor (2x rank)
-lora_dropout: 0.05     # Regularization
+lora_r: 8 # Adapter rank
+lora_alpha: 16 # Scaling factor (2x rank)
+lora_dropout: 0.05 # Regularization
 
 # Training
-batch_size: 1                       # Per-device batch size
-gradient_accumulation_steps: 8      # Effective batch = 8
-num_epochs: 3                       # Training epochs
-learning_rate: 0.000346015          # Peak learning rate (from best_hparams.json)
-lr_scheduler_type: "cosine"         # LR decay schedule
-warmup_ratio: 0.05                  # % of steps for warmup
+batch_size: 1 # Per-device batch size
+gradient_accumulation_steps: 8 # Effective batch = 8
+num_epochs: 3 # Training epochs
+learning_rate: 0.000346015 # Peak learning rate (from best_hparams.json)
+lr_scheduler_type: "cosine" # LR decay schedule
+warmup_ratio: 0.05 # % of steps for warmup
 
 # Tracking
-report_to: "wandb"            # "wandb", "mlflow", or "none"
+report_to: "wandb" # "wandb", "mlflow", or "none"
 wandb_project: "fitsense-sft" # W&B project name
 ```
 
