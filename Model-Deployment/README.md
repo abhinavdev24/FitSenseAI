@@ -20,12 +20,12 @@ Deployment guide for the FitSenseAI student model (Qwen3-4B + QLoRA LoRA adapter
 
 ```mermaid
 graph TB
-    classDef mobile   fill:#065f46,stroke:#064e3b,color:#fff
-    classDef backend  fill:#0369a1,stroke:#075985,color:#fff
-    classDef gcp      fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef registry fill:#92400e,stroke:#78350f,color:#fff
-    classDef cicd     fill:#1f2937,stroke:#374151,color:#fff
-    classDef monitor  fill:#b45309,stroke:#92400e,color:#fff
+    classDef mobile   fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef backend  fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef gcp      fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef registry fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef cicd     fill:#f1f5f9,stroke:#64748b,color:#1e293b
+    classDef monitor  fill:#fff7ed,stroke:#ea580c,color:#7c2d12
 
     UI["📱 Flutter App\niOS · Android · Web"]:::mobile
 
@@ -89,12 +89,12 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    classDef cron    fill:#1e3a5f,stroke:#3b82f6,color:#fff
-    classDef script  fill:#064e3b,stroke:#10b981,color:#fff
-    classDef gate    fill:#78350f,stroke:#f59e0b,color:#fff
-    classDef retrain fill:#7f1d1d,stroke:#dc2626,color:#fff
-    classDef ok      fill:#052e16,stroke:#16a34a,color:#fff
-    classDef slack   fill:#4a1d96,stroke:#7c3aed,color:#fff
+    classDef cron    fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef script  fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef gate    fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef retrain fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
+    classDef ok      fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef slack   fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
 
     CRON(["⏰ Daily Cron\n06:00 UTC"]):::cron
     MAN(["👤 Manual Trigger\nworkflow_dispatch"]):::cron
