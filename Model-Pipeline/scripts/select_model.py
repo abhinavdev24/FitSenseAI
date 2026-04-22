@@ -98,7 +98,7 @@ def normalize_val_loss(losses: list[float]) -> list[float]:
     if len(losses) == 1:
         return [1.0]
 
-    finite = [l for l in losses if l != float("inf")]
+    finite = [loss for loss in losses if loss != float("inf")]
     if not finite:
         return [0.0] * len(losses)
 
@@ -108,8 +108,8 @@ def normalize_val_loss(losses: list[float]) -> list[float]:
 
     # Invert: lower loss -> higher normalized score
     return [
-        0.0 if l == float("inf") else 1.0 - (l - min_loss) / denominator
-        for l in losses
+        0.0 if loss == float("inf") else 1.0 - (loss - min_loss) / denominator
+        for loss in losses
     ]
 
 

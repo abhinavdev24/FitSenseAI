@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -137,7 +136,7 @@ def compute_stats(
             f"({split_stats['thinking_ratio']:.1%})"
         )
         logger.info(f"  Approx tokens: {split_stats['approx_tokens']:,}")
-        logger.info(f"  Provider breakdown:")
+        logger.info("  Provider breakdown:")
         for provider, count in split_stats["provider_breakdown"].items():
             pct = count / split_stats["row_count"] * 100
             logger.info(f"    - {provider}: {count} ({pct:.1f}%)")
@@ -208,7 +207,7 @@ def load_and_validate(
         )
 
     # Compute and log stats
-    stats = compute_stats(dataset_dict, logger)
+    compute_stats(dataset_dict, logger)
 
     return dataset_dict
 
@@ -270,7 +269,7 @@ def main() -> None:
 
     # Load and validate
     try:
-        dataset_dict = load_and_validate(args.train_path, args.val_path, logger)
+        load_and_validate(args.train_path, args.val_path, logger)
         logger.info("Dataset loading and validation completed successfully")
     except FileNotFoundError as e:
         logger.error(f"File error: {e}")

@@ -695,8 +695,6 @@ def main() -> None:
     logger.info("Computing validation loss via forward pass...")
     # Subset the dataset when max_samples is set to be consistent
     if args.max_samples is not None:
-        import datasets as hf_datasets  # lazy import
-
         val_subset = val_dataset.select(range(n_samples))
     else:
         val_subset = val_dataset

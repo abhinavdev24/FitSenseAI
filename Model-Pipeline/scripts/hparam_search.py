@@ -557,7 +557,7 @@ def log_wandb_hparam_summary(
     try:
         import wandb  # type: ignore[import]
 
-        run = wandb.init(
+        wandb.init(
             project="fitsense-sft",
             name=f"{study_name}-summary",
             job_type="hparam_search",
