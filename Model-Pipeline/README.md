@@ -2,6 +2,8 @@
 
 Fine-tuning pipeline for FitSenseAI's student model (Qwen3-4B) using knowledge distilled from a teacher model (Qwen3-32B). The technique is **QLoRA-based Supervised Fine-Tuning (SFT) with thinking distillation** — the student learns both the teacher's reasoning traces (`<think>` blocks) and final JSON tool-call outputs.
 
+## [🤗Hugging Face - abhinav241998/qwen3-4b-fitsense-qlora](https://huggingface.co/abhinav241998/qwen3-4b-fitsense-qlora)
+
 ---
 
 ## Architecture Overview
@@ -37,7 +39,7 @@ flowchart TD
 
 ## Training Results
 
-[View run on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/zxo4igua?nw=nwuserabhinav241998)
+### [📊 View Training Run on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/zxo4igua?nw=nwuserabhinav241998)
 
 <img src="diagrams/train_loss.png" alt="Train Loss" width="48%"/> <img src="diagrams/eval_loss.png" alt="Eval Loss" width="48%"/>
 
@@ -54,21 +56,22 @@ Each sample in `train.jsonl` / `val.jsonl` is a 3-turn conversation:
   "messages": [
     {
       "role": "system",
-      "content": "You are a fitness coaching agent with access to tools..."
+      "content": "You are FitSense AI, an expert fitness coach and periodization specialist.\n\nThe user will provide their profile ... and ask you to create a personalised workout plan.\n\n## Hard rules\n- No weights. Every set must have target_reps and target_rir only.\n- RIR scale: 0 = to failure, 1 = 1 rep left, 2 = 2 reps left, 3 = comfortable.\n- Respect every medical condition, injury, and medication listed.\n\n## Output format\nReturn only the JSON object — no markdown fences, no explanation."
     },
     {
       "role": "user",
-      "content": "I'm a 28-year-old male, intermediate, looking to build muscle..."
+      "content": "Generate a new workout plan for me.\n\n## My Profile\nAge: 48, Sex: other, Height: 182.8 cm\nActivity level: lightly_active\nGoals (priority order): cycling_performance\nMedical conditions: none\nInjuries: none\nMedications: Cyclosporine 79 mg daily\n\n## Instructions\n- Do NOT include any weights in the plan.\n- Organise the plan into named training days (e.g. PUSH_1, PULL_1, LEGS_1).\n- Return a valid JSON object and nothing else."
     },
     {
       "role": "assistant",
-      "content": "<think>\nThe user wants a hypertrophy program...\n</think>\n{\"tool_name\": \"generate_workout_plan\", \"tool_input\": {...}}"
+      "content": "<think>\nThe user wants a cycling performance plan. They're on Cyclosporine (immunosuppressant), so I should avoid overexertion. Focus on lower body strength and core stability with bodyweight exercises...\n</think>\n{\n  \"plan_name\": \"Cycling Performance Focus - Bodyweight Program\",\n  \"days\": [\n    {\n      \"name\": \"LEGS_1\",\n      \"day_order\": 1,\n      \"notes\": \"Focus on lower body strength for cycling power\",\n      \"exercises\": [\n        {\n          \"exercise_name\": \"Bodyweight Squats\",\n          \"position\": 1,\n          \"notes\": \"Use full range of motion\",\n          \"sets\": [\n            {\"set_number\": 1, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60},\n            {\"set_number\": 2, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60},\n            {\"set_number\": 3, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60}\n          ]\n        }\n      ]\n    }\n  ]\n}"
     }
   ],
   "metadata": {
-    "response_id": "...",
-    "provider": "groq",
-    "has_reasoning": true
+    "response_id": "c0e4175e-e71a-45b9-85e9-46cee83d7d01",
+    "query_id": "4303cbae-5542-54a7-8e37-731d30f19abc",
+    "prompt_type": "plan_creation",
+    "model_name": "qwen/qwen3-32b"
   }
 }
 ```
