@@ -851,6 +851,9 @@ def main() -> None:
 
         # Validate inputs
         logger.info("Validating inputs")
+        if not adapter_dir:
+            raise ValueError("adapter_dir is required")
+        adapter_dir = str(adapter_dir)
         files_to_package = validate_inputs(adapter_dir, metadata_files, logger)
         logger.info(f"Validation passed: {len(files_to_package)} files to package")
 

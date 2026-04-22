@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from datasets import DatasetDict, load_dataset
 
@@ -95,7 +95,8 @@ def compute_stats(
         total_chars = 0
         provider_counts: dict[str, int] = {}
 
-        for row in dataset:
+        for _row in dataset:
+            row = cast(dict[str, Any], _row)
             # Count thinking messages
             messages = row.get("messages", [])
             if len(messages) >= 3:
@@ -182,9 +183,12 @@ def load_and_validate(
     logger.info(f"Loading validation from: {val_path}")
 
     # Load datasets
-    dataset_dict = load_dataset(
-        "json",
-        data_files={"train": train_path, "validation": val_path},
+    dataset_dict = cast(
+        DatasetDict,
+        load_dataset(
+            "json",
+            data_files={"train": train_path, "validation": val_path},
+        ),
     )
 
     # Validate schema for each row
@@ -193,7 +197,7 @@ def load_and_validate(
     for split_name in ["train", "validation"]:
         dataset = dataset_dict[split_name]
         for row_idx, row in enumerate(dataset):
-            if not validate_schema(row, row_idx, logger):
+            if not validate_schema(cast(dict[str, Any], row), row_idx, logger):
                 invalid_rows[split_name] += 1
 
     # Log validation results

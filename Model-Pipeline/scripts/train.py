@@ -27,7 +27,8 @@ from typing import Any
 import unsloth  # must be imported before trl/transformers so Unsloth patches are active  # noqa: F401, I001
 import wandb
 import yaml
-from trl import SFTConfig, SFTTrainer
+from trl.trainer.sft_config import SFTConfig
+from trl.trainer.sft_trainer import SFTTrainer
 
 # load_data is a sibling module in the same scripts/ directory
 sys.path.insert(0, str(Path(__file__).parent))
@@ -649,7 +650,8 @@ def main() -> None:
             name=run_name,
             config=config,
         )
-        run_id_path.write_text(wandb.run.id)
+        if wandb.run is not None:
+            run_id_path.write_text(wandb.run.id)
         logger.info("W&B run ID saved to: %s", run_id_path)
 
     # 3. Load and validate training data

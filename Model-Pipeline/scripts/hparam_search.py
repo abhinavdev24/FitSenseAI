@@ -36,7 +36,7 @@ import unsloth  # must be imported before trl/transformers so Unsloth patches ar
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
-from trl import SFTConfig
+from trl.trainer.sft_config import SFTConfig
 
 # ---------------------------------------------------------------------------
 # Sibling-module imports (same scripts/ directory)
@@ -214,7 +214,7 @@ def run_trial(
         # 6. Report intermediate training loss for pruning
         for log_entry in trainer.state.log_history:
             if "loss" in log_entry and "step" in log_entry:
-                trial.report(log_entry["loss"], step=log_entry["step"])
+                trial.report(log_entry["loss"], step=int(log_entry["step"]))
                 if trial.should_prune():
                     logger.info(
                         "Trial %d pruned at step %d", trial.number, log_entry["step"]
