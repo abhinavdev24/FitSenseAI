@@ -62,12 +62,12 @@ FastAPI backend for the FitSenseAI fitness coaching application.
 ```mermaid
 flowchart TD
     subgraph Client["📱 Client"]
-        style Client fill:#1E3A5F,color:#fff,stroke:#2563EB
+        style Client fill:#dbeafe,color:#1e3a5f,stroke:#2563EB
         MA[Mobile App]
     end
 
     subgraph Backend["⚙️ FastAPI Backend"]
-        style Backend fill:#14532D,color:#fff,stroke:#16A34A
+        style Backend fill:#d1fae5,color:#14532d,stroke:#16A34A
         API[API Routes\nmain.py]
         SVC[Services\nservices.py]
         LLM[LLM Runtime\nllm_runtime.py]
@@ -76,13 +76,13 @@ flowchart TD
     end
 
     subgraph DB["🗄️ Database"]
-        style DB fill:#3B0764,color:#fff,stroke:#9333EA
+        style DB fill:#ede9fe,color:#3b0764,stroke:#9333EA
         MySQL[(Cloud SQL\nMySQL\nproduction)]
         SQLite[(SQLite\nlocal dev)]
     end
 
     subgraph LLMProviders["🤖 LLM Providers"]
-        style LLMProviders fill:#7C2D12,color:#fff,stroke:#EA580C
+        style LLMProviders fill:#fef3c7,color:#7c2d12,stroke:#EA580C
         P1["① OpenAI-compatible API\nGroq · OpenRouter · Together"]
         P2["② Cloud Run\nvLLM service"]
         P3["③ Local LoRA Adapter\nStudent model on-device"]
@@ -167,30 +167,30 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     subgraph Input["Request"]
-        style Input fill:#1E3A5F,color:#fff,stroke:#2563EB
+        style Input fill:#dbeafe,color:#1e3a5f,stroke:#2563EB
         REQ["POST /coach\nor GET /coach/stream (SSE)"]
     end
 
     subgraph Context["Context Assembly"]
-        style Context fill:#14532D,color:#fff,stroke:#16A34A
+        style Context fill:#d1fae5,color:#14532d,stroke:#16A34A
         CTX["User profile + goals + conditions\nRecent workouts & sets\nSleep · calorie · weight logs"]
     end
 
     subgraph Inference["Inference"]
-        style Inference fill:#7C2D12,color:#fff,stroke:#EA580C
+        style Inference fill:#fef3c7,color:#7c2d12,stroke:#EA580C
         STU["try_student_coach_reply()\nLLM Runtime"]
         RUL["build_coach_reply()\nRule-Based"]
     end
 
     subgraph RuleChecks["Rule-Based Checks"]
-        style RuleChecks fill:#3B0764,color:#fff,stroke:#9333EA
+        style RuleChecks fill:#ede9fe,color:#3b0764,stroke:#9333EA
         PAIN["Pain / injury keywords?\n→ Recommend rest"]
         LOG["Low logging volume?\n→ Encourage tracking"]
         SLP["Sleep below target?\n→ Recovery note"]
     end
 
     subgraph Output["Output"]
-        style Output fill:#134E4A,color:#fff,stroke:#0D9488
+        style Output fill:#ccfbf1,color:#134e4a,stroke:#0D9488
         LOGAI["INSERT AIInteraction\nquery · response · model_name · context_type"]
         RESP["Return text response\nor SSE token stream"]
     end

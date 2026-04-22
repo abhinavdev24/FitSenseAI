@@ -25,12 +25,12 @@ FitSense AI turns your goals, constraints, and weekly performance into a structu
 
 ```mermaid
 graph TB
-    classDef mobile   fill:#065f46,stroke:#064e3b,color:#fff
-    classDef backend  fill:#0369a1,stroke:#075985,color:#fff
-    classDef gcp      fill:#1565c0,stroke:#0d47a1,color:#fff
-    classDef registry fill:#92400e,stroke:#78350f,color:#fff
-    classDef offline  fill:#4a1d96,stroke:#7c3aed,color:#fff
-    classDef pipeline fill:#1f2937,stroke:#374151,color:#fff
+    classDef mobile   fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef backend  fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef gcp      fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef registry fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef offline  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+    classDef pipeline fill:#f1f5f9,stroke:#64748b,color:#1e293b
 
     APP["📱 Flutter App\niOS · Android · Web"]:::mobile
 
