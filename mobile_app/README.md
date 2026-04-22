@@ -2,6 +2,8 @@
 
 Flutter client for the FitSenseAI fitness coaching platform. Connects to the FastAPI backend to deliver personalized workout plans, AI coaching, workout logging, and health tracking across iOS, Android, and desktop.
 
+[![Figma](https://img.shields.io/badge/Figma-Wireframes-F24E1E?style=for-the-badge&logo=figma&logoColor=white)](https://www.figma.com/design/H3Xs3MqvK6lrxt26g1LQfl/First-Designs?node-id=0-1&p=f)
+
 - **Package**: `fitsense_ai`
 - **Version**: `1.0.0+1`
 - **Dart SDK**: `>=3.3.0 <4.0.0`
@@ -11,37 +13,35 @@ Flutter client for the FitSenseAI fitness coaching platform. Connects to the Fas
 
 ## Screenshots
 
-### [🎨 Figma Designs — First Designs](https://www.figma.com/design/H3Xs3MqvK6lrxt26g1LQfl/First-Designs?node-id=0-1&p=f)
-
-| Login | Sign Up | Dashboard | Workout Plan | AI Coach |
-|---|---|---|---|---|
+| Login                                   | Sign Up                                    | Dashboard                                       | Workout Plan                                   | AI Coach                                   |
+| --------------------------------------- | ------------------------------------------ | ----------------------------------------------- | ---------------------------------------------- | ------------------------------------------ |
 | ![Login](screenshots/login_screen.jpeg) | ![Sign Up](screenshots/signup_screen.jpeg) | ![Dashboard](screenshots/dashboard_screen.jpeg) | ![Workout Plan](screenshots/plans_screen.jpeg) | ![AI Coach](screenshots/coach_screen.jpeg) |
 
 ---
 
 ## Supported Platforms
 
-| Platform | Folder |
-|---|---|
-| iOS | `ios/` |
-| Android | `android/` |
-| macOS | `macos/` |
-| Windows | `windows/` |
-| Linux | `linux/` |
-| Web | `web/` |
+| Platform | Folder     |
+| -------- | ---------- |
+| iOS      | `ios/`     |
+| Android  | `android/` |
+| macOS    | `macos/`   |
+| Windows  | `windows/` |
+| Linux    | `linux/`   |
+| Web      | `web/`     |
 
 ---
 
 ## Tech Stack
 
-| Layer | Package | Version |
-|---|---|---|
-| UI framework | `flutter` (SDK) | 3.x |
-| HTTP client | `http` | `^1.2.1` |
+| Layer           | Package              | Version  |
+| --------------- | -------------------- | -------- |
+| UI framework    | `flutter` (SDK)      | 3.x      |
+| HTTP client     | `http`               | `^1.2.1` |
 | Session storage | `shared_preferences` | `^2.2.3` |
-| iOS icons | `cupertino_icons` | `^1.0.8` |
-| Testing | `flutter_test` (SDK) | — |
-| Linting | `flutter_lints` | `^5.0.0` |
+| iOS icons       | `cupertino_icons`    | `^1.0.8` |
+| Testing         | `flutter_test` (SDK) | —        |
+| Linting         | `flutter_lints`      | `^5.0.0` |
 
 ---
 
@@ -266,64 +266,64 @@ All requests require `Authorization: Bearer <token>` unless noted.
 
 ### Auth & Profile
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/auth/signup` | Create account (no auth required) |
-| `POST` | `/auth/login` | Login, returns bearer token (no auth required) |
-| `GET` | `/me` | Current user profile |
+| Method | Path                  | Description                                           |
+| ------ | --------------------- | ----------------------------------------------------- |
+| `POST` | `/auth/signup`        | Create account (no auth required)                     |
+| `POST` | `/auth/login`         | Login, returns bearer token (no auth required)        |
+| `GET`  | `/me`                 | Current user profile                                  |
 | `POST` | `/profile/onboarding` | Save onboarding data (age, goals, equipment, medical) |
 
 ### Plans
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/plans` | Generate a new workout plan (async background job) |
-| `GET` | `/plans/current` | Active plan with all days / exercises / sets |
-| `POST` | `/plans/{plan_id}:modify` | Modify plan with a natural language instruction |
-| `GET` | `/plans/jobs/{job_id}` | Poll plan generation job status |
-| `GET` | `/plans/jobs/latest` | Latest pending job |
+| Method | Path                      | Description                                        |
+| ------ | ------------------------- | -------------------------------------------------- |
+| `POST` | `/plans`                  | Generate a new workout plan (async background job) |
+| `GET`  | `/plans/current`          | Active plan with all days / exercises / sets       |
+| `POST` | `/plans/{plan_id}:modify` | Modify plan with a natural language instruction    |
+| `GET`  | `/plans/jobs/{job_id}`    | Poll plan generation job status                    |
+| `GET`  | `/plans/jobs/latest`      | Latest pending job                                 |
 
 ### Workouts
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/workouts` | Start a new workout session |
+| Method | Path                       | Description                  |
+| ------ | -------------------------- | ---------------------------- |
+| `POST` | `/workouts`                | Start a new workout session  |
 | `POST` | `/workouts/{id}/exercises` | Log an exercise in a workout |
-| `POST` | `/workouts/{id}/sets` | Log a set |
-| `GET` | `/workouts/recent` | Recent workout summaries |
+| `POST` | `/workouts/{id}/sets`      | Log a set                    |
+| `GET`  | `/workouts/recent`         | Recent workout summaries     |
 
 ### Daily Logs
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/daily/sleep` | Log sleep hours |
+| Method | Path              | Description        |
+| ------ | ----------------- | ------------------ |
+| `POST` | `/daily/sleep`    | Log sleep hours    |
 | `POST` | `/daily/calories` | Log calorie intake |
-| `POST` | `/daily/weight` | Log body weight |
+| `POST` | `/daily/weight`   | Log body weight    |
 
 ### Targets
 
-| Method | Path | Description |
-|---|---|---|
+| Method | Path                | Description          |
+| ------ | ------------------- | -------------------- |
 | `POST` | `/targets/calories` | Set a calorie target |
-| `GET` | `/targets/calories` | List calorie targets |
-| `POST` | `/targets/sleep` | Set a sleep target |
-| `GET` | `/targets/sleep` | List sleep targets |
+| `GET`  | `/targets/calories` | List calorie targets |
+| `POST` | `/targets/sleep`    | Set a sleep target   |
+| `GET`  | `/targets/sleep`    | List sleep targets   |
 
 ### Coaching
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/coach` | Ask the AI coach (returns full response) |
-| `GET` | `/coach/stream` | SSE streaming version of coach |
+| Method | Path                    | Description                               |
+| ------ | ----------------------- | ----------------------------------------- |
+| `POST` | `/coach`                | Ask the AI coach (returns full response)  |
+| `GET`  | `/coach/stream`         | SSE streaming version of coach            |
 | `POST` | `/adaptation:next_week` | Next-week training adaptation suggestions |
 
 ### Other
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/catalog/exercises` | All exercises in the database |
-| `GET` | `/dashboard` | Aggregated profile, plan, workouts, and logs |
-| `GET` | `/model/runtime` | Student LLM runtime status |
+| Method | Path                 | Description                                  |
+| ------ | -------------------- | -------------------------------------------- |
+| `GET`  | `/catalog/exercises` | All exercises in the database                |
+| `GET`  | `/dashboard`         | Aggregated profile, plan, workouts, and logs |
+| `GET`  | `/model/runtime`     | Student LLM runtime status                   |
 
 ---
 
