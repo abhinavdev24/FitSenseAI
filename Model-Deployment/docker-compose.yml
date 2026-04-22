@@ -1,0 +1,71 @@
+version: "3.9"
+
+# =============================================================================
+# FitSenseAI — Local Development Stack
+# =============================================================================
+# This compose file runs the FastAPI backend wired to the deployed vLLM
+# endpoint on Google Compute Engine. The vLLM inference server is NOT included
+# here — it requires an NVIDIA GPU and runs separately via deploy_vllm.sh.
+#
+# Quick start:
+#   export VLLM_API_URL=http://<gce-external-ip>:8000
+#   export VLLM_API_KEY=<your-vllm-api-key>
+#   docker compose -f Model-Deployment/docker-compose.yml up
+#
+# API docs: http://localhost:8000/docs
+# =============================================================================
+
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: fitsenseai-backend:local
+    ports:
+      - "8000:8000"
+    environment:
+      # ── LLM inference (GCE vLLM endpoint) ─────────────────────────────────
+      # Set VLLM_API_URL to your GCE VM external IP, e.g.:
+      #   http://<gce-external-ip>:8000
+      OPENAI_API_KEY: ${VLLM_API_KEY:?Set VLLM_API_KEY before running docker compose}
+      OPENAI_API_URL: ${VLLM_API_URL:-http://host.docker.internal:8000}/v1/chat/completions
+      OPENAI_MODEL: fitsense
+      MAX_OUTPUT_TOKENS: "13000"
+
+      # ── Database (SQLite for local dev) ────────────────────────────────────
+      DATABASE_ENGINE: sqlite
+      DATABASE_PATH: /app/data/fitsense.db
+
+      # ── Optional debug flags ───────────────────────────────────────────────
+      FITSENSE_DEBUG_VERTEX: "0"
+
+    volumes:
+      - backend_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  backend_data:
+    driver: local
+
+# =============================================================================
+# Environment variables reference
+# =============================================================================
+# VLLM_API_URL   — Base URL of the GCE vLLM VM (no trailing slash)
+#                  Example: http://34.123.45.67:8000
+# VLLM_API_KEY   — API key set in deploy_vllm.sh
+#                  Required — no default. Set in your shell before running.
+#
+# For MySQL (Cloud SQL) instead of SQLite, add:
+#   DATABASE_ENGINE: mysql
+#   DATABASE_HOST:   <cloud-sql-ip>
+#   DATABASE_PORT:   3306
+#   DATABASE_NAME:   fitsense
+#   DATABASE_USER:   fitsensebackend
+#   DATABASE_PASSWORD: <password>
+# =============================================================================

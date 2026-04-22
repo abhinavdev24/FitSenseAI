@@ -1,0 +1,32 @@
+# Trained model artifacts — mount at runtime, don't bake into image
+outputs/
+data/training/
+
+# Python caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Large binary files
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+
+# Dev tooling
+.git/
+.gitignore
+*.md
+tests/
+notebook.ipynb
+
+# macOS
+.DS_Store

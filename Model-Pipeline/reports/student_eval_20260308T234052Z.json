@@ -1,8 +1,0 @@
-{
-  "run_id": "20260308T234052Z",
-  "metrics": {
-    "json_validity_rate": 0.1,
-    "rougeL_mean": 0.42266191759005534,
-    "bertscore_f1_mean": 0.8715653419494629
-  }
-}

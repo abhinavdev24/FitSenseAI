@@ -1,0 +1,35 @@
+# FitSenseAI — Registry Push Configuration
+# Used by Model-Pipeline/scripts/push_to_registry.py
+# All paths are relative to the repository root.
+
+# ---------------------------------------------------------------------------
+# GCS
+# ---------------------------------------------------------------------------
+gcs_bucket: "fitsense-models"
+model_name: "qwen3-4b-fitsense-qlora"
+version: "v20260411T231753Z"
+
+# ---------------------------------------------------------------------------
+# Local artifact paths
+# ---------------------------------------------------------------------------
+adapter_dir: "Model-Pipeline/outputs/final_adapter"
+checkpoints_dir: "Model-Pipeline/outputs/checkpoints"
+hparam_search_dir: "Model-Pipeline/outputs/hparam_search"
+
+# Extra metadata files staged alongside the adapter
+metadata_files:
+  - "Model-Pipeline/outputs/training_summary.json"
+  - "Model-Pipeline/outputs/hparam_search/best_hparams.json"
+  - "Model-Pipeline/outputs/evaluation/evaluation_results.json"
+  - "Model-Pipeline/outputs/bias_detection/bias_report.json"
+  - "Model-Pipeline/outputs/sensitivity/sensitivity_report.json"
+
+# ---------------------------------------------------------------------------
+# Local staging directory (cleaned up after upload)
+# ---------------------------------------------------------------------------
+output_dir: "Model-Pipeline/outputs/registry"
+
+# ---------------------------------------------------------------------------
+# HuggingFace Hub (optional — uncomment when ready to push)
+# ---------------------------------------------------------------------------
+# hf_repo: "abhinav241998/qwen3-4b-fitsense-qlora"

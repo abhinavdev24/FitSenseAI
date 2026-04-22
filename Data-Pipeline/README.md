@@ -104,27 +104,43 @@ We use Apache Airflow to orchestrate the full workflow as a DAG.
 
 ### 4.1 Airflow DAG Diagram
 
-![FitSenseAI DAG](docs_assets/fitsense_pipeline_dag.svg)
-
-### 4.2 Airflow Run (verified locally)
-
-The DAG was tested locally using:
-
-```bash
-export AIRFLOW_HOME=$PWD/.airflow
-export AIRFLOW__CORE__DAGS_FOLDER=$PWD/Data-Pipeline/dags
-export FITSENSE_PYTHON_BIN=/Users/abhinav/miniconda3/envs/mlopsenv/bin/python
-airflow db migrate
-airflow dags test fitsense_pipeline 2026-02-17
+```mermaid
+flowchart LR
+    A[bootstrap_phase1] --> B[generate_synthetic_profiles]
+    B --> C[generate_synthetic_workouts]
+    C --> D[generate_synthetic_queries]
 ```
-
-Result: **DAG run completed successfully** and produced end-to-end artifacts for run id `20260217T000000`.
 
 ## 5. Data Pipeline Components
 
 ### 5.1 Pipeline Component Overview
 
-![Pipeline Components](docs_assets/pipeline_components.svg)
+```mermaid
+flowchart TD
+    subgraph Phase2["Phase 2: Synthetic Data Generation"]
+        P[generate_synthetic_profiles.py]
+        W[generate_synthetic_workouts.py]
+    end
+    subgraph Phase3["Phase 3: Query Generation"]
+        Q[generate_synthetic_queries.py]
+    end
+    subgraph Phase4["Phase 4: Teacher LLM Calling"]
+        T["call_teacher_llm.py\nmock / openai_compatible"]
+    end
+    subgraph Phase5["Phase 5: Distillation Dataset Build"]
+        D["build_distillation_dataset.py\ntrain / val / test JSONL"]
+    end
+    subgraph Phase6["Phase 6: Validation & Monitoring"]
+        V[validate_data.py]
+        S[compute_stats.py]
+        A[detect_anomalies.py]
+    end
+
+    Phase2 --> Phase3
+    Phase3 --> Phase4
+    Phase4 --> Phase5
+    Phase5 --> Phase6
+```
 
 The data pipeline is modularized from synthetic data generation through teacher inference, distillation dataset construction, and validation/monitoring. Each phase is implemented as a separate script and is orchestrated as an Airflow task.
 
@@ -194,7 +210,13 @@ Stored fields include:
 
 #### Distillation Split Visualization (current run)
 
-![Distillation Split Sizes](docs_assets/distillation_split.svg)
+```mermaid
+xychart-beta
+    title "Distillation Dataset Split (run 20260217T000000, n=800)"
+    x-axis ["train", "val", "test"]
+    y-axis "Records" 0 --> 700
+    bar [636, 76, 88]
+```
 
 ### 5.7 Phase 6: Validation, Statistics, and Anomaly Detection
 
@@ -212,15 +234,33 @@ Generated reports:
 
 #### Prompt Type Distribution (current run)
 
-![Prompt Type Distribution](docs_assets/prompt_type_distribution.svg)
+```mermaid
+xychart-beta
+    title "Prompt Type Distribution (n=800)"
+    x-axis ["plan_creation", "plan_modification", "safety_adjustment", "progress_adaptation"]
+    y-axis "Records" 0 --> 250
+    bar [200, 200, 200, 200]
+```
 
 #### Goal Type Distribution (current run)
 
-![Goal Type Distribution](docs_assets/goal_type_distribution.svg)
+```mermaid
+xychart-beta
+    title "Goal Type Distribution (n=800)"
+    x-axis ["general_fitness", "fat_loss", "strength", "muscle_gain"]
+    y-axis "Records" 0 --> 250
+    bar [232, 200, 200, 168]
+```
 
 #### Response Length Summary (current run)
 
-![Response Length Summary](docs_assets/response_length_summary.svg)
+| Statistic | Value (chars) |
+| --------- | ------------- |
+| MIN       | 181           |
+| P50       | 211.0         |
+| P95       | 321.0         |
+| MAX       | 327           |
+| MEAN      | 226.12        |
 
 ## 6. Testing, Validation, and Monitoring
 
@@ -269,11 +309,6 @@ This ensures:
 - missing responses,
 - short/long responses,
 - split imbalance vs. expected train/val/test ratios.
-
-Current run (`20260217T000000`) result:
-
-- `severity = none`
-- no active alerts
 
 ## 7. DVC, Reproducibility, and Folder Structure
 
@@ -340,6 +375,6 @@ python Data-Pipeline/scripts/detect_anomalies.py
 # Airflow local test
 export AIRFLOW_HOME=$PWD/.airflow
 export AIRFLOW__CORE__DAGS_FOLDER=$PWD/Data-Pipeline/dags
-export FITSENSE_PYTHON_BIN=/Users/abhinav/miniconda3/envs/mlopsenv/bin/python
+export FITSENSE_PYTHON_BIN=/Users/user/miniconda3/envs/mlopsenv/bin/python
 airflow dags test fitsense_pipeline 2026-02-17
 ```

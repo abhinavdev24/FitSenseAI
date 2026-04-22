@@ -1,206 +1,199 @@
 """
-prepare_training_data.py
-------------------------
-Loads distillation dataset from Phase 1 output and formats it into
-Qwen3 ChatML format with /no_think for structured JSON output.
+Prepare teacher LLM responses for Qwen3 SFT with thinking distillation.
 
-Input:  Data-Pipeline/data/raw/distillation_dataset/<run_id>/{train,val,test}.jsonl
-Output: Model-Pipeline/data/formatted/{run_id}/{train,val,test}_formatted.jsonl
+Reads the re-reasoned responses.jsonl (all OpenRouter, all have reasoning)
+and produces train.jsonl / val.jsonl in the Hugging Face "messages" format
+that SFTTrainer + Qwen3 chat template expects.
+
+Output format per line (JSONL):
+  {"messages": [
+      {"role": "system", "content": "…"},
+      {"role": "user",   "content": "…"},
+      {"role": "assistant", "content": "<think>\\n…\\n</think>\\n{json}"}
+  ]}
+
+Usage:
+    conda activate mlopsenv
+    python Model-Pipeline/prepare_training_data.py \\
+        --input  Data-Pipeline/data/raw/teacher-llm-responses/20260324T162857Z/responses.jsonl \\
+        --output Model-Pipeline/data/training
 """
 
+from __future__ import annotations
+
+import argparse
 import json
-import os
 import logging
+import random
+import re
 from pathlib import Path
-from datetime import datetime
-
-# ── Config ────────────────────────────────────────────────────────────────────
-
-DISTILLATION_BASE = Path("Data-Pipeline/data/raw/distillation_dataset")
-OUTPUT_BASE       = Path("Model-Pipeline/data/formatted")
-SPLITS            = ["train", "val", "test"]
-MAX_TOKENS_FLAG   = 2048
-
-SYSTEM_PROMPT = (
-    "You are FitSense AI, an expert fitness coach and periodization specialist. "
-    "You provide personalised, safety-aware workout plans and coaching guidance. "
-    "When generating workout plans, return ONLY valid JSON with this exact structure:\n"
-    '{"plan_name": "...", "days": [{"name": "...", "day_order": 1, "notes": null, '
-    '"exercises": [{"exercise_name": "...", "position": 1, "notes": null, '
-    '"sets": [{"set_number": 1, "target_reps": 10, "target_rir": 2, "rest_seconds": 60}]}]}]}\n'
-    "No other top-level keys. No markdown fences. No prose before or after the JSON. "
-    "Always respect the user's medical conditions, injuries, and constraints."
-)
+from typing import Any
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    format="%(asctime)s  %(levelname)-8s  %(message)s",
 )
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-# ── Chat template ─────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Validate a single record
+# ---------------------------------------------------------------------------
 
-def format_qwen3(system: str, user: str, assistant: str) -> str:
+def _validate_record(record: dict[str, Any]) -> list[str]:
+    """Return a list of issues (empty == valid)."""
+    issues: list[str] = []
+
+    if record.get("status") != "success":
+        issues.append(f"status={record.get('status')}")
+
+    messages = (record.get("request_payload") or {}).get("messages", [])
+    if len(messages) < 2:
+        issues.append(f"request has only {len(messages)} message(s)")
+
+    if not (record.get("response_text") or "").strip():
+        issues.append("empty response_text")
+
+    if record.get("response_json") is None:
+        issues.append("response_json is null")
+
+    raw = record.get("raw_response") or {}
+    choices = raw.get("choices") or [{}]
+    reasoning = (choices[0].get("message") or {}).get("reasoning")
+    if not reasoning:
+        issues.append("missing reasoning")
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
+# Convert one raw record → training sample
+# ---------------------------------------------------------------------------
+
+def convert_record(record: dict[str, Any]) -> dict[str, Any] | None:
+    """Convert a raw teacher record into a messages-format training sample.
+
+    Returns None if the record is invalid.
     """
-    Qwen3 ChatML format with /no_think appended to the user turn and an
-    empty <think></think> block injected before the assistant response.
-    This trains the model to skip the reasoning phase and output JSON directly.
-    """
-    return (
-        "<|im_start|>system\n"
-        f"{system}\n"
-        "<|im_end|>\n"
-        "<|im_start|>user\n"
-        f"{user} /no_think<|im_end|>\n"
-        "<|im_start|>assistant\n"
-        "<think>\n</think>\n"
-        f"{assistant}\n"
-        "<|im_end|>"
-    )
+    issues = _validate_record(record)
+    if issues:
+        logger.warning("Skipping %s: %s", record.get("response_id", "?"), "; ".join(issues))
+        return None
 
+    raw = record["raw_response"]
+    reasoning: str = raw["choices"][0]["message"]["reasoning"].strip()
+    answer: str = record["response_text"].strip()
+    # Strip any residual <think> block from answer (shouldn't exist, but be safe)
+    answer = re.sub(r"<think>.*?</think>\s*", "", answer, flags=re.DOTALL).strip()
 
-def build_user_message(record: dict) -> str:
-    instruction = record.get("instruction", "")
-    context     = record.get("context", {})
-    parts       = [instruction]
+    assistant_content = f"<think>\n{reasoning}\n</think>\n{answer}"
 
-    summary = context.get("context_summary") or context.get("summary", "")
-    if summary:
-        parts.append(f"\nContext: {summary}")
-
-    constraints = context.get("expected_safety_constraints", [])
-    if constraints:
-        parts.append(f"\nSafety constraints: {', '.join(constraints)}")
-
-    return "\n".join(parts).strip()
-
-
-# ── Token length estimator ────────────────────────────────────────────────────
-
-def estimate_tokens(text: str) -> int:
-    return len(text) // 4
-
-
-# ── Core processing ───────────────────────────────────────────────────────────
-
-def process_split(input_path: Path, output_path: Path, split: str) -> dict:
-    records_in    = 0
-    records_out   = 0
-    flagged_long  = 0
-    token_lengths = []
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with open(input_path, "r") as fin, open(output_path, "w") as fout:
-        for line in fin:
-            line = line.strip()
-            if not line:
-                continue
-            records_in += 1
-
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError as e:
-                log.warning(f"[{split}] Skipping malformed record: {e}")
-                continue
-
-            user_msg  = build_user_message(record)
-            assistant = record.get("response", "")
-
-            if not user_msg or not assistant:
-                log.warning(f"[{split}] Skipping record with empty user/assistant: {record.get('record_id', '?')}")
-                continue
-
-            formatted_text = format_qwen3(SYSTEM_PROMPT, user_msg, assistant)
-            token_est      = estimate_tokens(formatted_text)
-            token_lengths.append(token_est)
-
-            if token_est > MAX_TOKENS_FLAG:
-                flagged_long += 1
-
-            out_record = {
-                "record_id":      record.get("record_id", ""),
-                "prompt_type":    record.get("context", {}).get("prompt_type", ""),
-                "goal_type":      record.get("context", {}).get("slice_tags", {}).get("goal_type", ""),
-                "condition_flag": record.get("context", {}).get("slice_tags", {}).get("condition_flag", ""),
-                "activity_level": record.get("context", {}).get("slice_tags", {}).get("activity_level", ""),
-                "age_band":       record.get("context", {}).get("slice_tags", {}).get("age_band", ""),
-                "sex":            record.get("context", {}).get("slice_tags", {}).get("sex", ""),
-                "formatted_text": formatted_text,
-                "user_message":   user_msg,
-                "assistant":      assistant,
-                "token_estimate": token_est,
-                "flagged_long":   token_est > MAX_TOKENS_FLAG,
-            }
-
-            fout.write(json.dumps(out_record) + "\n")
-            records_out += 1
-
-    avg_tokens = sum(token_lengths) / len(token_lengths) if token_lengths else 0
-    max_tokens = max(token_lengths) if token_lengths else 0
-
-    stats = {
-        "split":        split,
-        "records_in":   records_in,
-        "records_out":  records_out,
-        "flagged_long": flagged_long,
-        "avg_tokens":   round(avg_tokens, 1),
-        "max_tokens":   max_tokens,
+    payload_messages = record["request_payload"]["messages"]
+    return {
+        "messages": [
+            {"role": "system",    "content": payload_messages[0]["content"]},
+            {"role": "user",      "content": payload_messages[1]["content"]},
+            {"role": "assistant", "content": assistant_content},
+        ],
+        "metadata": {
+            "response_id": record.get("response_id"),
+            "query_id":    record.get("query_id"),
+            "prompt_type": record.get("prompt_type"),
+            "model_name":  record.get("model_name"),
+        },
     }
 
-    log.info(
-        f"[{split}] {records_out}/{records_in} records formatted | "
-        f"avg_tokens={avg_tokens:.0f} max_tokens={max_tokens} flagged_long={flagged_long}"
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Prepare teacher LLM responses for Qwen3 SFT training."
     )
-    return stats
+    parser.add_argument(
+        "--input", required=True,
+        help="Path to raw responses.jsonl from the teacher pipeline.",
+    )
+    parser.add_argument(
+        "--output", required=True,
+        help="Output directory. Will write train.jsonl and val.jsonl here.",
+    )
+    parser.add_argument(
+        "--val-ratio", type=float, default=0.1,
+        help="Fraction of data reserved for validation (default 0.1).",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42,
+        help="Random seed for train/val split (default 42).",
+    )
+    args = parser.parse_args()
 
+    input_path = Path(args.input)
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-# ── Runner ────────────────────────────────────────────────────────────────────
+    # ---- Load & convert ----
+    samples: list[dict[str, Any]] = []
+    skipped = 0
+    line_num = 0
 
-def get_latest_run_id() -> str:
-    dirs = [d for d in DISTILLATION_BASE.iterdir() if d.is_dir()]
-    if not dirs:
-        raise FileNotFoundError(f"No run directories found under {DISTILLATION_BASE}")
-    latest = max(dirs, key=lambda d: d.stat().st_mtime)
-    log.info(f"Auto-detected latest run_id: {latest.name}")
-    return latest.name
+    with open(input_path) as f:
+        for line_num, line in enumerate(f, 1):
+            record = json.loads(line)
+            sample = convert_record(record)
+            if sample is None:
+                skipped += 1
+            else:
+                samples.append(sample)
 
+    logger.info("Loaded %d records, converted %d, skipped %d", line_num, len(samples), skipped)
 
-def main():
-    run_id           = os.environ.get("DISTILLATION_RUN_ID") or get_latest_run_id()
-    distillation_dir = DISTILLATION_BASE / run_id
-    output_dir       = OUTPUT_BASE / run_id
+    # ---- Train / val split ----
+    random.seed(args.seed)
+    random.shuffle(samples)
+    val_count = max(1, int(len(samples) * args.val_ratio))
+    val_samples = samples[:val_count]
+    train_samples = samples[val_count:]
 
-    log.info(f"Loading distillation dataset from: {distillation_dir}")
-    log.info(f"Writing formatted output to:       {output_dir}")
+    logger.info("Split: %d train, %d val", len(train_samples), len(val_samples))
 
-    all_stats = []
+    # ---- Write output ----
+    train_path = output_dir / "train.jsonl"
+    val_path = output_dir / "val.jsonl"
 
-    for split in SPLITS:
-        input_path  = distillation_dir / f"{split}.jsonl"
-        output_path = output_dir / f"{split}_formatted.jsonl"
+    for path, data in [(train_path, train_samples), (val_path, val_samples)]:
+        with open(path, "w") as f:
+            for sample in data:
+                json.dump(sample, f, ensure_ascii=False)
+                f.write("\n")
 
-        if not input_path.exists():
-            log.warning(f"Split file not found, skipping: {input_path}")
-            continue
+    # ---- Summary ----
+    def _token_estimate(samples: list[dict]) -> int:
+        return sum(len(m["content"]) for s in samples for m in s["messages"]) // 4
 
-        stats = process_split(input_path, output_path, split)
-        all_stats.append(stats)
-
-    manifest = {
-        "run_id":          run_id,
-        "prepared_at":     datetime.utcnow().isoformat() + "Z",
-        "system_prompt":   SYSTEM_PROMPT,
-        "max_tokens_flag": MAX_TOKENS_FLAG,
-        "splits":          all_stats,
+    summary = {
+        "input_file":          str(input_path),
+        "total_raw_records":   line_num,
+        "converted":           len(samples),
+        "skipped":             skipped,
+        "train_count":         len(train_samples),
+        "val_count":           len(val_samples),
+        "train_approx_tokens": _token_estimate(train_samples),
+        "val_approx_tokens":   _token_estimate(val_samples),
+        "val_ratio":           args.val_ratio,
+        "seed":                args.seed,
     }
-    manifest_path = output_dir / "manifest.json"
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=2)
 
-    log.info(f"Manifest written to: {manifest_path}")
-    log.info("Data preparation complete.")
+    summary_path = output_dir / "prepare_summary.json"
+    with open(summary_path, "w") as f:
+        json.dump(summary, f, indent=2)
+
+    logger.info("Wrote %s", train_path)
+    logger.info("Wrote %s", val_path)
+    logger.info("Wrote %s", summary_path)
+    logger.info("Summary:\n%s", json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":

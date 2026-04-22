@@ -1,8 +1,0 @@
-unsloth
-trl
-transformers
-datasets
-peft
-accelerate
-bitsandbytes
-sentencepiece

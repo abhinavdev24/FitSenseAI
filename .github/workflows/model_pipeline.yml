@@ -1,0 +1,261 @@
+name: Model Pipeline CI/CD
+
+on:
+  push:
+    paths:
+      - 'Model-Pipeline/**'
+    branches: [main]
+  pull_request:
+    paths:
+      - 'Model-Pipeline/**'
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model to train (e.g. Qwen/Qwen3-8B)'
+        required: false
+        default: 'Qwen/Qwen3-8B'
+      skip_training:
+        description: 'Skip training and use existing adapter'
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.11'
+  CONDA_ENV: mlopsenv
+  CONFIG_PATH: Model-Pipeline/config/training_config.yaml
+  GCS_BUCKET: gs://fitsense-models
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          pip install ruff pytest
+          pip install -r Model-Pipeline/requirements.txt
+      - name: Lint with ruff
+        run: ruff check Model-Pipeline/
+      - name: Type check
+        run: |
+          pip install pyright
+          pyright Model-Pipeline/scripts/
+        continue-on-error: true
+      - name: Run tests
+        run: pytest Model-Pipeline/tests/ -v --tb=short
+
+  train:
+    needs: lint-and-test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted  # GPU runner
+    # Could also use a GCP provisioned VM
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: mlopsenv
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda activate mlopsenv
+          pip install -r Model-Pipeline/requirements.txt
+      - name: Run hyperparameter search
+        if: ${{ !inputs.skip_training }}
+        shell: bash -l {0}
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          conda activate mlopsenv
+          python Model-Pipeline/scripts/hparam_search.py \
+            --config ${{ env.CONFIG_PATH }} \
+            --n-trials 10 \
+            --output-dir Model-Pipeline/outputs/hparam_search
+      - name: Train with best hparams
+        if: ${{ !inputs.skip_training }}
+        shell: bash -l {0}
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          conda activate mlopsenv
+          python Model-Pipeline/scripts/train.py \
+            --config ${{ env.CONFIG_PATH }} \
+            --output-dir Model-Pipeline/outputs
+      - name: Upload training artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-outputs
+          path: |
+            Model-Pipeline/outputs/final_adapter/
+            Model-Pipeline/outputs/training_summary.json
+            Model-Pipeline/outputs/hparam_search/
+          retention-days: 30
+
+  evaluate:
+    needs: train
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download training artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: training-outputs
+          path: Model-Pipeline/outputs/
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: mlopsenv
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda activate mlopsenv
+          pip install -r Model-Pipeline/requirements.txt
+      - name: Run evaluation
+        shell: bash -l {0}
+        run: |
+          conda activate mlopsenv
+          python Model-Pipeline/scripts/evaluate.py \
+            --adapter-dir Model-Pipeline/outputs/final_adapter \
+            --config ${{ env.CONFIG_PATH }} \
+            --output-dir Model-Pipeline/outputs/evaluation
+      - name: Upload evaluation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-outputs
+          path: Model-Pipeline/outputs/evaluation/
+          retention-days: 30
+
+  bias-check:
+    needs: evaluate
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download training artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: training-outputs
+          path: Model-Pipeline/outputs/
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: mlopsenv
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          conda activate mlopsenv
+          pip install -r Model-Pipeline/requirements.txt
+      - name: Run bias detection
+        shell: bash -l {0}
+        run: |
+          conda activate mlopsenv
+          python Model-Pipeline/scripts/bias_detection.py \
+            --adapter-dir Model-Pipeline/outputs/final_adapter \
+            --config ${{ env.CONFIG_PATH }} \
+            --output-dir Model-Pipeline/outputs/bias_detection \
+            --threshold 0.1
+      - name: Check for critical bias
+        shell: bash -l {0}
+        run: |
+          python -c "
+          import json, sys
+          report = json.load(open('Model-Pipeline/outputs/bias_detection/bias_report.json'))
+          flagged = report.get('flagged_slices', [])
+          critical = [f for f in flagged if f.get('deviation', 0) > 0.25]
+          if critical:
+              print(f'CRITICAL BIAS DETECTED: {len(critical)} slices with >25% deviation')
+              for c in critical:
+                  print(f\"  - {c['dimension']}/{c['slice']}: {c['metric']} deviation={c['deviation']:.3f}\")
+              sys.exit(1)
+          print(f'Bias check passed. {len(flagged)} flagged slices (none critical).')
+          "
+      - name: Upload bias artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bias-outputs
+          path: Model-Pipeline/outputs/bias_detection/
+          retention-days: 30
+
+  registry-push:
+    needs: [evaluate, bias-check]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production  # manual approval gate
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: Model-Pipeline/outputs/
+          merge-multiple: true
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Install dependencies
+        run: |
+          pip install google-cloud-storage
+      - name: Push to registry
+        run: |
+          python Model-Pipeline/scripts/push_to_registry.py \
+            --adapter-dir Model-Pipeline/outputs/final_adapter \
+            --metadata-files \
+              Model-Pipeline/outputs/hparam_search/best_hparams.json \
+              Model-Pipeline/outputs/evaluation/evaluation_results.json \
+              Model-Pipeline/outputs/bias_detection/bias_report.json \
+              Model-Pipeline/outputs/training_summary.json \
+            --gcs-bucket ${{ env.GCS_BUCKET }} \
+            --model-name qwen3-8b-fitsense-qlora
+
+  notify:
+    needs: [lint-and-test, train, evaluate, bias-check, registry-push]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.registry-push.result }}" == "success" ]; then
+            echo "status=SUCCESS: Model pushed to registry" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.bias-check.result }}" == "failure" ]; then
+            echo "status=BLOCKED: Critical bias detected" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.train.result }}" == "failure" ]; then
+            echo "status=FAILED: Training failed" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.evaluate.result }}" == "failure" ]; then
+            echo "status=FAILED: Evaluation failed" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          else
+            echo "status=COMPLETED: Pipeline finished (registry push skipped)" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          fi
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"text\": \"FitSenseAI Model Pipeline: ${{ steps.status.outputs.status }}\",
+              \"attachments\": [{
+                \"color\": \"${{ steps.status.outputs.color }}\",
+                \"fields\": [
+                  {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
+                  {\"title\": \"Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}
+                ]
+              }]
+            }"

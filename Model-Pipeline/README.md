@@ -1,226 +1,755 @@
-# FitSenseAI
+# Model Pipeline — QLoRA SFT with Thinking Distillation
 
-AI-powered fitness coaching application focused on personalized workouts, progress tracking, and health-aware guidance.
+Fine-tuning pipeline for FitSenseAI's student model (Qwen3-4B) using knowledge distilled from a teacher model (Qwen3-32B). The technique is **QLoRA-based Supervised Fine-Tuning (SFT) with thinking distillation** — the student learns both the teacher's reasoning traces (`<think>` blocks) and final JSON tool-call outputs.
 
-## What's In This Repository
+## [🤗Hugging Face - abhinav241998/qwen3-4b-fitsense-qlora](https://huggingface.co/abhinav241998/qwen3-4b-fitsense-qlora)
 
-This repository currently includes:
+---
 
-- project planning artifacts,
-- database schema design for the FitSenseAI domain,
-- an implemented synthetic-data MLOps pipeline in `Data-Pipeline/` (data generation → teacher LLM → distillation dataset → validation/monitoring),
-- Airflow DAG orchestration for the pipeline,
-- a model training and evaluation pipeline in `Model-Pipeline/` (fine-tuning → evaluation → bias analysis → GCS/Vertex AI registry).
+## Architecture Overview
 
-## Project Scope
+```mermaid
+flowchart TD
+    classDef done   fill:#e5e7eb,stroke:#6b7280,color:#374151
+    classDef data   fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef script fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef output fill:#fef3c7,stroke:#f59e0b,color:#78350f
 
-FitSenseAI is designed to:
+    A[("responses.jsonl\nTeacher LLM outputs")]:::data
+    B["Phase 0 · prepare_training_data.py\n✓ already complete"]:::done
+    C[("train.jsonl · val.jsonl\n720 train / 80 val samples")]:::data
+    D["Phase 1 · load_data.py\nValidate schema & log stats"]:::script
+    E["Phase 3 · hparam_search.py\nOptuna TPE — 10 trials"]:::script
+    F[("best_hparams.json")]:::output
+    G["Phase 2 · train.py\nQLoRA SFT · 3 epochs · 270 steps"]:::script
+    H[("final_adapter/\n63 MB LoRA weights")]:::output
+    I["Phase 4 · evaluate.py\ntool accuracy · JSON parse · latency"]:::script
+    J["Phase 5 · bias_detection.py\n5 demographic dimensions"]:::script
+    K["Phase 6 · sensitivity.py\nhparam + input perturbation"]:::script
+    L[("evaluation_results.json\nbias_report.json\nsensitivity_report.json")]:::output
+    M["Phase 7 · select_model.py\nN-model composite score"]:::script
+    N[("selected_model.json")]:::output
+    O["Phase 8 · push_to_registry.py\nGCS upload + versioning"]:::script
+    P[("gs://fitsense-models/\nversioned artifact")]:::output
 
-- Create and adapt workout plans based on user goals, conditions, and workout history.
-- Log workout execution (exercises, sets, reps, weight, RIR, notes).
-- Store relevant user health context (medical profile, medications, allergies, injuries).
-- Recommend daily maintenance calories and allow optional daily calorie intake logging.
-- Recommend target sleep duration and allow optional daily sleep-duration logging.
-- Allow users to log body weight any time for progress tracking.
-
-Out of scope for current data model:
-
-- Detailed nutrition macro tracking (protein/carbs/fats).
-- Hydration tracking.
-
-## Repository Structure
-
-```txt
-FitSenseAI/
-  README.md
-  Project_Plan.md
-  Project_Scoping.md
-  setup_vm.sh
-  Data-Pipeline/
-    dags/
-    scripts/
-    tests/
-    data/
-    logs/
-    params.yaml
-    requirements.txt
-    dvc.yaml
-  Model-Pipeline/
-    adapters/
-      qwen3-4b-fitsense/        ← trained LoRA adapter (stored in GCS)
-    data/
-      formatted/                ← Qwen3 ChatML formatted training data
-    reports/
-      student_eval_*.json       ← per-sample evaluation results
-      bias_report_*.json        ← demographic slice analysis
-      registry_record_*.json    ← Vertex AI push metadata
-    scripts/
-      prepare_training_data.py  ← formats distillation dataset for training
-      trainmodel.py             ← fine-tunes Qwen3-4B with LoRA via Unsloth
-      evaluate_student.py       ← runs inference and computes ROUGE-L/BERTScore
-      check_schema.py           ← validates JSON schema of model outputs
-      bias_slicing.py           ← slices metrics by demographic attributes
-      push_to_registry.py       ← packages and pushes adapter to GCS + Vertex AI
-  database/
-    database_design.dbml
-    postgresql.sql
-    mysql.sql
-    UML_diagram.png
+    A --> B --> C --> D
+    D --> E --> F --> G --> H
+    H --> I & J & K --> L --> M --> N --> O --> P
 ```
 
-## Database Design
+## Training Results
 
-Primary schema file:
+### [📊 View Training Run on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/zxo4igua?nw=nwuserabhinav241998)
 
-- `database/database_design.dbml`
+<img src="diagrams/train_loss.png" alt="Train Loss" width="48%"/> <img src="diagrams/eval_loss.png" alt="Eval Loss" width="48%"/>
 
-Live ER diagram (no upload needed):
+<img src="diagrams/learning_rate.png" alt="Learning Rate" width="48%"/> <img src="diagrams/train_grad_norm.png" alt="Gradient Norm" width="48%"/>
 
-- https://dbdiagram.io/d/FitSenseAI-69850002bd82f5fce2cfe02c
+---
 
-Core model areas:
+## Training Data Format
 
-- User and goals: `users`, `goals`, `user_goals`
-- Health context: `conditions`, `user_conditions`, `user_profiles`, `user_medical_profiles`, `user_medications`, `user_allergies`
-- Workouts: `workout_plans`, `plan_exercises`, `plan_sets`, `workouts`, `workout_exercises`, `workout_sets`
-- Guidance + tracking:
-  - Calories: `calorie_targets`, `calorie_intake_logs`
-  - Sleep: `sleep_targets`, `sleep_duration_logs`
-  - Weight: `weight_logs`
-- AI interactions: `ai_interactions`
+Each sample in `train.jsonl` / `val.jsonl` is a 3-turn conversation:
 
-## Quick Start (Schema)
+```json
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are FitSense AI, an expert fitness coach and periodization specialist.\n\nThe user will provide their profile ... and ask you to create a personalised workout plan.\n\n## Hard rules\n- No weights. Every set must have target_reps and target_rir only.\n- RIR scale: 0 = to failure, 1 = 1 rep left, 2 = 2 reps left, 3 = comfortable.\n- Respect every medical condition, injury, and medication listed.\n\n## Output format\nReturn only the JSON object — no markdown fences, no explanation."
+    },
+    {
+      "role": "user",
+      "content": "Generate a new workout plan for me.\n\n## My Profile\nAge: 48, Sex: other, Height: 182.8 cm\nActivity level: lightly_active\nGoals (priority order): cycling_performance\nMedical conditions: none\nInjuries: none\nMedications: Cyclosporine 79 mg daily\n\n## Instructions\n- Do NOT include any weights in the plan.\n- Organise the plan into named training days (e.g. PUSH_1, PULL_1, LEGS_1).\n- Return a valid JSON object and nothing else."
+    },
+    {
+      "role": "assistant",
+      "content": "<think>\nThe user wants a cycling performance plan. They're on Cyclosporine (immunosuppressant), so I should avoid overexertion. Focus on lower body strength and core stability with bodyweight exercises...\n</think>\n{\n  \"plan_name\": \"Cycling Performance Focus - Bodyweight Program\",\n  \"days\": [\n    {\n      \"name\": \"LEGS_1\",\n      \"day_order\": 1,\n      \"notes\": \"Focus on lower body strength for cycling power\",\n      \"exercises\": [\n        {\n          \"exercise_name\": \"Bodyweight Squats\",\n          \"position\": 1,\n          \"notes\": \"Use full range of motion\",\n          \"sets\": [\n            {\"set_number\": 1, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60},\n            {\"set_number\": 2, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60},\n            {\"set_number\": 3, \"target_reps\": 15, \"target_rir\": 2, \"rest_seconds\": 60}\n          ]\n        }\n      ]\n    }\n  ]\n}"
+    }
+  ],
+  "metadata": {
+    "response_id": "c0e4175e-e71a-45b9-85e9-46cee83d7d01",
+    "query_id": "4303cbae-5542-54a7-8e37-731d30f19abc",
+    "prompt_type": "plan_creation",
+    "model_name": "qwen/qwen3-32b"
+  }
+}
+```
 
-1. Open the live diagram: [UML Diagram](https://dbdiagram.io/d/FitSenseAI-69850002bd82f5fce2cfe02c)
-2. No DBML upload is required for viewers; they can access the schema directly from the link.
-3. Use `database/postgresql.sql` (PostgreSQL) or `database/mysql.sql` (MySQL) as the base SQL export for database setup.
-4. Prefer PostgreSQL for implementation (recommended for this project's relational complexity and future analytics needs).
+**Dataset stats** (from `prepare_summary.json`):
 
-## Planned Architecture (High Level)
+| Split | Samples | Approx Tokens |
+| ----- | ------- | ------------- |
+| Train | 720     | ~3.0M         |
+| Val   | 80      | ~330K         |
 
-- Backend API: user onboarding, goal capture, workout planning, logging, and AI endpoints.
-- Mobile/Web client: plan viewing, workout execution logging, and daily check-ins (calories/sleep/weight).
-- AI layer: plan generation/adaptation and conversational guidance.
-- Data layer: relational DB for user/workout/health data and model interaction logs.
+**Reasoning breakdown**: 181 Groq (with thinking) + 558 OpenRouter (with reasoning) + 61 OpenRouter (no reasoning) = 800 total
 
-See `Project_Plan.md` for phase-wise execution details.
+---
 
-## Architecture Diagram (Detailed)
+## Framework Stack
 
-For a more complete write-up, see `docs/Architecture.md`.
+```mermaid
+graph LR
+    classDef hw     fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef quant  fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+    classDef train  fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef search fill:#fff7ed,stroke:#ea580c,color:#7c2d12
+    classDef track  fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef cloud  fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
 
-![FitSenseAI Detailed Architecture Diagram](docs/assets/fitsenseai_architecture.svg)
+    GPU["NVIDIA GPU\nCUDA 12.1+"]:::hw
+    Torch["PyTorch ≥ 2.1"]:::quant
+    BnB["bitsandbytes\nNF4 4-bit quant"]:::quant
+    Unsloth["Unsloth ≥ 2024.8\nFast LoRA kernels"]:::train
+    PEFT["PEFT ≥ 0.12\nLoRA adapter"]:::train
+    TRL["TRL SFTTrainer\n≥ 0.9"]:::train
+    Optuna["Optuna ≥ 3.6\nTPE + MedianPruner"]:::search
+    WnB["Weights & Biases\nfitsense-sft project"]:::track
+    HF["HuggingFace\ndatasets · hub · transformers"]:::cloud
+    GCS["Google Cloud Storage\ngs://fitsense-models"]:::cloud
 
-## Data Pipeline (Overview)
+    GPU --> Torch --> BnB --> Unsloth --> PEFT --> TRL
+    Optuna -->|best hparams| TRL
+    HF -->|base model + dataset| TRL
+    TRL -->|metrics + adapter| WnB
+    TRL -->|versioned adapter| GCS
+```
 
-FitSenseAI includes an end-to-end synthetic-data MLOps pipeline under `Data-Pipeline/` that covers:
+---
 
-- synthetic profile/workout/health data generation,
-- synthetic query generation for a teacher LLM (Qwen 32B via Groq),
-- teacher response capture and storage,
-- distillation dataset creation (train/val/test JSONL),
-- validation, statistics, and anomaly detection,
-- Airflow DAG orchestration for the full workflow.
+## Directory Structure
 
-Primary docs:
+```text
+Model-Pipeline/
+├── scripts/
+│   ├── prepare_training_data.py # Phase 0: Converts raw teacher outputs → train/val JSONL
+│   ├── load_data.py            # Phase 1: Load & validate train/val JSONL
+│   ├── train.py                # Phase 2: QLoRA SFT training loop
+│   ├── hparam_search.py        # Phase 3: Bayesian hparam search (Optuna)
+│   ├── evaluate.py             # Phase 4: Metrics & generation evaluation
+│   ├── bias_detection.py       # Phase 5: Demographic bias analysis
+│   ├── sensitivity.py          # Phase 6: Hparam & input sensitivity
+│   ├── select_model.py         # Phase 7: Automated model selection
+│   └── push_to_registry.py     # Phase 8: GCS upload & versioning
+├── config/
+│   └── training_config.yaml    # All hyperparameters & paths
+├── data/
+│   └── training/
+│       ├── train.jsonl         # 720 training samples
+│       ├── val.jsonl           # 80 validation samples
+│       └── prepare_summary.json
+├── notebook.ipynb              # Exploratory notebook
+├── Dockerfile                  # Multi-stage: training + inference images
+├── requirements.txt            # Pinned Python dependencies
+├── Plan.md                     # Implementation plan
+└── README.md                   # This file
+```
 
-- `Data-Pipeline/README.md` for the full pipeline usage and Airflow commands.
+**Generated at runtime** (not committed):
 
-### Pipeline Component Diagram
+```text
+Model-Pipeline/
+└── outputs/
+    ├── final_adapter/              # LoRA weights + tokenizer
+    ├── training_summary.json       # Training run metadata
+    ├── checkpoints/                # Intermediate checkpoints
+    │   ├── checkpoint-220/
+    │   ├── checkpoint-230/
+    │   ├── checkpoint-240/
+    │   ├── checkpoint-250/
+    │   └── checkpoint-260/
+    ├── hparam_search/
+    │   ├── best_hparams.json       # Winning hyperparameters
+    │   └── all_trials.json         # All Optuna trial results
+    ├── evaluation/
+    │   ├── evaluation_results.json # Aggregate metrics
+    │   ├── per_sample_results.jsonl
+    │   └── plots/                  # Metric visualizations
+    ├── bias_detection/
+    │   ├── bias_report.json        # Flagged slices & recommendations
+    │   └── plots/                  # Bias heatmaps
+    ├── sensitivity/
+    │   ├── sensitivity_report.json
+    │   └── plots/
+    ├── selection/
+    │   └── selected_model.json     # Final model decision
+    └── registry/
+        └── {model_name}/{version}/ # Staged package for GCS
+```
 
-![FitSenseAI Data Pipeline Components](Data-Pipeline/docs_assets/pipeline_components.svg)
+---
 
-### Airflow DAG Diagram
+## Prerequisites
 
-![FitSenseAI Airflow DAG](Data-Pipeline/docs_assets/fitsense_pipeline_dag.svg)
-
-### Pipeline Quick Start
+- **Python 3.11+** (via conda)
+- **NVIDIA GPU** with CUDA 12.1+ (for training/evaluation)
+- **Conda environment**: `mlopsenv`
+- **Weights & Biases** account (for experiment tracking)
+- **GCP credentials** (for registry push)
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r Data-Pipeline/requirements.txt
+# Create and activate conda environment
+conda create -n mlopsenv python=3.11 -y
+conda activate mlopsenv
 
-# bootstrap
-python Data-Pipeline/scripts/bootstrap_phase1.py
-
-# run pipeline stages (script-by-script)
-python Data-Pipeline/scripts/generate_synthetic_profiles.py
-python Data-Pipeline/scripts/generate_synthetic_workouts.py
-python Data-Pipeline/scripts/generate_synthetic_queries.py
-python Data-Pipeline/scripts/call_teacher_llm.py
-python Data-Pipeline/scripts/build_distillation_dataset.py
-python Data-Pipeline/scripts/validate_data.py
-python Data-Pipeline/scripts/compute_stats.py
-python Data-Pipeline/scripts/detect_anomalies.py
+# Install dependencies
+pip install -r Model-Pipeline/requirements.txt
 ```
 
-## Model Pipeline (Overview)
+### Environment Variables
 
-FitSenseAI includes a model training and evaluation pipeline under `Model-Pipeline/` that covers:
+| Variable                         | Purpose                               | Required For            |
+| -------------------------------- | ------------------------------------- | ----------------------- |
+| `WANDB_API_KEY`                  | Weights & Biases experiment tracking  | Training, hparam search |
+| `GOOGLE_APPLICATION_CREDENTIALS` | GCP service account key path          | Registry push           |
+| `GROQ_API_KEY`                   | Teacher LLM calls (upstream pipeline) | Data preparation only   |
 
-- formatting the distillation dataset into Qwen3 ChatML format with `/no_think`,
-- fine-tuning Qwen3-4B (student model) using LoRA adapters via Unsloth on a GPU instance,
-- evaluating the student model with ROUGE-L and BERTScore metrics,
-- validating JSON schema correctness of generated workout plans,
-- analyzing performance across demographic slices (age, sex, goal type, activity level, medical conditions) for bias detection,
-- packaging and pushing the trained adapter to GCS and registering it in Vertex AI Metadata Store.
+---
 
-### Model Architecture
+## Pipeline Execution
 
-| Component | Details |
-|---|---|
-| Teacher model | Qwen 32B via Groq API |
-| Student model | Qwen3-4B fine-tuned with LoRA |
-| Adapter type | LoRA (rank 16, alpha 32) |
-| Training steps | 60 |
-| Quantization | 4-bit NF4 (Unsloth) |
-| Training data | Distillation dataset from Data-Pipeline |
+### Quick Reference
 
-### Evaluation Results (Run 20260403Z)
+```text
+ Phase 0   prepare_training_data.py    ── already done ──▶  train.jsonl + val.jsonl
+ Phase 1   load_data.py                ── validate data  ──▶  HF Dataset
+ Phase 3   hparam_search.py            ── Optuna search  ──▶  best_hparams.json
+ Phase 2   train.py                    ── QLoRA SFT      ──▶  LoRA adapter
+ Phase 4   evaluate.py                 ── metrics + gen   ──▶  evaluation_results.json
+ Phase 5   bias_detection.py           ── slice analysis  ──▶  bias_report.json
+ Phase 6   sensitivity.py              ── perturbation    ──▶  sensitivity_report.json
+ Phase 7   select_model.py             ── compare models  ──▶  selected_model.json
+ Phase 8   push_to_registry.py         ── GCS upload      ──▶  Artifact Registry
+```
 
-| Metric | Value | Threshold | Status |
-|---|---|---|---|
-| JSON validity | 45% | ≥ 50% | ⚠️ |
-| Schema validity (overall) | 55% | ≥ 50% | ✅ |
-| Schema validity (plan_creation) | 90.91% | — | ✅ |
-| Schema validity (plan_updation) | 11.11% | — | ⚠️ |
-| ROUGE-L | 0.1734 | ≥ 0.10 | ✅ |
+> **Note**: Always run from the repository root and with `conda activate mlopsenv`.
 
-### Model Registry
+---
 
-Trained adapter is stored in GCS and registered in Vertex AI:
+### Phase 0: Prepare Training Data (already complete)
 
-- GCS: `gs://fitsense-adapter-store/models/fitsense-qwen3-4b/`
-- Vertex AI Metadata Store: `projects/584243823383/locations/us-central1/metadataStores/default/artifacts/`
-
-### Model Pipeline Quick Start
+Converts raw teacher LLM responses into the messages format for SFT.
 
 ```bash
-# 1. Format training data
-python Model-Pipeline/scripts/prepare_training_data.py
-
-# 2. Fine-tune student model (requires GPU — use Colab Pro or GCP GPU VM)
-python Model-Pipeline/scripts/trainmodel.py
-
-# 3. Evaluate student model
-python Model-Pipeline/scripts/evaluate_student.py
-
-# 4. Validate JSON schema
-python Model-Pipeline/scripts/check_schema.py
-
-# 5. Run bias analysis
-python Model-Pipeline/scripts/bias_slicing.py
-
-# 6. Push adapter to GCS + Vertex AI
-python Model-Pipeline/scripts/push_to_registry.py
+python Model-Pipeline/scripts/prepare_training_data.py \
+    --input  Data-Pipeline/data/raw/teacher-llm-responses/20260324T162857Z/responses.jsonl \
+    --output Model-Pipeline/data/training \
+    --val-ratio 0.1 \
+    --seed 42
 ```
 
-## Roadmap Snapshot
+### Phase 1: Load & Validate Data
 
-- Phase 1: Foundation and data schemas ✅
-- Phase 2: Model development (teacher/student workflow) ✅
-- Phase 3: Backend + app MVP
-- Phase 4: Adaptation engine and instrumentation
-- Phase 5: Safety, monitoring, hardening
-- Phase 6: Pilot, iteration, final validation
+Loads the JSONL files, validates schema (3 messages per row, correct roles), and logs stats.
+
+```bash
+python Model-Pipeline/scripts/load_data.py \
+    --train-path Model-Pipeline/data/training/train.jsonl \
+    --val-path   Model-Pipeline/data/training/val.jsonl
+```
+
+This phase is also callable from other scripts:
+
+```python
+from load_data import load_and_validate
+datasets = load_and_validate("Model-Pipeline/data/training/train.jsonl",
+                              "Model-Pipeline/data/training/val.jsonl")
+```
+
+### Phase 2: Train (QLoRA SFT)
+
+Trains a LoRA adapter on the 4-bit quantized base model.
+
+```bash
+python Model-Pipeline/scripts/train.py \
+    --config Model-Pipeline/config/training_config.yaml
+```
+
+See [Configuration Reference](#configuration-reference) for all parameters.
+
+**Output**: `outputs/final_adapter/` (~63MB), `outputs/training_summary.json`
+
+### Phase 3: Hyperparameter Search
+
+Bayesian optimization with Optuna to find the best training configuration.
+
+```bash
+python Model-Pipeline/scripts/hparam_search.py \
+    --config Model-Pipeline/config/training_config.yaml \
+    --n-trials 10 \
+    --output-dir Model-Pipeline/outputs/hparam_search
+```
+
+**Search space**:
+
+| Hyperparameter  | Range             | Type        |
+| --------------- | ----------------- | ----------- |
+| `lora_r`        | [8, 16, 32]       | Categorical |
+| `lora_alpha`    | 2 x `lora_r`      | Derived     |
+| `learning_rate` | [1e-4, 5e-4]      | Log-uniform |
+| `batch_size`    | [1]               | Fixed       |
+| `lora_dropout`  | [0.0, 0.05, 0.1]  | Categorical |
+| `warmup_ratio`  | [0.03, 0.05, 0.1] | Categorical |
+
+Uses `TPESampler` (Tree-structured Parzen Estimator) with `MedianPruner` for early stopping of underperforming trials.
+
+**Trial results** (10 Optuna trials, sorted by train loss) — [View on Weights & Biases](https://wandb.ai/abhinav241998-org/fitsense-sft/runs/2m5v6n0l?nw=nwuserabhinav241998):
+
+| Trial | Train Loss | LoRA r | Learning Rate | Batch Size | Dropout | Warmup | State    |
+| ----- | ---------- | ------ | ------------- | ---------- | ------- | ------ | -------- |
+| 9     | 0.3611     | 8      | 3.460e-4      | 1          | 0.00    | 0.05   | COMPLETE |
+| 8     | 0.3678     | 32     | 1.255e-4      | 1          | 0.10    | 0.10   | COMPLETE |
+| 6     | 0.3757     | 16     | 1.651e-4      | 1          | 0.00    | 0.05   | COMPLETE |
+| 3     | 0.3774     | 16     | 1.632e-4      | 1          | 0.00    | 0.03   | COMPLETE |
+| 2     | 0.4297     | 16     | 1.098e-4      | 1          | 0.00    | 0.03   | COMPLETE |
+| 5     | 0.4375     | 8      | 1.633e-4      | 1          | 0.05    | 0.05   | COMPLETE |
+| 4     | 0.4683     | 8      | 1.379e-4      | 1          | 0.10    | 0.05   | COMPLETE |
+
+Best config: `lora_r=8`, `lr=3.46e-4`, `dropout=0`, `warmup=0.05` (Trial 9, loss 0.3611)
+
+**Output**: `best_hparams.json`, `all_trials.json`
+
+### Phase 4: Evaluation
+
+Generates responses on the validation set and computes metrics.
+
+```bash
+python Model-Pipeline/scripts/evaluate.py \
+    --adapter-dir Model-Pipeline/outputs/final_adapter \
+    --config Model-Pipeline/config/training_config.yaml \
+    --output-dir Model-Pipeline/outputs/evaluation \
+    --max-samples 50  # optional: quick check
+```
+
+**Metrics computed**:
+
+| Metric                 | What It Measures                             |
+| ---------------------- | -------------------------------------------- |
+| Validation Loss        | Cross-entropy on held-out set (forward pass) |
+| Tool Call Accuracy     | Correct `tool_name` prediction rate          |
+| JSON Parse Rate        | % of outputs that are valid JSON             |
+| Schema Compliance      | % with `tool_name` + `tool_input` keys       |
+| Thinking Presence Rate | % of responses with `<think>` block          |
+| Avg Thinking Length    | Avg characters in reasoning traces           |
+| Response Latency       | Avg ms per `model.generate()` call           |
+
+Also computes per-tool accuracy breakdown and generates plots (bar charts, latency histogram).
+
+**Output**: `evaluation_results.json`, `per_sample_results.jsonl`, `plots/`
+
+### Phase 5: Bias Detection
+
+Slices validation results by demographic attributes and flags disparities.
+
+```bash
+python Model-Pipeline/scripts/bias_detection.py \
+    --adapter-dir Model-Pipeline/outputs/final_adapter \
+    --config Model-Pipeline/config/training_config.yaml \
+    --output-dir Model-Pipeline/outputs/bias_detection \
+    --threshold 0.1
+```
+
+**Slicing dimensions** (extracted from user messages via regex):
+
+```mermaid
+graph TD
+    classDef root   fill:#f1f5f9,stroke:#64748b,color:#1e293b
+    classDef dim    fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef slice  fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef metric fill:#fef3c7,stroke:#f59e0b,color:#78350f
+
+    VD["Validation Set\n80 samples"]:::root
+
+    VD --> AG["Age Group"]:::dim
+    VD --> GD["Gender"]:::dim
+    VD --> FL["Fitness Level"]:::dim
+    VD --> GT["Goal Type"]:::dim
+    VD --> BM["BMI Category"]:::dim
+
+    AG --> AG1["18–25"]:::slice
+    AG --> AG2["26–35"]:::slice
+    AG --> AG3["36–50"]:::slice
+    AG --> AG4["50+"]:::slice
+
+    GD --> GD1["Male"]:::slice
+    GD --> GD2["Female"]:::slice
+
+    FL --> FL1["Beginner"]:::slice
+    FL --> FL2["Intermediate"]:::slice
+    FL --> FL3["Advanced"]:::slice
+
+    GT --> GT1["Weight Loss"]:::slice
+    GT --> GT2["Muscle Gain"]:::slice
+    GT --> GT3["Endurance"]:::slice
+
+    BM --> BM1["Underweight"]:::slice
+    BM --> BM2["Normal"]:::slice
+    BM --> BM3["Overweight"]:::slice
+    BM --> BM4["Obese"]:::slice
+
+    AG1 & AG2 & AG3 & AG4 & GD1 & GD2 & FL1 & FL2 & FL3 & GT1 & GT2 & GT3 & BM1 & BM2 & BM3 & BM4 --> M
+
+    M["Per-slice metrics\ntool_call_accuracy · json_parse_rate\nschema_compliance · thinking_presence_rate\n⚠ flag if deviation > 10%"]:::metric
+```
+
+Generates heatmap visualizations and mitigation recommendations.
+
+**Output**: `bias_report.json`, `plots/bias_heatmap.png`
+
+### Phase 6: Sensitivity Analysis
+
+Analyzes how performance changes with hyperparameters and input perturbations.
+
+```bash
+python Model-Pipeline/scripts/sensitivity.py \
+    --adapter-dir Model-Pipeline/outputs/final_adapter \
+    --config Model-Pipeline/config/training_config.yaml \
+    --trials-file Model-Pipeline/outputs/hparam_search/all_trials.json \
+    --output-dir Model-Pipeline/outputs/sensitivity \
+    --n-samples 50
+```
+
+**Two analysis types**:
+
+1. **Hyperparameter sensitivity** — which hparams affect val loss the most (from Optuna trials)
+2. **Input perturbation** — 4 tests:
+   - Truncate user message to 50% / 25%
+   - Remove system prompt entirely
+   - Mask demographic info (age, gender, BMI, fitness level)
+
+Use `--skip-hparam` or `--skip-input` to run only one type.
+
+**Output**: `sensitivity_report.json`, hparam ranking plots, perturbation impact chart
+
+### Phase 7: Model Selection
+
+Compares the final adapter against all saved checkpoints and selects the best one using a weighted composite score.
+
+```bash
+python Model-Pipeline/scripts/select_model.py \
+    --eval-dirs \
+        Model-Pipeline/outputs/evaluation/final_adapter \
+        Model-Pipeline/outputs/evaluation/checkpoint-220 \
+        Model-Pipeline/outputs/evaluation/checkpoint-230 \
+        Model-Pipeline/outputs/evaluation/checkpoint-240 \
+        Model-Pipeline/outputs/evaluation/checkpoint-250 \
+        Model-Pipeline/outputs/evaluation/checkpoint-260 \
+    --bias-dirs \
+        Model-Pipeline/outputs/bias_detection/final_adapter \
+        Model-Pipeline/outputs/bias_detection/checkpoint-220 \
+        Model-Pipeline/outputs/bias_detection/checkpoint-230 \
+        Model-Pipeline/outputs/bias_detection/checkpoint-240 \
+        Model-Pipeline/outputs/bias_detection/checkpoint-250 \
+        Model-Pipeline/outputs/bias_detection/checkpoint-260 \
+    --output-dir Model-Pipeline/outputs/selection
+```
+
+**Scoring weights**:
+
+```text
+ Tool Call Accuracy ████████████████████████████████  0.30
+ JSON Parse Rate    ████████████████████             0.20
+ Schema Compliance  ███████████████                  0.15
+ Val Loss (inv.)    ███████████████                  0.15
+ Thinking Presence  ██████████                       0.10
+ Bias Score (inv.)  ██████████                       0.10
+```
+
+**Eval → Select → Push flow**:
+
+```mermaid
+flowchart TD
+    classDef ckpt   fill:#f1f5f9,stroke:#64748b,color:#1e293b
+    classDef eval   fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef bias   fill:#fce7f3,stroke:#db2777,color:#831843
+    classDef select fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef push   fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+
+    subgraph CANDS["6 Candidates (outputs/checkpoints/ + final_adapter)"]
+        direction LR
+        FA["final_adapter"]:::ckpt
+        C1["checkpoint-220"]:::ckpt
+        C2["checkpoint-230"]:::ckpt
+        C3["checkpoint-240"]:::ckpt
+        C4["checkpoint-250"]:::ckpt
+        C5["checkpoint-260"]:::ckpt
+    end
+
+    CANDS -->|"evaluate.py\n--output-dir outputs/evaluation/&lt;name&gt;"| EV["evaluation_results.json\nper candidate"]:::eval
+    CANDS -->|"bias_detection.py\n--output-dir outputs/bias_detection/&lt;name&gt;"| BI["bias_report.json\nper candidate"]:::bias
+
+    EV & BI --> SM["select_model.py\n--eval-dirs ... --bias-dirs ...\nweighted composite score"]:::select
+    SM --> BEST["selected_model.json\nbest candidate path + rationale"]:::select
+    BEST --> PR["push_to_registry.py\n--adapter-dir &lt;selected&gt;\n--config registry_config.yaml"]:::push
+    PR --> GCS["gs://fitsense-models/\nversioned upload"]:::push
+```
+
+**Output**: `selected_model.json` with scores, breakdown, rationale, and comparison table
+
+### Phase 8: Push to Registry
+
+Packages the adapter + all training checkpoints and uploads to GCS and HuggingFace Hub.
+
+```bash
+# Full upload — adapter + checkpoints + metadata → GCS + HuggingFace
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir      Model-Pipeline/outputs/final_adapter \
+    --checkpoints-dir  Model-Pipeline/outputs/checkpoints \
+    --metadata-files \
+        Model-Pipeline/outputs/training_summary.json \
+        Model-Pipeline/outputs/hparam_search/best_hparams.json \
+        Model-Pipeline/outputs/evaluation/evaluation_results.json \
+        Model-Pipeline/outputs/bias_detection/bias_report.json \
+        Model-Pipeline/outputs/sensitivity/sensitivity_report.json \
+    --gcs-bucket  fitsense-models \
+    --model-name  qwen3-4b-fitsense-qlora \
+    --hf-repo     abhinav241998/qwen3-4b-fitsense-qlora \
+    --hf-token    $HF_TOKEN \
+    --log-level   INFO
+
+# GCS only (no HuggingFace push)
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir     Model-Pipeline/outputs/final_adapter \
+    --checkpoints-dir Model-Pipeline/outputs/checkpoints \
+    --metadata-files  Model-Pipeline/outputs/training_summary.json \
+    --gcs-bucket      fitsense-models \
+    --model-name      qwen3-4b-fitsense-qlora \
+    --log-level       INFO
+
+# Dry run (local staging only, no uploads)
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir Model-Pipeline/outputs/final_adapter \
+    --gcs-bucket  fitsense-models \
+    --model-name  qwen3-4b-fitsense-qlora \
+    --dry-run
+
+# Rollback latest.json to a previous version
+conda run -n mlopsenv python Model-Pipeline/scripts/push_to_registry.py \
+    --adapter-dir  Model-Pipeline/outputs/final_adapter \
+    --gcs-bucket   fitsense-models \
+    --model-name   qwen3-4b-fitsense-qlora \
+    --rollback-to  v20260324T120000Z
+```
+
+**GCS layout** (`gs://fitsense-models/`):
+
+```text
+gs://fitsense-models/
+└── qwen3-4b-fitsense-qlora/
+    ├── latest.json                        # Points to current version
+    ├── versions.json                      # Version history
+    └── v<timestamp>/
+        ├── manifest.json
+        ├── adapter_config.json
+        ├── adapter_model.safetensors
+        ├── tokenizer.json
+        ├── training_summary.json
+        └── checkpoints/
+            ├── checkpoint-220/
+            ├── checkpoint-230/
+            └── ...
+```
+
+**Model versioning & rollback flow**:
+
+```mermaid
+flowchart LR
+    classDef action fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef vers   fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef ptr    fill:#fef3c7,stroke:#f59e0b,color:#78350f
+
+    P1["push run 1\nv20260325T..."]:::action --> V1["v20260325T.../\nadapter + metadata"]:::vers
+    P2["push run 2\nv20260401T..."]:::action --> V2["v20260401T.../\nadapter + metadata"]:::vers
+    P3["push run 3\nv20260411T..."]:::action --> V3["v20260411T... ← current\nadapter + metadata"]:::vers
+
+    V1 & V2 & V3 --> VJ["versions.json\n[v20260325T, v20260401T, v20260411T]"]:::ptr
+    V3 --> LJ["latest.json\n{ version: v20260411T }"]:::ptr
+
+    RB["--rollback-to v20260401T\nupdates latest.json only\nno data deleted"]:::action --> LJ
+```
+
+**HuggingFace Hub**: [abhinav241998/qwen3-4b-fitsense-qlora](https://huggingface.co/abhinav241998/qwen3-4b-fitsense-qlora)
+
+- Base model: `unsloth/qwen3-4b-unsloth-bnb-4bit`
+- Adapter pushed as a PEFT LoRA repo with version tag matching GCS
+
+---
+
+## CI/CD Pipeline
+
+Automated via GitHub Actions (`.github/workflows/model_pipeline.yml`). The `lint-and-test` job runs automatically on every push or PR to `Model-Pipeline/**`. All heavy GPU jobs (train, evaluate, bias-check, registry-push) require a manual `workflow_dispatch` trigger.
+
+```mermaid
+flowchart TD
+    classDef trigger fill:#f1f5f9,stroke:#64748b,color:#1e293b
+    classDef auto    fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef manual  fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef gate    fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef fail    fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
+    classDef success fill:#ecfdf5,stroke:#059669,color:#064e3b
+
+    PR["Push / PR\nto Model-Pipeline/**"]:::trigger
+    WD["workflow_dispatch\nManual trigger\nmodel_name · skip_training"]:::trigger
+
+    L["lint-and-test\nubuntu-latest\nruff · pyright · pytest"]:::auto
+    T["train\nGPU self-hosted\nhparam_search → train.py"]:::manual
+    E["evaluate\nGPU self-hosted\nevaluate.py"]:::manual
+    BC["bias-check\nGPU self-hosted\nbias_detection.py"]:::manual
+    BG{"deviation\n> 25%?"}:::gate
+    RP["registry-push\nmain branch only\n+ manual approval gate"]:::manual
+    NF["notify\nSlack webhook\nsuccess · fail · blocked"]:::success
+    BLOCKED["Pipeline BLOCKED\ncritical bias detected"]:::fail
+
+    PR --> L
+    WD --> L
+    L -->|"workflow_dispatch only"| T --> E --> BC --> BG
+    BG -->|No| RP --> NF
+    BG -->|Yes| BLOCKED --> NF
+    L -->|"push / PR only\n(stops here)"| NF
+```
+
+**Key features**:
+
+- **Manual approval gate**: `registry-push` uses the `production` environment (requires reviewer approval)
+- **Critical bias blocking**: Pipeline fails if any slice has >25% deviation
+- **Slack notifications**: Success, failure, and blocked states with color coding
+- **Workflow dispatch**: Manual trigger with model name override and skip-training option
+
+**Required GitHub Secrets**:
+
+| Secret              | Purpose                           |
+| ------------------- | --------------------------------- |
+| `WANDB_API_KEY`     | Experiment tracking               |
+| `GCP_SA_KEY`        | GCP service account JSON          |
+| `SLACK_WEBHOOK_URL` | Pipeline notifications (optional) |
+
+---
+
+## GCP Deployment Architecture
+
+```mermaid
+graph TB
+    classDef gh    fill:#f1f5f9,stroke:#64748b,color:#1e293b
+    classDef local fill:#d1fae5,stroke:#10b981,color:#064e3b
+    classDef gcs   fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef hf    fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
+
+    GHA["GitHub Actions\n.github/workflows/model_pipeline.yml"]:::gh
+    GPU["Self-hosted GPU Runner\nNVIDIA + CUDA 12.1"]:::local
+
+    subgraph TRAIN["Training (self-hosted GPU)"]
+        direction TB
+        HS["hparam_search.py\n10 Optuna trials"]:::local
+        TR["train.py\nQLoRA SFT"]:::local
+        EV["evaluate.py + bias_detection.py\n+ sensitivity.py"]:::local
+        SM["select_model.py\nN-checkpoint comparison"]:::local
+    end
+
+    subgraph GCS_BUCKET["gs://fitsense-models/qwen3-4b-fitsense-qlora/"]
+        direction TB
+        LATEST["latest.json\n→ current version pointer"]:::gcs
+        VERSIONS["versions.json\nfull version history"]:::gcs
+        subgraph VX["v&lt;timestamp&gt;/"]
+            direction LR
+            F1["manifest.json\nadapter_config.json\nadapter_model.safetensors"]:::gcs
+            F2["tokenizer.json\ntraining_summary.json\nevaluation_results.json\nbias_report.json"]:::gcs
+            F3["checkpoints/\ncheckpoint-220/ · checkpoint-230/\ncheckpoint-240/ · checkpoint-250/\ncheckpoint-260/"]:::gcs
+        end
+    end
+
+    HF["HuggingFace Hub\nabhinav241998/qwen3-4b-fitsense-qlora\n+ version tag"]:::hf
+
+    GHA -->|"triggers (workflow_dispatch)"| GPU
+    GPU --> TRAIN
+    TRAIN -->|"push_to_registry.py"| GCS_BUCKET
+    TRAIN -->|"adapter + tag"| HF
+    F1 --> LATEST
+    F1 --> VERSIONS
+```
+
+---
+
+## Docker
+
+Multi-stage build with two targets:
+
+```bash
+# Build training image (CUDA devel, full deps)
+docker build --target training -t fitsense-train -f Model-Pipeline/Dockerfile .
+
+# Build inference image (CUDA runtime, lightweight)
+docker build --target inference -t fitsense-eval -f Model-Pipeline/Dockerfile .
+
+# Run training (mount data + pass W&B key)
+docker run --gpus all \
+    -v $(pwd)/Model-Pipeline/data:/app/Model-Pipeline/data \
+    -v $(pwd)/Model-Pipeline/outputs:/app/Model-Pipeline/outputs \
+    -e WANDB_API_KEY=$WANDB_API_KEY \
+    fitsense-train \
+    --config Model-Pipeline/config/training_config.yaml
+
+# Run evaluation
+docker run --gpus all \
+    -v $(pwd)/Model-Pipeline/outputs:/app/Model-Pipeline/outputs \
+    -v $(pwd)/Model-Pipeline/data:/app/Model-Pipeline/data \
+    fitsense-eval \
+    --adapter-dir Model-Pipeline/outputs/final_adapter \
+    --config Model-Pipeline/config/training_config.yaml
+```
+
+| Stage       | Base Image                               | Size | Purpose                                |
+| ----------- | ---------------------------------------- | ---- | -------------------------------------- |
+| `training`  | `nvidia/cuda:12.1.1-devel-ubuntu22.04`   | ~8GB | Full training with compilation support |
+| `inference` | `nvidia/cuda:12.1.1-runtime-ubuntu22.04` | ~5GB | Evaluation and inference only          |
+
+---
+
+## Experiment Tracking
+
+All training and search experiments are logged to **Weights & Biases** under the `fitsense-sft` project.
+
+**What gets logged**:
+
+- `train.py`: Loss curves, learning rate, GPU utilization, final adapter artifact
+- `hparam_search.py`: Single summary run with all-trials table + best params
+- Eval/bias results uploaded as artifacts alongside the adapter
+
+Set your API key:
+
+```bash
+export WANDB_API_KEY=your_key_here
+# or
+wandb login
+```
+
+---
+
+## Configuration Reference
+
+All training parameters live in `config/training_config.yaml`:
+
+```yaml
+# Model
+model_name: "unsloth/qwen3-4b-unsloth-bnb-4bit" # Base model from HuggingFace
+max_seq_length: 16500 # Max tokens per sequence
+
+# LoRA
+lora_r: 8 # Adapter rank
+lora_alpha: 16 # Scaling factor (2x rank)
+lora_dropout: 0.05 # Regularization
+
+# Training
+batch_size: 1 # Per-device batch size
+gradient_accumulation_steps: 8 # Effective batch = 8
+num_epochs: 3 # Training epochs
+learning_rate: 0.000346015 # Peak learning rate (from best_hparams.json)
+lr_scheduler_type: "cosine" # LR decay schedule
+warmup_ratio: 0.05 # % of steps for warmup
+
+# Tracking
+report_to: "wandb" # "wandb", "mlflow", or "none"
+wandb_project: "fitsense-sft" # W&B project name
+```
+
+Override any value via CLI: `--model-name unsloth/Qwen3-4B` or `--output-dir /custom/path`

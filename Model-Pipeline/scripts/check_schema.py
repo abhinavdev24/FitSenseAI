@@ -1,82 +1,168 @@
-import json, re
+#!/usr/bin/env python3
+"""
+FitSenseAI — Training Data Schema Validator
 
-REPORT_PATH = "Model-Pipeline/reports/student_eval_20260403Z.json"
+Validates train.jsonl and val.jsonl files against the expected 3-turn
+conversation format used for QLoRA SFT training. Referenced by the
+data-pipeline-ci.yml GitHub Actions workflow.
 
-def strip_think(t):
-    if "</think>" in t:
-        t = t.split("</think>", 1)[-1].strip()
-    return t
+Expected record format:
+  {
+    "messages": [
+      {"role": "system",    "content": "..."},
+      {"role": "user",      "content": "..."},
+      {"role": "assistant", "content": "<think>...</think>{...json...}"}
+    ],
+    "metadata": {...}
+  }
 
-def extract_json(t):
-    t = strip_think(t)
-    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", t, re.DOTALL)
-    if m: return m.group(1)
-    s, e = t.find("{"), t.rfind("}")
-    return t[s:e+1] if s != -1 and e > s else t
+Exit codes:
+  0 — schema valid (or no files found — CI runs before training)
+  1 — schema errors found
+"""
 
-def nk(o):
-    if isinstance(o, dict): return {k.lower(): nk(v) for k, v in o.items()}
-    if isinstance(o, list): return [nk(i) for i in o]
-    return o
+import argparse
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
 
-def has_exercises(d):
-    """Check if a dict contains exercises in any recognized format."""
-    if not isinstance(d, dict):
-        return False
-    # Pattern A: exercises as a list
-    exs = (d.get("exercises") or d.get("exercise_list") or
-           d.get("workout") or d.get("movements") or
-           d.get("main_exercises") or [])
-    if isinstance(exs, list) and len(exs) > 0:
-        return True
-    # Pattern B: exercises as named keys with sets/reps
-    for val in d.values():
-        if isinstance(val, dict) and ("sets" in val or "reps" in val):
-            return True
-    return False
 
-def check(t):
-    try:
-        obj = nk(json.loads(extract_json(t)))
-        if "workout_plan" in obj and isinstance(obj["workout_plan"], dict):
-            obj = obj["workout_plan"]
-        elif "training_plan" in obj and isinstance(obj["training_plan"], dict):
-            obj = obj["training_plan"]
-        elif "plan" in obj and isinstance(obj["plan"], dict):
-            obj = obj["plan"]
+EXPECTED_ROLES = ["system", "user", "assistant"]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_TRAIN = REPO_ROOT / "Model-Pipeline" / "data" / "training" / "train.jsonl"
+DEFAULT_VAL = REPO_ROOT / "Model-Pipeline" / "data" / "training" / "val.jsonl"
+DEFAULT_REPORTS = REPO_ROOT / "Model-Pipeline" / "reports"
 
-        # Pattern A: "days" is a list
-        days = (obj.get("days") or obj.get("workout_days") or
-                obj.get("training_days") or obj.get("schedule") or [])
-        if isinstance(days, list) and len(days) > 0:
-            for d in days:
-                if has_exercises(d):
-                    return True
 
-        # Pattern B: "days" is a dict with day names as keys
-        if isinstance(days, dict) and len(days) > 0:
-            for day_name, day_val in days.items():
-                if isinstance(day_val, dict) and has_exercises(day_val):
-                    return True
+def validate_record(record: Any, line_num: int) -> list[str]:
+    """Return list of error strings for a single record (empty = valid)."""
+    errors: list[str] = []
 
-        return False
-    except:
-        return False
+    if not isinstance(record, dict):
+        return [f"line {line_num}: record is not a JSON object"]
 
-with open(REPORT_PATH) as f:
-    report = json.load(f)
+    messages = record.get("messages")
+    if messages is None:
+        errors.append(f"line {line_num}: missing 'messages' key")
+        return errors
 
-plan_recs = [r for r in report["per_record"] if r["prompt_type"] in {"plan_creation", "plan_updation"}]
-sv = [check(r["prediction"]) for r in plan_recs]
+    if not isinstance(messages, list):
+        errors.append(f"line {line_num}: 'messages' is not a list")
+        return errors
 
-print(f"Plan records checked : {len(plan_recs)}")
-print(f"Schema valid         : {sum(sv)}/{len(plan_recs)} = {sum(sv)/len(plan_recs):.2%}")
+    if len(messages) != 3:
+        errors.append(
+            f"line {line_num}: expected 3 messages, got {len(messages)}"
+        )
+        return errors
 
-creation_recs = [r for r in plan_recs if r["prompt_type"] == "plan_creation"]
-updation_recs = [r for r in plan_recs if r["prompt_type"] == "plan_updation"]
-creation_valid = sum(check(r["prediction"]) for r in creation_recs)
-updation_valid = sum(check(r["prediction"]) for r in updation_recs)
+    for idx, (msg, expected_role) in enumerate(zip(messages, EXPECTED_ROLES)):
+        if not isinstance(msg, dict):
+            errors.append(f"line {line_num}: message[{idx}] is not an object")
+            continue
+        role = msg.get("role", "")
+        if role != expected_role:
+            errors.append(
+                f"line {line_num}: message[{idx}] role={role!r}, "
+                f"expected {expected_role!r}"
+            )
+        content = msg.get("content", "")
+        if not isinstance(content, str) or not content.strip():
+            errors.append(
+                f"line {line_num}: message[{idx}] (role={role!r}) has empty content"
+            )
 
-print(f"\n--- By prompt type ---")
-if creation_recs: print(f"  plan_creation : {creation_valid}/{len(creation_recs)} = {creation_valid/len(creation_recs):.2%}")
-if updation_recs: print(f"  plan_updation : {updation_valid}/{len(updation_recs)} = {updation_valid/len(updation_recs):.2%}")
+    return errors
+
+
+def validate_file(path: Path) -> dict[str, Any]:
+    """Validate a single JSONL file. Returns stats dict."""
+    total = 0
+    errors: list[str] = []
+
+    if not path.exists():
+        print(f"  [WARN] {path} not found — skipping (expected before training)")
+        return {"path": str(path), "total": 0, "valid": 0, "errors": [], "found": False}
+
+    with open(path, encoding="utf-8") as fh:
+        for line_num, raw_line in enumerate(fh, start=1):
+            line = raw_line.strip()
+            if not line:
+                continue
+            total += 1
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError as exc:
+                errors.append(f"line {line_num}: JSON parse error — {exc}")
+                continue
+            errors.extend(validate_record(record, line_num))
+
+    valid = total - len(errors)
+    return {
+        "path": str(path),
+        "total": total,
+        "valid": valid,
+        "errors": errors[:50],   # cap at 50 to avoid huge reports
+        "found": True,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Validate FitSense training JSONL schema")
+    parser.add_argument("--train-path", type=Path, default=DEFAULT_TRAIN)
+    parser.add_argument("--val-path", type=Path, default=DEFAULT_VAL)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_REPORTS)
+    args = parser.parse_args()
+
+    print("=" * 60)
+    print("FitSenseAI — Training Data Schema Validator")
+    print("=" * 60)
+
+    train_stats = validate_file(args.train_path)
+    val_stats = validate_file(args.val_path)
+
+    # Print summary
+    for label, stats in [("train", train_stats), ("val", val_stats)]:
+        if not stats["found"]:
+            print(f"  {label}: NOT FOUND (skipped)")
+        else:
+            status = "✓" if not stats["errors"] else "✗"
+            print(
+                f"  {label}: {status}  total={stats['total']}  "
+                f"valid={stats['valid']}  errors={len(stats['errors'])}"
+            )
+            for err in stats["errors"][:10]:
+                print(f"    - {err}")
+            if len(stats["errors"]) > 10:
+                print(f"    ... and {len(stats['errors']) - 10} more")
+
+    all_errors = train_stats["errors"] + val_stats["errors"]
+    passed = len(all_errors) == 0
+    print()
+    print(f"Result: {'PASSED ✓' if passed else 'FAILED ✗'}")
+
+    # Write report
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    report_path = args.output_dir / f"schema_check_{ts}.json"
+    report = {
+        "timestamp": ts,
+        "train_total": train_stats["total"],
+        "train_valid": train_stats["valid"],
+        "train_errors": train_stats["errors"],
+        "val_total": val_stats["total"],
+        "val_valid": val_stats["valid"],
+        "val_errors": val_stats["errors"],
+        "passed": passed,
+    }
+    with open(report_path, "w", encoding="utf-8") as fh:
+        json.dump(report, fh, indent=2)
+    print(f"Report written to: {report_path}")
+
+    return 0 if passed else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
