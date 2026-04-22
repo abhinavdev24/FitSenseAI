@@ -9,6 +9,16 @@ Flutter client for the FitSenseAI fitness coaching platform. Connects to the Fas
 
 ---
 
+## Screenshots
+
+### [🎨 Figma Designs — First Designs](https://www.figma.com/design/H3Xs3MqvK6lrxt26g1LQfl/First-Designs?node-id=0-1&p=f)
+
+| Login | Sign Up | Dashboard | Workout Plan | AI Coach |
+|---|---|---|---|---|
+| ![Login](screenshots/login_screen.jpeg) | ![Sign Up](screenshots/signup_screen.jpeg) | ![Dashboard](screenshots/dashboard_screen.jpeg) | ![Workout Plan](screenshots/plans_screen.jpeg) | ![AI Coach](screenshots/coach_screen.jpeg) |
+
+---
+
 ## Supported Platforms
 
 | Platform | Folder |
