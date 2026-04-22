@@ -1,6 +1,6 @@
 """Model selection script that compares evaluation results and bias reports.
 
-This script compares two candidate models based on evaluation metrics and bias detection
+This script compares N candidate models based on evaluation metrics and bias detection
 results, computes a weighted composite score, and selects the best model. Outputs a
 detailed selection report with scoring breakdown and rationale.
 """
@@ -81,23 +81,36 @@ def compute_bias_score(bias_report: dict[str, Any]) -> float:
 
 
 def normalize_val_loss(losses: list[float]) -> list[float]:
-    """Min-max normalize validation losses between two models.
+    """Min-max normalize validation losses for N models.
+
+    Lower loss is better. Returns scores in [0, 1] where higher = better
+    (i.e., the model with lowest loss gets score 1.0).
 
     Args:
-        losses: List of two val_loss values [loss1, loss2]
+        losses: List of N val_loss values
 
     Returns:
-        List of two normalized losses (higher = better)
+        List of N normalized scores (0-1, higher = better)
     """
-    if len(losses) != 2:
-        raise ValueError(f"Expected 2 losses, got {len(losses)}")
+    if not losses:
+        raise ValueError("losses must be non-empty")
 
-    min_loss = min(losses)
-    max_loss = max(losses)
+    if len(losses) == 1:
+        return [1.0]
+
+    finite = [l for l in losses if l != float("inf")]
+    if not finite:
+        return [0.0] * len(losses)
+
+    min_loss = min(finite)
+    max_loss = max(finite)
     denominator = max_loss - min_loss + 1e-8
 
-    normalized = [(loss - min_loss) / denominator for loss in losses]
-    return normalized
+    # Invert: lower loss -> higher normalized score
+    return [
+        0.0 if l == float("inf") else 1.0 - (l - min_loss) / denominator
+        for l in losses
+    ]
 
 
 def compute_composite_score(
@@ -123,7 +136,7 @@ def compute_composite_score(
     schema_compliance = metrics.get("schema_compliance", 0.0)
     thinking_presence_rate = metrics.get("thinking_presence_rate", 0.0)
 
-    # Invert bias score (higher bias → lower contribution)
+    # Invert bias score (higher bias -> lower contribution)
     bias_contribution = 1.0 - bias_score
 
     # Weights
@@ -157,40 +170,39 @@ def generate_rationale(
     """Generate human-readable rationale for model selection.
 
     Args:
-        scores: Dict mapping model names to score dicts
-        eval_results_map: Dict mapping model names to evaluation results
+        scores: Dict mapping candidate IDs to score dicts
+        eval_results_map: Dict mapping candidate IDs to evaluation results
 
     Returns:
         Human-readable rationale string
     """
-    # Find selected model (highest composite score)
-    selected = max(scores.keys(), key=lambda m: scores[m]["composite_score"])
+    ranked = sorted(scores.keys(), key=lambda m: scores[m]["composite_score"], reverse=True)
+    selected = ranked[0]
     selected_score = scores[selected]["composite_score"]
 
-    other_model = next(m for m in scores.keys() if m != selected)
-    other_score = scores[other_model]["composite_score"]
-    score_diff = selected_score - other_score
+    if len(ranked) > 1:
+        runner_up = ranked[1]
+        runner_up_score = scores[runner_up]["composite_score"]
+        score_diff = selected_score - runner_up_score
 
-    # Find primary differentiator
-    selected_metrics = eval_results_map[selected].get("metrics", {})
-    other_metrics = eval_results_map[other_model].get("metrics", {})
+        selected_metrics = eval_results_map[selected].get("metrics", {})
+        runner_up_metrics = eval_results_map[runner_up].get("metrics", {})
 
-    metric_diffs = {}
-    for key in ["tool_call_accuracy", "json_parse_rate", "schema_compliance"]:
-        s_val = selected_metrics.get(key, 0.0)
-        o_val = other_metrics.get(key, 0.0)
-        metric_diffs[key] = s_val - o_val
+        metric_diffs = {}
+        for key in ["tool_call_accuracy", "json_parse_rate", "schema_compliance"]:
+            metric_diffs[key] = selected_metrics.get(key, 0.0) - runner_up_metrics.get(key, 0.0)
 
-    primary_metric = max(metric_diffs.keys(), key=lambda k: metric_diffs[k])
-    primary_diff = metric_diffs[primary_metric]
-    selected_val = selected_metrics.get(primary_metric, 0.0)
-    other_val = other_metrics.get(primary_metric, 0.0)
+        primary_metric = max(metric_diffs.keys(), key=lambda k: metric_diffs[k])
+        selected_val = selected_metrics.get(primary_metric, 0.0)
+        runner_up_val = runner_up_metrics.get(primary_metric, 0.0)
 
-    rationale = (
-        f"{selected} selected with composite score {selected_score:.2f} vs {other_score:.2f}. "
-        f"Higher {primary_metric} ({selected_val:.2f} vs {other_val:.2f}) was the primary differentiator."
-    )
-    return rationale
+        return (
+            f"{selected} selected with composite score {selected_score:.4f} "
+            f"(runner-up: {runner_up} at {runner_up_score:.4f}, margin: {score_diff:.4f}). "
+            f"Primary differentiator: {primary_metric} ({selected_val:.4f} vs {runner_up_val:.4f})."
+        )
+    else:
+        return f"{selected} selected (only candidate) with composite score {selected_score:.4f}."
 
 
 def log_comparison_table(
@@ -201,8 +213,8 @@ def log_comparison_table(
     """Log a formatted comparison table and return it as structured data.
 
     Args:
-        scores: Dict mapping model names to score dicts
-        eval_results_map: Dict mapping model names to evaluation results
+        scores: Dict mapping candidate IDs to score dicts
+        eval_results_map: Dict mapping candidate IDs to evaluation results
         logger: Logger instance
 
     Returns:
@@ -266,17 +278,17 @@ def main() -> None:
     )
     parser.add_argument(
         "--eval-dirs",
-        nargs=2,
+        nargs="+",
         required=True,
-        metavar=("EVAL_DIR1", "EVAL_DIR2"),
-        help="Paths to two evaluation output directories (each contains evaluation_results.json)",
+        metavar="EVAL_DIR",
+        help="One or more evaluation output directories (each contains evaluation_results.json)",
     )
     parser.add_argument(
         "--bias-dirs",
-        nargs=2,
+        nargs="+",
         required=True,
-        metavar=("BIAS_DIR1", "BIAS_DIR2"),
-        help="Paths to two bias detection output directories (each contains bias_report.json)",
+        metavar="BIAS_DIR",
+        help="One or more bias detection output directories (each contains bias_report.json)",
     )
     parser.add_argument(
         "--output-dir",
@@ -307,57 +319,65 @@ def main() -> None:
     try:
         logger.info("Starting model selection process")
 
-        # Load evaluation results and bias reports
-        logger.info(f"Loading evaluation results from {args.eval_dirs[0]} and {args.eval_dirs[1]}")
-        eval_results_1 = load_eval_results(args.eval_dirs[0])
-        eval_results_2 = load_eval_results(args.eval_dirs[1])
+        # Validate that eval-dirs and bias-dirs have the same count
+        if len(args.eval_dirs) != len(args.bias_dirs):
+            raise ValueError(
+                f"--eval-dirs ({len(args.eval_dirs)}) and --bias-dirs ({len(args.bias_dirs)}) "
+                f"must have the same number of entries"
+            )
 
-        logger.info(f"Loading bias reports from {args.bias_dirs[0]} and {args.bias_dirs[1]}")
-        bias_report_1 = load_bias_report(args.bias_dirs[0])
-        bias_report_2 = load_bias_report(args.bias_dirs[1])
+        # Load all N candidates using directory basename as identifier
+        eval_results_map: dict[str, dict] = {}
+        bias_reports_map: dict[str, dict] = {}
 
-        # Extract model names
-        model_1 = eval_results_1.get("model_name")
-        model_2 = eval_results_2.get("model_name")
+        for eval_dir, bias_dir in zip(args.eval_dirs, args.bias_dirs):
+            candidate_id = Path(eval_dir).name
+            eval_results_map[candidate_id] = load_eval_results(eval_dir)
+            bias_reports_map[candidate_id] = load_bias_report(bias_dir)
 
-        if not model_1 or not model_2:
-            raise ValueError("Could not extract model names from evaluation results")
-
-        logger.info(f"Comparing {model_1} vs {model_2}")
+        logger.info(
+            f"Loaded {len(eval_results_map)} candidates: {list(eval_results_map.keys())}"
+        )
 
         # Compute bias scores
-        bias_score_1 = compute_bias_score(bias_report_1)
-        bias_score_2 = compute_bias_score(bias_report_2)
-
-        logger.info(f"Bias scores: {model_1}={bias_score_1:.4f}, {model_2}={bias_score_2:.4f}")
+        bias_scores = {cid: compute_bias_score(br) for cid, br in bias_reports_map.items()}
+        logger.info(
+            "Bias scores: "
+            + ", ".join(f"{cid}={score:.4f}" for cid, score in bias_scores.items())
+        )
 
         # Normalize val losses
-        val_loss_1 = eval_results_1.get("metrics", {}).get("val_loss", float("inf"))
-        val_loss_2 = eval_results_2.get("metrics", {}).get("val_loss", float("inf"))
-        norm_loss_1, norm_loss_2 = normalize_val_loss([val_loss_1, val_loss_2])
+        val_losses = [
+            eval_results_map[cid].get("metrics", {}).get("val_loss", float("inf"))
+            for cid in eval_results_map
+        ]
+        norm_losses = normalize_val_loss(val_losses)
+        norm_loss_map = dict(zip(eval_results_map.keys(), norm_losses))
 
         # Compute composite scores
-        score_1, breakdown_1 = compute_composite_score(eval_results_1, bias_score_1, norm_loss_1)
-        score_2, breakdown_2 = compute_composite_score(eval_results_2, bias_score_2, norm_loss_2)
+        scores: dict[str, dict] = {}
+        for cid in eval_results_map:
+            composite, breakdown = compute_composite_score(
+                eval_results_map[cid], bias_scores[cid], norm_loss_map[cid]
+            )
+            scores[cid] = {"composite_score": composite, "breakdown": breakdown}
 
-        logger.info(f"Composite scores: {model_1}={score_1:.4f}, {model_2}={score_2:.4f}")
-
-        # Build scores dict
-        scores = {
-            model_1: {"composite_score": score_1, "breakdown": breakdown_1},
-            model_2: {"composite_score": score_2, "breakdown": breakdown_2},
-        }
-        eval_results_map = {model_1: eval_results_1, model_2: eval_results_2}
+        logger.info(
+            "Composite scores: "
+            + ", ".join(f"{cid}={s['composite_score']:.4f}" for cid, s in scores.items())
+        )
 
         # Check for bias if required
         decision = "auto"
         if args.require_no_bias:
-            has_bias = (
-                bias_report_1.get("bias_detected", False)
-                or bias_report_2.get("bias_detected", False)
-            )
-            if has_bias:
-                logger.warning("Bias detected in one or more models. Manual review required.")
+            biased = [
+                cid for cid, br in bias_reports_map.items() if br.get("bias_detected", False)
+            ]
+            if biased:
+                logger.warning(
+                    f"Bias detected in {len(biased)} candidate(s): {biased}. "
+                    f"Manual review required."
+                )
                 decision = "manual_review_required"
 
         # Generate rationale
@@ -369,14 +389,11 @@ def main() -> None:
 
         # Build bias status
         bias_status = {
-            model_1: {
-                "bias_detected": bias_report_1.get("bias_detected", False),
-                "n_flagged": len(bias_report_1.get("flagged_slices", [])),
-            },
-            model_2: {
-                "bias_detected": bias_report_2.get("bias_detected", False),
-                "n_flagged": len(bias_report_2.get("flagged_slices", [])),
-            },
+            cid: {
+                "bias_detected": bias_reports_map[cid].get("bias_detected", False),
+                "n_flagged": len(bias_reports_map[cid].get("flagged_slices", [])),
+            }
+            for cid in bias_reports_map
         }
 
         # Determine selected model

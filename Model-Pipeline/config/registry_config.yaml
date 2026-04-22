@@ -20,6 +20,9 @@ hparam_search_dir: "Model-Pipeline/outputs/hparam_search"
 metadata_files:
   - "Model-Pipeline/outputs/training_summary.json"
   - "Model-Pipeline/outputs/hparam_search/best_hparams.json"
+  - "Model-Pipeline/outputs/evaluation/evaluation_results.json"
+  - "Model-Pipeline/outputs/bias_detection/bias_report.json"
+  - "Model-Pipeline/outputs/sensitivity/sensitivity_report.json"
 
 # ---------------------------------------------------------------------------
 # Local staging directory (cleaned up after upload)
